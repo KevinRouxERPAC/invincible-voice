@@ -61,9 +61,7 @@ class RedisMetricsBackgroundTask:
     async def start(self):
         """Start the background task."""
         if self._task is None or self._task.done():
-            self._task = asyncio.create_task(
-                update_redis_lock_metrics(self.redis_url)
-            )
+            self._task = asyncio.create_task(update_redis_lock_metrics(self.redis_url))
             logger.info("Redis metrics background task started")
 
     async def stop(self):

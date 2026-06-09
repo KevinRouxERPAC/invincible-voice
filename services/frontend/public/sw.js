@@ -6,9 +6,7 @@ const CACHE = 'invincible-shell-v1';
 const SHELL = ['/', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)),
-  );
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
   self.skipWaiting();
 });
 
@@ -17,7 +15,9 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))),
+        Promise.all(
+          keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)),
+        ),
       ),
   );
   self.clients.claim();
@@ -35,7 +35,9 @@ self.addEventListener('fetch', (event) => {
   // Navigation requests: network-first, fall back to cached shell when offline.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/').then((r) => r || Response.error())),
+      fetch(request).catch(() =>
+        caches.match('/').then((r) => r || Response.error()),
+      ),
     );
     return;
   }

@@ -93,13 +93,16 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       if (!bearerToken) {
         return;
       }
-      const response = await fetch(apiUrl(`/v1/user/accept_terms_of_services`), {
-        method: 'POST',
-        headers: addAuthHeaders({
-          Authorization: `Bearer ${bearerToken}`,
-          'Content-Type': 'application/json',
-        }),
-      });
+      const response = await fetch(
+        apiUrl(`/v1/user/accept_terms_of_services`),
+        {
+          method: 'POST',
+          headers: addAuthHeaders({
+            Authorization: `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+          }),
+        },
+      );
       if (response.ok) {
         await fetchUserData();
       }
@@ -170,10 +173,13 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         const body = new FormData();
         body.append('username', email);
         body.append('password', password);
-        const response = await fetch(apiUrl(`/auth/register?language=${locale}`), {
-          method: 'POST',
-          body,
-        });
+        const response = await fetch(
+          apiUrl(`/auth/register?language=${locale}`),
+          {
+            method: 'POST',
+            body,
+          },
+        );
         if (response.ok) {
           const data = await response.json();
           new Cookies().set('bearerToken', data.access_token, { path: '/' });

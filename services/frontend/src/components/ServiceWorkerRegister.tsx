@@ -6,9 +6,13 @@ import { useEffect } from 'react';
 // Renders nothing; mounted once from the root layout.
 const ServiceWorkerRegister = () => {
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!('serviceWorker' in navigator)) return;
-    if (process.env.NODE_ENV !== 'production') return;
+    if (
+      typeof window === 'undefined' ||
+      !('serviceWorker' in navigator) ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return undefined;
+    }
 
     const register = () => {
       navigator.serviceWorker.register('/sw.js').catch((error) => {

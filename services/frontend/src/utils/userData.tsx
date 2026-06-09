@@ -344,7 +344,9 @@ export async function deleteVoice(
   voiceName: string,
 ): Promise<ApiResponse<{ message: string; name: string }>> {
   try {
-    const url = apiUrl(`/v1/voices?voice_name=${encodeURIComponent(voiceName)}`);
+    const url = apiUrl(
+      `/v1/voices?voice_name=${encodeURIComponent(voiceName)}`,
+    );
 
     const response = await fetch(url, {
       method: 'DELETE',
