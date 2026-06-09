@@ -8,12 +8,14 @@ from backend.kyutai_constants import ALLOW_PASSWORD, GOOGLE_CLIENT_ID
 from backend.libs.google import verify_google_token
 from backend.security import create_access_token, hash_password, verify_password
 from backend.storage import (
+    InvalidEmailError,
     UserData,
     UserDataNotFoundError,
     get_user_data_from_storage,
     get_user_data_path,
+    validate_email,
 )
-from backend.typing import GoogleAuthRequest, UserSettings
+from backend.typing import GoogleAuthRequest, Language, UserSettings
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -27,9 +29,15 @@ def login(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password-based login is disabled",
         )
-    user = get_user_data_from_storage(form_data.username)
+    try:
+        user = get_user_data_from_storage(validate_email(form_data.username))
+    except (InvalidEmailError, UserDataNotFoundError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect username or password",
+        ) from None
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect username or password",
@@ -43,7 +51,7 @@ def login(
 
 def get_new_user(
     email: str,
-    language: str,
+    language: Language,
     hashed_password: str = "",
     google_sub: str | None = None,
 ) -> UserData:
@@ -130,9 +138,10 @@ def get_new_user(
         google_sub=google_sub,
         hashed_password=hashed_password,
         user_settings=UserSettings(
-            name=default_names[language],
+            # Fall back to English in case an unsupported language slips through
+            name=default_names.get(language, default_names["en"]),
             prompt="",
-            additional_keywords=default_keywords[language],
+            additional_keywords=default_keywords.get(language, default_keywords["en"]),
             friends=[],
         ),
         conversations=[],
@@ -142,13 +151,20 @@ def get_new_user(
 @auth_router.post("/register")
 def register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    language: str,
+    language: Language,
 ):
     if not ALLOW_PASSWORD:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Password-based registration is disabled",
         )
+    try:
+        validate_email(form_data.username)
+    except InvalidEmailError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid email address",
+        ) from None
     user_data_path = get_user_data_path(form_data.username)
     if user_data_path.exists():
         raise HTTPException(

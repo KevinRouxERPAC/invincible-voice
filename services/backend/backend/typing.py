@@ -42,9 +42,13 @@ class UserSettings(pydantic.BaseModel):
     accepted_terms_of_services: bool = False
 
 
+# Languages supported by the default user settings, see get_new_user()
+Language = Literal["en", "fr", "de", "es", "pt"]
+
+
 class GoogleAuthRequest(pydantic.BaseModel):
     token: str
-    language: str
+    language: Language
 
 
 class HealthStatus(pydantic.BaseModel):

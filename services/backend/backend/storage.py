@@ -1,4 +1,5 @@
 import logging
+import re
 import uuid
 from typing import Literal
 
@@ -118,7 +119,24 @@ def _add_to_llm_ready_conversation(
         llm_ready_conversation[-1].content += f"\n{content}"
 
 
+# Strict allowlist of email characters: the email is user-controlled and used to
+# build a file path, so anything that could escape USERS_SETTINGS_AND_HISTORY_DIR
+# (path separators, "..", URL schemes for AnyPath, ...) must be rejected.
+_EMAIL_REGEX = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+")
+
+
+class InvalidEmailError(ValueError):
+    pass
+
+
+def validate_email(email: str) -> str:
+    if ".." in email or not _EMAIL_REGEX.fullmatch(email):
+        raise InvalidEmailError(f"Invalid email address: {email!r}")
+    return email
+
+
 def get_user_data_path(email: str) -> AnyPath:
+    validate_email(email)
     return kyutai_constants.USERS_SETTINGS_AND_HISTORY_DIR / f"{email}.json"
 
 
