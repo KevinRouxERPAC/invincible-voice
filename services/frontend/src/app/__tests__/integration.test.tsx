@@ -26,14 +26,14 @@ jest.mock('react-use-websocket', () => ({
   },
 }));
 
-jest.mock('../useMicrophoneAccess', () => ({
+jest.mock('@/hooks/useMicrophoneAccess', () => ({
   useMicrophoneAccess: jest.fn(() => ({
     microphoneAccess: 'unknown',
     askMicrophoneAccess: mockAskMicrophoneAccess,
   })),
 }));
 
-jest.mock('../useAudioProcessor', () => ({
+jest.mock('@/hooks/useAudioProcessor', () => ({
   useAudioProcessor: jest.fn(() => ({
     setupAudio: mockSetupAudio,
     shutdownAudio: mockShutdownAudio,
@@ -41,17 +41,17 @@ jest.mock('../useAudioProcessor', () => ({
   })),
 }));
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -94,16 +94,16 @@ describe('InvincibleVoice Integration Tests', () => {
 
     // Wait for health check and initial load
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // Verify initial state shows simplified interface (no response boxes when not connected)
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
 
     // STEP 2: Test Connect button functionality
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(connectButton);
 
     // Verify microphone access was requested
@@ -112,7 +112,7 @@ describe('InvincibleVoice Integration Tests', () => {
     // Wait for connection to be established (stop button appears in right pane)
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -128,7 +128,7 @@ describe('InvincibleVoice Integration Tests', () => {
     // - All.responses messages that populate the 4 response boxes
     // - Response selection that sends WebSocket messages and triggers TTS
 
-    expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+    expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
   });
 
   test('Connect button behavior - microphone activation and WebSocket connection', async () => {
@@ -136,10 +136,10 @@ describe('InvincibleVoice Integration Tests', () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
 
     // ✅ Test: Clicking Connect activates microphone
     await user.click(connectButton);
@@ -147,7 +147,7 @@ describe('InvincibleVoice Integration Tests', () => {
 
     // ✅ Test: Successful connection shows stop button in right pane
     await waitFor(() => {
-      expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+      expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
     });
 
     // ✅ Test: Audio setup is called with media stream
@@ -162,7 +162,7 @@ describe('InvincibleVoice Integration Tests', () => {
 
   test('Microphone access refusal shows error', async () => {
     // Mock microphone access being refused
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'refused',
       askMicrophoneAccess: jest.fn().mockResolvedValue(null),
@@ -185,13 +185,13 @@ describe('InvincibleVoice Integration Tests', () => {
 
     // Wait for component to load and health check to complete
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // ✅ Test: Response boxes are now shown only when connected (after clicking start)
     // When not connected, we expect no response boxes
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
   });
 
@@ -200,7 +200,7 @@ describe('InvincibleVoice Integration Tests', () => {
 
     // Wait for component to load and health check to complete
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // ✅ Test: Component is set up to handle WebSocket messages
@@ -210,11 +210,11 @@ describe('InvincibleVoice Integration Tests', () => {
     // - Response selection sends WebSocket messages
 
     // This test verifies the structure is in place for message handling
-    expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
 
     // Verify that response options are not shown when not connected
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
 
     // The actual message handling logic is tested through the component's

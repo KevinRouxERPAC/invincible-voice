@@ -2,12 +2,6 @@ import { render, screen } from '@testing-library/react';
 import ChatInterface from '../../components/chat/ChatInterface';
 import { ChatMessage } from '../../types/chatHistory';
 
-// Mock the BubbleTrail component
-jest.mock('../BubbleTrail', () => ({
-  __esModule: true,
-  default: () => <div data-testid='bubble-trail' />,
-}));
-
 describe('Message Ordering Tests', () => {
   test('should display messages in chronological order by timestamp', () => {
     // Create messages with timestamps that would be out of order if sorted by array index
@@ -32,9 +26,7 @@ describe('Message Ordering Tests', () => {
     render(
       <ChatInterface
         chatHistory={chatHistory}
-        pendingResponses={[]}
-        onResponseSelect={() => {}}
-        isConnected={false}
+        isConnected
         currentSpeakerMessage=''
       />,
     );
@@ -79,9 +71,7 @@ describe('Message Ordering Tests', () => {
     render(
       <ChatInterface
         chatHistory={chatHistory}
-        pendingResponses={[]}
-        onResponseSelect={() => {}}
-        isConnected={false}
+        isConnected
         currentSpeakerMessage=''
       />,
     );
@@ -95,17 +85,24 @@ describe('Message Ordering Tests', () => {
     render(
       <ChatInterface
         chatHistory={[]}
+        isConnected
         currentSpeakerMessage=''
-        isConnected={false}
-        onSendMessage={() => {}}
-        textInput=''
-        onTextInputChange={() => {}}
-        errors={[]}
-        setErrors={() => {}}
       />,
     );
 
     // Should show empty state message
-    expect(screen.getByText('Connect to get started')).toBeInTheDocument();
+    expect(screen.getByText('Ready to chat')).toBeInTheDocument();
+  });
+
+  test('should render nothing when not connected', () => {
+    const { container } = render(
+      <ChatInterface
+        chatHistory={[]}
+        isConnected={false}
+        currentSpeakerMessage=''
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 });

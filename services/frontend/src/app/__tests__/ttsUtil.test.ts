@@ -1,151 +1,153 @@
 import { ttsCache } from '../../utils/ttsCache';
-import { fetchTTSAudio, playTTSAudio } from '../../utils/ttsUtil';
+import { playTTSStream } from '../../utils/ttsUtil';
 
-// Mock global fetch
-global.fetch = jest.fn();
+const SAMPLE_RATE = 24000;
 
-// Mock global Audio
-const mockAudio = {
-  play: jest.fn().mockResolvedValue(undefined),
-  pause: jest.fn(),
-  addEventListener: jest.fn(),
-  removeEventListener: jest.fn(),
+// Build a fake streaming response body with one PCM16 chunk
+const makeStreamBody = (frames: number) => {
+  const chunk = new Uint8Array(frames * 2); // 2 bytes per PCM16 frame
+  const read = jest
+    .fn()
+    .mockResolvedValueOnce({ value: chunk, done: false })
+    .mockResolvedValue({ value: undefined, done: true });
+  return { getReader: () => ({ read }) };
 };
 
-global.Audio = jest.fn().mockImplementation(() => mockAudio);
-
-// Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = jest.fn().mockReturnValue('blob:mock-url');
-global.URL.revokeObjectURL = jest.fn();
+const mockFetchForTTS = (
+  options: { ttsOk?: boolean; frames?: number } = {},
+) => {
+  const { ttsOk = true, frames = 4 } = options;
+  return jest.fn().mockImplementation((url: string) => {
+    if (url.includes('/v1/tts/sample_rate')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ sample_rate: SAMPLE_RATE }),
+      });
+    }
+    if (url.includes('/v1/tts/')) {
+      return Promise.resolve({
+        ok: ttsOk,
+        body: ttsOk ? makeStreamBody(frames) : null,
+      });
+    }
+    return Promise.reject(new Error('Unknown URL'));
+  });
+};
 
 describe('TTS Utility', () => {
   beforeEach(() => {
     ttsCache.clear();
     jest.clearAllMocks();
+
+    // Minimal Web Audio mock supporting the streaming playback path
+    global.AudioContext = jest.fn().mockImplementation(() => ({
+      createBuffer: jest.fn(() => ({
+        copyToChannel: jest.fn(),
+        duration: 0.1,
+      })),
+      createBufferSource: jest.fn(() => ({
+        connect: jest.fn(),
+        start: jest.fn(),
+        buffer: null,
+      })),
+      destination: {},
+      currentTime: 0,
+    })) as unknown as typeof AudioContext;
   });
 
   afterEach(() => {
     ttsCache.clear();
   });
 
-  describe('fetchTTSAudio', () => {
-    test('should fetch from backend when not in cache', async () => {
-      const mockBlob = new Blob(['test audio'], { type: 'audio/wav' });
-      const mockResponse = {
-        ok: true,
-        blob: () => Promise.resolve(mockBlob),
-      };
+  describe('playTTSStream', () => {
+    test('fetches the sample rate and streams TTS audio from the backend', async () => {
+      global.fetch = mockFetchForTTS();
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-      const result = await fetchTTSAudio({
+      await playTTSStream({
         text: 'Hello world',
+        messageId: 'msg-1',
         cacheType: 'temporary',
       });
 
-      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts', {
+      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/sample_rate');
+      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ text: 'Hello world' }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: 'Hello world', message_id: 'msg-1' }),
       });
-
-      expect(result).toBe(mockBlob);
     });
 
-    test('should return from cache when available', async () => {
-      const cachedBlob = new Blob(['cached audio'], { type: 'audio/wav' });
-      ttsCache.set('Hello world', cachedBlob, 'temporary');
+    test('includes voice_name in the request when provided', async () => {
+      global.fetch = mockFetchForTTS();
 
-      const result = await fetchTTSAudio({
+      await playTTSStream({
         text: 'Hello world',
-        cacheType: 'temporary',
+        messageId: 'msg-1',
+        voiceName: 'my-voice',
       });
 
-      expect(global.fetch).not.toHaveBeenCalled();
-      expect(result).toBe(cachedBlob);
-    });
-
-    test('should throw error on failed fetch', async () => {
-      const mockResponse = {
-        ok: false,
-        status: 500,
-        statusText: 'Internal Server Error',
-      };
-
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-      await expect(
-        fetchTTSAudio({
+      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           text: 'Hello world',
-          cacheType: 'temporary',
+          message_id: 'msg-1',
+          voice_name: 'my-voice',
         }),
-      ).rejects.toThrow('TTS request failed: 500 Internal Server Error');
+      });
     });
 
-    test('should cache fetched audio', async () => {
-      const mockBlob = new Blob(['test audio'], { type: 'audio/wav' });
-      const mockResponse = {
-        ok: true,
-        blob: () => Promise.resolve(mockBlob),
-      };
+    test('caches the streamed audio after playback', async () => {
+      global.fetch = mockFetchForTTS({ frames: 4 });
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-      await fetchTTSAudio({
+      await playTTSStream({
         text: 'Hello world',
+        messageId: 'msg-1',
         cacheType: 'permanent',
       });
 
       expect(ttsCache.has('Hello world')).toBe(true);
-      expect(ttsCache.get('Hello world')).toBe(mockBlob);
+      expect(ttsCache.get('Hello world')).toHaveLength(4);
     });
-  });
 
-  describe('playTTSAudio', () => {
-    test('should play audio after fetching', async () => {
-      const mockBlob = new Blob(['test audio'], { type: 'audio/wav' });
-      const mockResponse = {
-        ok: true,
-        blob: () => Promise.resolve(mockBlob),
-      };
+    test('plays from cache without requesting TTS again', async () => {
+      global.fetch = mockFetchForTTS();
+      ttsCache.set('Hello world', new Float32Array(4), 'temporary');
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-      const result = await playTTSAudio({
+      await playTTSStream({
         text: 'Hello world',
+        messageId: 'msg-1',
         cacheType: 'temporary',
       });
 
-      expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
-      expect(global.Audio).toHaveBeenCalledWith('blob:mock-url');
-      expect(mockAudio.play).toHaveBeenCalled();
-      expect(result).toBe(mockAudio);
+      // Only the sample-rate endpoint is hit, not the TTS endpoint
+      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/sample_rate');
+      expect(global.fetch).not.toHaveBeenCalledWith(
+        '/api/v1/tts/',
+        expect.anything(),
+      );
     });
 
-    test('should set up cleanup event listeners', async () => {
-      const mockBlob = new Blob(['test audio'], { type: 'audio/wav' });
-      const mockResponse = {
-        ok: true,
-        blob: () => Promise.resolve(mockBlob),
-      };
+    test('uses a voice-specific cache key when voiceName is provided', async () => {
+      global.fetch = mockFetchForTTS({ frames: 4 });
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
-
-      await playTTSAudio({
+      await playTTSStream({
         text: 'Hello world',
-        cacheType: 'temporary',
+        messageId: 'msg-1',
+        cacheType: 'permanent',
+        voiceName: 'my-voice',
       });
 
-      expect(mockAudio.addEventListener).toHaveBeenCalledWith(
-        'ended',
-        expect.any(Function),
-      );
-      expect(mockAudio.addEventListener).toHaveBeenCalledWith(
-        'error',
-        expect.any(Function),
-      );
+      expect(ttsCache.has('Hello world|my-voice')).toBe(true);
+      expect(ttsCache.has('Hello world')).toBe(false);
+    });
+
+    test('throws when the TTS request fails', async () => {
+      global.fetch = mockFetchForTTS({ ttsOk: false });
+
+      await expect(
+        playTTSStream({ text: 'Hello world', messageId: 'msg-1' }),
+      ).rejects.toThrow('TTS streaming failed');
     });
   });
 });

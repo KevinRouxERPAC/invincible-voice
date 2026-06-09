@@ -15,20 +15,20 @@ jest.mock('react-use-websocket', () => ({
 }));
 
 // Mock the custom hooks
-jest.mock('../useMicrophoneAccess');
-jest.mock('../useAudioProcessor');
+jest.mock('@/hooks/useMicrophoneAccess');
+jest.mock('@/hooks/useAudioProcessor');
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -51,13 +51,13 @@ describe('CurrentKeywords Message Tests', () => {
     const mockSetupAudio = jest.fn();
 
     // Mock the hooks with our spy functions
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'unknown',
       askMicrophoneAccess: mockAskMicrophoneAccess,
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: mockSetupAudio,
       shutdownAudio: jest.fn(),
@@ -70,16 +70,16 @@ describe('CurrentKeywords Message Tests', () => {
   const establishConnection = async (user) => {
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const startButton = screen.getByTitle('Start Conversation');
+    const startButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(startButton);
 
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -141,14 +141,14 @@ describe('CurrentKeywords Message Tests', () => {
     });
 
     // Mock microphone access
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'granted',
       askMicrophoneAccess: jest.fn(),
     });
 
     // Mock audio processor
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: jest.fn(),
       shutdownAudio: jest.fn(),
@@ -174,13 +174,13 @@ describe('CurrentKeywords Message Tests', () => {
     const mockSetupAudio = jest.fn();
 
     // Mock the hooks with our spy functions
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'unknown',
       askMicrophoneAccess: mockAskMicrophoneAccess,
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: mockSetupAudio,
       shutdownAudio: jest.fn(),
@@ -193,16 +193,16 @@ describe('CurrentKeywords Message Tests', () => {
 
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const startButton = screen.getByTitle('Start Conversation');
+    const startButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(startButton);
 
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -210,11 +210,11 @@ describe('CurrentKeywords Message Tests', () => {
     // Now the text input should be available
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText('Type your message here...'),
+        screen.getByPlaceholderText('Type your message here…'),
       ).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
 
     // Type a word followed by space
     await user.type(textInput, 'hello ');
@@ -242,11 +242,11 @@ describe('CurrentKeywords Message Tests', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText('Type your message here...'),
+        screen.getByPlaceholderText('Type your message here…'),
       ).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
     const sendButton = screen.getByText('Send');
 
     // Type some text
@@ -281,11 +281,11 @@ describe('CurrentKeywords Message Tests', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText('Type your message here...'),
+        screen.getByPlaceholderText('Type your message here…'),
       ).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
 
     // Type a word followed by space
     await user.type(textInput, 'hello ');
@@ -328,11 +328,11 @@ describe('CurrentKeywords Message Tests', () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText('Type your message here...'),
+        screen.getByPlaceholderText('Type your message here…'),
       ).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
     const sendButton = screen.getByText('Send');
 
     // Type some text

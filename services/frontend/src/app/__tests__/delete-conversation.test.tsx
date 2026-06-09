@@ -3,20 +3,20 @@ import userEvent from '@testing-library/user-event';
 import InvincibleVoice from '../../components/InvincibleVoice';
 
 // Mock the custom hooks
-jest.mock('../useMicrophoneAccess');
-jest.mock('../useAudioProcessor');
+jest.mock('@/hooks/useMicrophoneAccess');
+jest.mock('@/hooks/useAudioProcessor');
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -33,7 +33,7 @@ jest.mock('react-use-websocket', () => ({
 }));
 
 // Mock userData functions
-jest.mock('../userData', () => ({
+jest.mock('@/utils/userData', () => ({
   getUserData: jest.fn(),
   deleteConversation: jest.fn(),
   isSpeakerMessage: jest.fn(),
@@ -114,7 +114,7 @@ describe('Delete Conversation Tests', () => {
     mockIsWriterMessage.mockImplementation((message) => 'messageId' in message);
 
     // Set up userData module mocks
-    const userData = require('../userData');
+    const userData = require('@/utils/userData');
     userData.getUserData.mockImplementation(mockGetUserData);
     userData.deleteConversation.mockImplementation(mockDeleteConversation);
     userData.isSpeakerMessage.mockImplementation(mockIsSpeakerMessage);
@@ -130,7 +130,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -149,7 +149,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -163,7 +163,7 @@ describe('Delete Conversation Tests', () => {
 
     // Check that confirmation dialog appears
     await waitFor(() => {
-      expect(screen.getByText('Delete Conversation')).toBeInTheDocument();
+      expect(screen.getByText('Delete conversation')).toBeInTheDocument();
       expect(
         screen.getByText(
           'Are you sure you want to delete this conversation? This action cannot be undone.',
@@ -180,7 +180,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -194,7 +194,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for confirmation dialog
     await waitFor(() => {
-      expect(screen.getByText('Delete Conversation')).toBeInTheDocument();
+      expect(screen.getByText('Delete conversation')).toBeInTheDocument();
     });
 
     // Click cancel
@@ -203,7 +203,7 @@ describe('Delete Conversation Tests', () => {
 
     // Check that dialog disappears and no deletion occurred
     await waitFor(() => {
-      expect(screen.queryByText('Delete Conversation')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delete conversation')).not.toBeInTheDocument();
     });
 
     expect(mockDeleteConversation).not.toHaveBeenCalled();
@@ -215,7 +215,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -229,7 +229,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for confirmation dialog
     await waitFor(() => {
-      expect(screen.getByText('Delete Conversation')).toBeInTheDocument();
+      expect(screen.getByText('Delete conversation')).toBeInTheDocument();
     });
 
     // Click delete to confirm
@@ -238,12 +238,12 @@ describe('Delete Conversation Tests', () => {
 
     // Check that API was called with correct parameters
     await waitFor(() => {
-      expect(mockDeleteConversation).toHaveBeenCalledWith('test-user-id', 2); // Last conversation index
+      expect(mockDeleteConversation).toHaveBeenCalledWith(2); // Last conversation index
     });
 
     // Check that dialog disappears
     await waitFor(() => {
-      expect(screen.queryByText('Delete Conversation')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delete conversation')).not.toBeInTheDocument();
     });
   });
 
@@ -260,7 +260,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -274,7 +274,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for confirmation dialog
     await waitFor(() => {
-      expect(screen.getByText('Delete Conversation')).toBeInTheDocument();
+      expect(screen.getByText('Delete conversation')).toBeInTheDocument();
     });
 
     // Click delete to confirm
@@ -288,7 +288,7 @@ describe('Delete Conversation Tests', () => {
 
     // Check that dialog disappears
     await waitFor(() => {
-      expect(screen.queryByText('Delete Conversation')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delete conversation')).not.toBeInTheDocument();
     });
 
     // The error should be handled internally (added to errors state)
@@ -301,7 +301,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for user data to load
     await waitFor(() => {
-      expect(mockGetUserData).toHaveBeenCalledWith('test-user-id');
+      expect(mockGetUserData).toHaveBeenCalled();
     });
 
     // Wait for conversations to appear
@@ -315,7 +315,7 @@ describe('Delete Conversation Tests', () => {
 
     // Wait for confirmation dialog
     await waitFor(() => {
-      expect(screen.getByText('Delete Conversation')).toBeInTheDocument();
+      expect(screen.getByText('Delete conversation')).toBeInTheDocument();
     });
 
     // Click the X button to close
@@ -324,7 +324,7 @@ describe('Delete Conversation Tests', () => {
 
     // Check that dialog disappears and no deletion occurred
     await waitFor(() => {
-      expect(screen.queryByText('Delete Conversation')).not.toBeInTheDocument();
+      expect(screen.queryByText('Delete conversation')).not.toBeInTheDocument();
     });
 
     expect(mockDeleteConversation).not.toHaveBeenCalled();

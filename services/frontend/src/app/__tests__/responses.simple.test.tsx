@@ -3,17 +3,22 @@ import userEvent from '@testing-library/user-event';
 
 import InvincibleVoice from '../../components/InvincibleVoice';
 
-// Mock WebSocket
-let mockLastMessage: any = null;
+// Mock WebSocket. The component receives server messages through the
+// onMessage callback passed to useWebSocket, so we capture it to be able
+// to simulate incoming messages.
 const mockSendMessage = jest.fn();
+let mockOnMessage: ((event: { data: string }) => void) | undefined;
 
 jest.mock('react-use-websocket', () => ({
   __esModule: true,
-  default: jest.fn(() => ({
-    sendMessage: mockSendMessage,
-    lastMessage: mockLastMessage,
-    readyState: 1, // OPEN
-  })),
+  default: jest.fn((url: string, options: { onMessage?: typeof mockOnMessage }) => {
+    mockOnMessage = options?.onMessage;
+    return {
+      sendMessage: mockSendMessage,
+      lastMessage: null,
+      readyState: 1, // OPEN
+    };
+  }),
   ReadyState: {
     CONNECTING: 0,
     OPEN: 1,
@@ -23,33 +28,34 @@ jest.mock('react-use-websocket', () => ({
 }));
 
 // Mock other hooks
-jest.mock('../useMicrophoneAccess');
-jest.mock('../useAudioProcessor');
+jest.mock('@/hooks/useMicrophoneAccess');
+jest.mock('@/hooks/useAudioProcessor');
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
 describe('Response Handling and TTS Tests', () => {
-  const setMockMessage = (message: any) => {
-    mockLastMessage = message;
-    const useWebSocket = require('react-use-websocket').default;
-    useWebSocket.mockReturnValue({
-      sendMessage: mockSendMessage,
-      lastMessage: mockLastMessage,
-      readyState: 1,
+  const sendServerMessage = async (payload: Record<string, unknown>) => {
+    await act(async () => {
+      mockOnMessage?.({ data: JSON.stringify(payload) });
     });
   };
+
+  const countTtsCalls = () =>
+    (global.fetch as jest.Mock).mock.calls.filter((call) =>
+      call[0].includes('/v1/tts'),
+    ).length;
 
   // Helper function to establish connection like the working tests
   const setupConnectionMocks = () => {
@@ -65,13 +71,13 @@ describe('Response Handling and TTS Tests', () => {
     const mockSetupAudio = jest.fn();
 
     // Mock the hooks with our spy functions
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'unknown',
       askMicrophoneAccess: mockAskMicrophoneAccess,
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: mockSetupAudio,
       shutdownAudio: jest.fn(),
@@ -84,23 +90,26 @@ describe('Response Handling and TTS Tests', () => {
   const establishConnection = async (user) => {
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const startButton = screen.getByTitle('Start Conversation');
+    const startButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(startButton);
 
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
   };
 
   beforeEach(() => {
-    // Mock fetch for health check and TTS (similar to working tests)
+    jest.clearAllMocks();
+    mockOnMessage = undefined;
+
+    // Mock fetch for health check and the streaming TTS endpoints
     global.fetch = jest.fn().mockImplementation((url) => {
       if (url.includes('/v1/health')) {
         return Promise.resolve({
@@ -109,27 +118,46 @@ describe('Response Handling and TTS Tests', () => {
             Promise.resolve({ ok: true, connected: 'yes_request_ok' }),
         });
       }
-      if (url.includes('/v1/tts')) {
+      if (url.includes('/v1/tts/sample_rate')) {
         return Promise.resolve({
           ok: true,
-          blob: () =>
-            Promise.resolve(new Blob(['mock-audio'], { type: 'audio/wav' })),
+          json: () => Promise.resolve({ sample_rate: 24000 }),
+        });
+      }
+      if (url.includes('/v1/tts')) {
+        const read = jest
+          .fn()
+          .mockResolvedValueOnce({ value: new Uint8Array(8), done: false })
+          .mockResolvedValue({ value: undefined, done: true });
+        return Promise.resolve({
+          ok: true,
+          body: { getReader: () => ({ read }) },
         });
       }
       return Promise.reject(new Error('Unknown URL'));
     });
 
-    jest.clearAllMocks();
-    mockLastMessage = null;
+    // Web Audio mock supporting the streaming playback path
+    global.AudioContext = jest.fn().mockImplementation(() => ({
+      createBuffer: jest.fn(() => ({
+        copyToChannel: jest.fn(),
+        duration: 0.1,
+      })),
+      createBufferSource: jest.fn(() => ({
+        connect: jest.fn(),
+        start: jest.fn(),
+        buffer: null,
+      })),
+      destination: {},
+      currentTime: 0,
+    })) as unknown as typeof AudioContext;
   });
 
   test('one.response messages populate response boxes progressively', async () => {
     const user = userEvent.setup();
     setupConnectionMocks();
 
-    const { rerender } = render(
-      <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-    );
+    render(<InvincibleVoice />);
 
     await establishConnection(user);
 
@@ -142,18 +170,11 @@ describe('Response Handling and TTS Tests', () => {
     ];
 
     for (let i = 0; i < responses.length; i++) {
-      await act(async () => {
-        setMockMessage({
-          data: JSON.stringify({
-            type: 'one.response',
-            content: responses[i],
-            timestamp: new Date().toISOString(),
-            index: i,
-          }),
-        });
-        rerender(
-          <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-        );
+      await sendServerMessage({
+        type: 'one.response',
+        content: responses[i],
+        timestamp: new Date().toISOString(),
+        index: i,
       });
     }
 
@@ -170,19 +191,19 @@ describe('Response Handling and TTS Tests', () => {
   });
 
   test('response interface is simplified when not connected', async () => {
-    render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
+    render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // Response boxes are not shown when not connected
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
 
     // Only essential buttons are shown
-    expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
 
     // Response-related UI elements are not visible
     expect(screen.queryByText('A')).not.toBeInTheDocument();
@@ -193,29 +214,18 @@ describe('Response Handling and TTS Tests', () => {
     const user = userEvent.setup();
     setupConnectionMocks();
 
-    const { rerender } = render(
-      <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-    );
+    render(<InvincibleVoice />);
 
     await establishConnection(user);
 
-    const initialTtsCount = (global.fetch as jest.Mock).mock.calls.filter(
-      (call) => call[0].includes('/v1/tts'),
-    ).length;
+    const initialTtsCount = countTtsCalls();
 
     // Send a response
-    await act(async () => {
-      setMockMessage({
-        data: JSON.stringify({
-          type: 'one.response',
-          content: 'First response',
-          timestamp: new Date().toISOString(),
-          index: 0,
-        }),
-      });
-      rerender(
-        <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-      );
+    await sendServerMessage({
+      type: 'one.response',
+      content: 'First response',
+      timestamp: new Date().toISOString(),
+      index: 0,
     });
 
     await waitFor(
@@ -225,26 +235,20 @@ describe('Response Handling and TTS Tests', () => {
       { timeout: 3000 },
     );
 
-    // Allow time for any pre-fetching to happen
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    // Record TTS count after the response is processed (may include pre-fetching)
-    const ttsRequestsAfterResponse = (
-      global.fetch as jest.Mock
-    ).mock.calls.filter((call) => call[0].includes('/v1/tts')).length;
+    // Receiving a response must not trigger any TTS request by itself
+    expect(countTtsCalls()).toBe(initialTtsCount);
 
     // Click the response
     const responseButton = screen.getByText('First response').closest('button');
     await user.click(responseButton!);
 
-    // Verify that clicking the response triggers TTS (either new request or uses cache)
+    // Verify that clicking the response triggers a streaming TTS request
     await waitFor(
       () => {
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/v1/tts',
+          '/api/v1/tts/',
           expect.objectContaining({
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: expect.stringMatching(/"text":"First response"/),
           }),
         );
@@ -252,35 +256,28 @@ describe('Response Handling and TTS Tests', () => {
       { timeout: 3000 },
     );
 
-    // Also verify messageId was included
+    // Also verify the message id was included
     await waitFor(
       () => {
         expect(global.fetch).toHaveBeenCalledWith(
-          'http://localhost:8000/v1/tts',
+          '/api/v1/tts/',
           expect.objectContaining({
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: expect.stringMatching(/"messageId":"[0-9a-f-]{36}"/),
+            body: expect.stringMatching(/"message_id":"[0-9a-f-]{36}"/),
           }),
         );
       },
       { timeout: 3000 },
     );
 
-    // Verify that the total TTS count increased (either from pre-fetch or click)
-    const finalTtsCount = (global.fetch as jest.Mock).mock.calls.filter(
-      (call) => call[0].includes('/v1/tts'),
-    ).length;
-    expect(finalTtsCount).toBeGreaterThan(initialTtsCount);
+    // Verify that the total TTS count increased after the click
+    expect(countTtsCalls()).toBeGreaterThan(initialTtsCount);
   });
 
   test('clicking response sends WebSocket message', async () => {
     const user = userEvent.setup();
     setupConnectionMocks();
 
-    const { rerender } = render(
-      <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-    );
+    render(<InvincibleVoice />);
 
     await establishConnection(user);
 
@@ -292,18 +289,11 @@ describe('Response Handling and TTS Tests', () => {
       'Fourth response',
     ];
     for (let i = 0; i < responses.length; i++) {
-      await act(async () => {
-        setMockMessage({
-          data: JSON.stringify({
-            type: 'one.response',
-            content: responses[i],
-            timestamp: new Date(Date.now() + 2000).toISOString(),
-            index: i,
-          }),
-        });
-        rerender(
-          <InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />,
-        );
+      await sendServerMessage({
+        type: 'one.response',
+        content: responses[i],
+        timestamp: new Date(Date.now() + 2000).toISOString(),
+        index: i,
       });
     }
 
@@ -335,18 +325,18 @@ describe('Response Handling and TTS Tests', () => {
   });
 
   test('response boxes are hidden when not connected', async () => {
-    render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
+    render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // Check that response boxes are not shown when not connected
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
 
     // Only the start conversation and settings buttons should be visible
-    expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
   });
 });

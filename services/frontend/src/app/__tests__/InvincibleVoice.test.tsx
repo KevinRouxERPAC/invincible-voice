@@ -1,23 +1,23 @@
-import { beforeEach, describe, jest } from '@jest/globals';
+import { beforeEach, describe } from '@jest/globals';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import InvincibleVoice from '../../components/InvincibleVoice';
 
 // Mock the custom hooks
-jest.mock('../useMicrophoneAccess');
-jest.mock('../useAudioProcessor');
+jest.mock('@/hooks/useMicrophoneAccess');
+jest.mock('@/hooks/useAudioProcessor');
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -60,13 +60,13 @@ describe('InvincibleVoice Connect Button Tests', () => {
     const mockSetupAudio = jest.fn();
 
     // Mock the hooks with our spy functions
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'unknown',
       askMicrophoneAccess: mockAskMicrophoneAccess,
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: mockSetupAudio,
       shutdownAudio: jest.fn(),
@@ -77,10 +77,10 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Wait for the component to render and health check to complete
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
 
     // Click the Start Conversation button
     await user.click(connectButton);
@@ -96,7 +96,7 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Verify the button text changes to "Stop Conversation"
     await waitFor(() => {
-      expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+      expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
     });
   });
 
@@ -105,7 +105,7 @@ describe('InvincibleVoice Connect Button Tests', () => {
     const mockAskMicrophoneAccess = jest.fn().mockResolvedValue(null);
 
     // Mock microphone access being refused
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'refused',
       askMicrophoneAccess: mockAskMicrophoneAccess,
@@ -114,10 +114,10 @@ describe('InvincibleVoice Connect Button Tests', () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(connectButton);
 
     // Verify the error message is shown
@@ -130,7 +130,7 @@ describe('InvincibleVoice Connect Button Tests', () => {
     });
 
     // Verify the button remains as "Start Conversation"
-    expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
   });
 
   test('Stop Conversation button stops audio and closes WebSocket connection', async () => {
@@ -145,13 +145,13 @@ describe('InvincibleVoice Connect Button Tests', () => {
     };
 
     // Mock the component in connected state
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'granted',
       askMicrophoneAccess: jest.fn().mockResolvedValue(mockMediaStream),
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: jest.fn(),
       shutdownAudio: mockShutdownAudio,
@@ -170,10 +170,10 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // First connect
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
 
     // Clear any previous calls before the actual test
     mockShutdownAudio.mockClear();
@@ -182,11 +182,11 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Wait for connection to be established
     await waitFor(() => {
-      expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+      expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
     });
 
     // Now click disconnect
-    const disconnectButton = screen.getByTitle('Stop Conversation');
+    const disconnectButton = screen.getByTitle('Stop the conversation');
     await user.click(disconnectButton);
 
     // Verify shutdown was called at least once
@@ -194,7 +194,7 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Verify button text changes back to "Start Conversation"
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
   });
 });

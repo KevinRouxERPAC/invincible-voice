@@ -3,20 +3,20 @@ import userEvent from '@testing-library/user-event';
 import InvincibleVoice from '../../components/InvincibleVoice';
 
 // Mock the custom hooks
-jest.mock('../useMicrophoneAccess');
-jest.mock('../useAudioProcessor');
+jest.mock('@/hooks/useMicrophoneAccess');
+jest.mock('@/hooks/useAudioProcessor');
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -33,7 +33,7 @@ jest.mock('react-use-websocket', () => ({
 }));
 
 // Mock userData functions
-jest.mock('../userData', () => ({
+jest.mock('@/utils/userData', () => ({
   getUserData: jest.fn(),
   deleteConversation: jest.fn(),
   isSpeakerMessage: jest.fn(),
@@ -70,13 +70,13 @@ describe('Friends Section Tests', () => {
     const mockSetupAudio = jest.fn();
 
     // Mock the hooks with our spy functions
-    const { useMicrophoneAccess } = require('../useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'unknown',
       askMicrophoneAccess: mockAskMicrophoneAccess,
     });
 
-    const { useAudioProcessor } = require('../useAudioProcessor');
+    const { useAudioProcessor } = require('@/hooks/useAudioProcessor');
     useAudioProcessor.mockReturnValue({
       setupAudio: mockSetupAudio,
       shutdownAudio: jest.fn(),
@@ -89,16 +89,16 @@ describe('Friends Section Tests', () => {
   const establishConnection = async (user) => {
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const startButton = screen.getByTitle('Start Conversation');
+    const startButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(startButton);
 
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -128,7 +128,7 @@ describe('Friends Section Tests', () => {
     });
 
     // Mock type guard functions
-    const userData = require('../userData');
+    const userData = require('@/utils/userData');
     userData.getUserData.mockImplementation(mockGetUserData);
     userData.isSpeakerMessage.mockImplementation(
       (message) => 'speaker' in message,
@@ -199,7 +199,7 @@ describe('Friends Section Tests', () => {
       expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
 
     // Click on Alice friend bubble
     const aliceButton = screen.getByText('Alice');
@@ -221,7 +221,7 @@ describe('Friends Section Tests', () => {
       expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
 
     // Type some initial text
     await user.type(textInput, 'Hello ');
@@ -276,11 +276,11 @@ describe('Friends Section Tests', () => {
       expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    const aliceButton = screen.getByText('Alice');
+    const aliceButton = screen.getByText('Alice').closest('button');
 
-    // Check if the button has blue styling (different from green Quick words)
-    expect(aliceButton).toHaveClass('bg-blue-700');
-    expect(aliceButton).toHaveClass('hover:bg-blue-600');
+    // Check if the button has the blue gradient styling (different from the
+    // green-tinted response options)
+    expect(aliceButton).toHaveClass('blue-to-light-blue-gradient');
   });
 
   test('friends section and quick words section are both visible', async () => {
@@ -313,7 +313,7 @@ describe('Friends Section Tests', () => {
       expect(screen.getByText('Alice')).toBeInTheDocument();
     });
 
-    const textInput = screen.getByPlaceholderText('Type your message here...');
+    const textInput = screen.getByPlaceholderText('Type your message here…');
 
     // Click on multiple friends
     await user.click(screen.getByText('Alice'));

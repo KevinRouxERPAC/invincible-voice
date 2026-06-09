@@ -7,11 +7,35 @@ jest.mock('pretty-print-json', () => ({
   },
 }));
 
-// Mock BubbleTrail component to avoid animation issues in tests
-jest.mock('./src/app/BubbleTrail', () => ({
-  __esModule: true,
-  default: () => null,
-}));
+// Mock i18n so components can use translations without an I18nProvider wrapper.
+// Resolves real English messages from the actual config (default locale = 'en').
+jest.mock('@/i18n', () => {
+  const actual = jest.requireActual('@/i18n');
+  const { messages, defaultLocale } = actual;
+  const getNested = (obj, path) =>
+    path.split('.').reduce((acc, key) => {
+      if (acc && typeof acc === 'object' && key in acc) {
+        return acc[key];
+      }
+      return undefined;
+    }, obj);
+  const t = (key) => {
+    const value = getNested(messages[defaultLocale], key);
+    return typeof value === 'string' ? value : key;
+  };
+  return {
+    ...actual,
+    I18nProvider: ({ children = null }) => children,
+    useI18n: () => ({
+      locale: defaultLocale,
+      messages: messages[defaultLocale],
+      setLocale: () => {},
+      t,
+    }),
+    useLocale: () => defaultLocale,
+    useTranslations: () => t,
+  };
+});
 
 // Mock IntersectionObserver
 global.IntersectionObserver = class IntersectionObserver {
@@ -28,6 +52,29 @@ global.ResizeObserver = class ResizeObserver {
   observe() {}
   unobserve() {}
 };
+
+// Polyfill structuredClone (not exposed in the jsdom test environment).
+if (typeof global.structuredClone === 'undefined') {
+  global.structuredClone = (value) => JSON.parse(JSON.stringify(value));
+}
+
+// Treat the test environment as a secure (HTTPS) context, matching production.
+Object.defineProperty(window, 'isSecureContext', {
+  writable: true,
+  value: true,
+});
+
+// Use a desktop viewport so useMobileDetection() renders the desktop layout.
+Object.defineProperty(window, 'innerWidth', {
+  writable: true,
+  configurable: true,
+  value: 1280,
+});
+Object.defineProperty(window, 'innerHeight', {
+  writable: true,
+  configurable: true,
+  value: 900,
+});
 
 // Mock MediaDevices API
 Object.defineProperty(window.navigator, 'mediaDevices', {
@@ -59,7 +106,7 @@ global.WebSocket = jest.fn().mockImplementation(() => ({
 }));
 
 // Mock authUtils to avoid authentication in tests
-jest.mock('./src/app/authUtils', () => ({
+jest.mock('@/auth/authUtils', () => ({
   addAuthHeaders: (headers = {}) => headers,
   getAuthHeaders: () => ({}),
 }));
@@ -115,10 +162,10 @@ console.error = (...args) => {
   ) {
     return;
   }
-  if (args[0] && args[0].includes('Failed to pre-cache')) {
+  if (typeof args[0] === 'string' && args[0].includes('Failed to pre-cache')) {
     return;
   }
-  if (args[0] && args[0].includes('Failed to pre-fetch TTS')) {
+  if (typeof args[0] === 'string' && args[0].includes('Failed to pre-fetch TTS')) {
     return;
   }
   originalError.apply(console, args);

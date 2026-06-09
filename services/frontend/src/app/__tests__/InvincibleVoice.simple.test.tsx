@@ -1,4 +1,4 @@
-import { expect, jest, test, describe, beforeEach } from '@jest/globals';
+import { expect, test, describe, beforeEach } from '@jest/globals';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -26,14 +26,14 @@ jest.mock('react-use-websocket', () => ({
   },
 }));
 
-jest.mock('../useMicrophoneAccess', () => ({
+jest.mock('@/hooks/useMicrophoneAccess', () => ({
   useMicrophoneAccess: jest.fn(() => ({
     microphoneAccess: 'unknown',
     askMicrophoneAccess: mockAskMicrophoneAccess,
   })),
 }));
 
-jest.mock('../useAudioProcessor', () => ({
+jest.mock('@/hooks/useAudioProcessor', () => ({
   useAudioProcessor: jest.fn(() => ({
     setupAudio: mockSetupAudio,
     shutdownAudio: mockShutdownAudio,
@@ -41,17 +41,17 @@ jest.mock('../useAudioProcessor', () => ({
   })),
 }));
 
-jest.mock('../useKeyboardShortcuts', () => ({
+jest.mock('@/hooks/useKeyboardShortcuts', () => ({
   __esModule: true,
   default: () => ({ isDevMode: false }),
 }));
 
-jest.mock('../useWakeLock', () => ({
+jest.mock('@/hooks/useWakeLock', () => ({
   __esModule: true,
   default: jest.fn(),
 }));
 
-jest.mock('../useBackendServerUrl', () => ({
+jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
@@ -109,10 +109,10 @@ describe('InvincibleVoice Core Functionality Tests', () => {
 
     // Wait for health check to complete
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
     expect(connectButton).toBeEnabled();
   });
 
@@ -121,10 +121,10 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(connectButton);
 
     // Verify microphone access was requested
@@ -144,16 +144,16 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByTitle('Start Conversation');
+    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
     await user.click(connectButton);
 
     // Wait for connection to be established (stop button appears in right pane)
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop Conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -162,7 +162,7 @@ describe('InvincibleVoice Core Functionality Tests', () => {
   test('Microphone refusal shows error message', async () => {
     // Mock the hook to return refused state
     // eslint-disable-next-line global-require
-    const { useMicrophoneAccess } = require('../__mocks__/useMicrophoneAccess');
+    const { useMicrophoneAccess } = require('@/hooks/useMicrophoneAccess');
     useMicrophoneAccess.mockReturnValue({
       microphoneAccess: 'refused',
       askMicrophoneAccess: jest.fn().mockResolvedValue(null),
@@ -183,12 +183,12 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByTitle('Start Conversation')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
     });
 
     // Check that response options are not shown when not connected
     expect(
-      screen.queryByText('Waiting for response...'),
+      screen.queryByText('Waiting for response…'),
     ).not.toBeInTheDocument();
 
     // Check option keyboard shortcuts are also not shown when not connected

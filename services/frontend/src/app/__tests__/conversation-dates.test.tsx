@@ -2,13 +2,14 @@ import { render, screen } from '@testing-library/react';
 import ConversationHistory from '../../components/conversations/ConversationHistory';
 
 describe('ConversationHistory Date Display', () => {
+  const todayStartTime = new Date().toISOString();
   const mockConversations = [
     {
       messages: [
         { speaker: 'user', content: 'Hello from today' },
         { content: 'Hi there!', messageId: 'msg1' },
       ],
-      start_time: new Date().toISOString(), // Today
+      start_time: todayStartTime, // Today
     },
     {
       messages: [
@@ -45,10 +46,13 @@ describe('ConversationHistory Date Display', () => {
     // Check that "Yesterday" appears for the yesterday conversation
     expect(screen.getByText('Yesterday')).toBeInTheDocument();
 
-    // Check that today shows time (will be in HH:MM AM/PM format)
-    const timeRegex = /^\d{1,2}:\d{2}\s?(AM|PM)$/;
-    const timeElements = screen.getAllByText(timeRegex);
-    expect(timeElements.length).toBeGreaterThan(0);
+    // Check that today shows time, formatted the same way as the component
+    // (locale-dependent, e.g. "02:30 PM" or "14:30")
+    const expectedTime = new Date(todayStartTime).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    expect(screen.getByText(expectedTime)).toBeInTheDocument();
   });
 
   it('should sort conversations by most recent first', () => {
@@ -95,8 +99,8 @@ describe('ConversationHistory Date Display', () => {
     // Should still display the conversation content
     expect(screen.getByText('Hello without time')).toBeInTheDocument();
 
-    // Should not crash and should handle missing timestamp gracefully
-    expect(screen.getByText('2 messages')).toBeInTheDocument();
+    // Should not crash and should show the message count badge
+    expect(screen.getByText('2')).toBeInTheDocument();
   });
 
   it('should handle invalid date strings gracefully', () => {
