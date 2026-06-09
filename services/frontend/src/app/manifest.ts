@@ -1,5 +1,9 @@
 import type { MetadataRoute } from 'next';
 
+// Required for the static export (NEXT_OUTPUT=export, Firebase Hosting):
+// route handlers like manifest.ts must opt in to static rendering.
+export const dynamic = 'force-static';
+
 // Web App Manifest — makes InvincibleVoice installable as a PWA on Android
 // (and add-to-home-screen on iOS). See layout.tsx for the related <meta> tags.
 export default function manifest(): MetadataRoute.Manifest {
