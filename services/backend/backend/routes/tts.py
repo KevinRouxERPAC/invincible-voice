@@ -10,8 +10,7 @@ from starlette.responses import Response
 
 from backend.kyutai_constants import (
     KYUTAI_API_KEY,
-    REDIS_HOST,
-    REDIS_PORT,
+    REDIS_URL,
     TTS_IS_GRADIUM,
     TTS_LOCK_TTL_SECONDS,
     TTS_SERVER,
@@ -64,9 +63,7 @@ async def text_to_speech(
         client = gradium.client.GradiumClient(
             base_url="https://eu.api.gradium.ai/api/",
         )
-        tts_lock_manager = RedisLockManager(
-            REDIS_HOST, REDIS_PORT, TTS_LOCK_TTL_SECONDS
-        )
+        tts_lock_manager = RedisLockManager(REDIS_URL, TTS_LOCK_TTL_SECONDS)
         lock = tts_lock_manager.acquire_lock(user.email, "tts")
         await lock.__aenter__()
         try:

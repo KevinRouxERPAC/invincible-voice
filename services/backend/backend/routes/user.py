@@ -12,7 +12,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing_extensions import Annotated
 
 from backend import metrics as mt
-from backend.kyutai_constants import REDIS_HOST, REDIS_PORT, STT_LOCK_TTL_SECONDS
+from backend.kyutai_constants import REDIS_URL, STT_LOCK_TTL_SECONDS
 from backend.libs.redis_lock import RedisLockManager
 from backend.libs.websockets import report_websocket_exception, run_route
 from backend.security import decode_access_token
@@ -21,7 +21,7 @@ from backend.timer import Stopwatch
 from backend.typing import UserSettings
 from backend.unmute_handler import UnmuteHandler
 
-_stt_lock_manager = RedisLockManager(REDIS_HOST, REDIS_PORT, STT_LOCK_TTL_SECONDS)
+_stt_lock_manager = RedisLockManager(REDIS_URL, STT_LOCK_TTL_SECONDS)
 
 _current_profile = None
 

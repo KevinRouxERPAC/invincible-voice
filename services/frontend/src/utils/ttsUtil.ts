@@ -1,4 +1,5 @@
 import { addAuthHeaders } from '../auth/authUtils';
+import { apiUrl } from './backend';
 import { ttsCache, CacheType } from './ttsCache';
 
 export interface TTSOptions {
@@ -16,7 +17,7 @@ export async function playTTSStream(
   options: TTSOptions,
 ): Promise<AudioContext> {
   /* Fetch sample rate from backend */
-  const SAMPLE_RATE = await fetch('/api/v1/tts/sample_rate').then((res) =>
+  const SAMPLE_RATE = await fetch(apiUrl('/v1/tts/sample_rate')).then((res) =>
     res.json().then((data) => data.sample_rate),
   );
   const { text, messageId, cacheType = 'temporary', voiceName } = options;
@@ -52,7 +53,7 @@ export async function playTTSStream(
     requestBody.voice_name = options.voiceName;
   }
 
-  const response = await fetch(`/api/v1/tts/`, {
+  const response = await fetch(apiUrl(`/v1/tts/`), {
     method: 'POST',
     headers: addAuthHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify(requestBody),

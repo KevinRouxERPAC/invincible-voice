@@ -1,5 +1,6 @@
 // TypeScript types equivalent to the Pydantic models in services/backend/backend/storage.py
 import { addAuthHeaders } from '../auth/authUtils';
+import { apiUrl } from './backend';
 
 /**
  * Represents a message from a speaker (user input)
@@ -97,7 +98,7 @@ interface ApiResponse<T> {
  */
 export async function getUserData(): Promise<ApiResponse<UserData>> {
   try {
-    const url = `/api/v1/user/`;
+    const url = apiUrl(`/v1/user/`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -138,7 +139,7 @@ export async function updateUserSettings(
   settings: UserSettings,
 ): Promise<ApiResponse<void>> {
   try {
-    const url = `/api/v1/user/settings`;
+    const url = apiUrl(`/v1/user/settings`);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -177,7 +178,7 @@ export async function deleteConversation(
   conversationId: number,
 ): Promise<ApiResponse<void>> {
   try {
-    const url = `/api/v1/user/conversations/${conversationId}`;
+    const url = apiUrl(`/v1/user/conversations/${conversationId}`);
 
     const response = await fetch(url, {
       method: 'DELETE',
@@ -214,7 +215,7 @@ export async function getVoices(): Promise<
   ApiResponse<Record<string, string>>
 > {
   try {
-    const url = `/api/v1/voices`;
+    const url = apiUrl(`/v1/voices`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -255,7 +256,7 @@ export async function selectVoice(
   voice: string,
 ): Promise<ApiResponse<{ voice: string }>> {
   try {
-    const url = `/api/v1/voices/select`;
+    const url = apiUrl(`/v1/voices/select`);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -299,7 +300,7 @@ export async function createVoice(
   name: string,
 ): Promise<ApiResponse<{ uid: string; name: string }>> {
   try {
-    const url = `/api/v1/voices/create`;
+    const url = apiUrl(`/v1/voices/create`);
 
     const formData = new FormData();
     formData.append('audio_file', audioFile);
@@ -343,7 +344,7 @@ export async function deleteVoice(
   voiceName: string,
 ): Promise<ApiResponse<{ message: string; name: string }>> {
   try {
-    const url = `/api/v1/voices?voice_name=${encodeURIComponent(voiceName)}`;
+    const url = apiUrl(`/v1/voices?voice_name=${encodeURIComponent(voiceName)}`);
 
     const response = await fetch(url, {
       method: 'DELETE',

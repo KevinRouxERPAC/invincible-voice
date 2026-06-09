@@ -12,9 +12,9 @@ from starlette.requests import Request
 import backend.openai_realtime_api_events as ora
 from backend import metrics as mt
 from backend.kyutai_constants import (
+    CORS_ALLOW_ORIGINS,
     MAX_VOICE_FILE_SIZE_MB,
-    REDIS_HOST,
-    REDIS_PORT,
+    REDIS_URL,
     USERS_SETTINGS_AND_HISTORY_DIR,
 )
 from backend.libs.files import LimitUploadSizeForPath
@@ -37,7 +37,7 @@ ClientEventAdapter = TypeAdapter(
 
 
 # Background metrics tasks
-redis_metrics_task = RedisMetricsBackgroundTask(REDIS_HOST, REDIS_PORT)
+redis_metrics_task = RedisMetricsBackgroundTask(REDIS_URL)
 storage_metrics_task = StorageMetricsBackgroundTask(USERS_SETTINGS_AND_HISTORY_DIR)
 
 
@@ -58,8 +58,8 @@ app = FastAPI(openapi_prefix="/api", lifespan=lifespan)
 # Instrument Prometheus metrics
 Instrumentator().instrument(app).expose(app)
 
-# Allow CORS for local development
-CORS_ALLOW_ORIGINS = ["http://localhost", "http://localhost:3000"]
+# Allow CORS for local development and any configured cross-origin frontends
+# (e.g. the PWA served from Firebase Hosting). See CORS_ALLOW_ORIGINS env var.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ALLOW_ORIGINS,

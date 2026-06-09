@@ -1,34 +1,22 @@
 import { useMemo } from 'react';
+import { BACKEND_BASE } from '@/utils/backend';
 
-// FIXME: This should be replaced by only one environment variable
+// Returns the base URL used to open the conversation WebSocket.
+// Modern browsers accept http(s) URLs in `new WebSocket()` and treat them as
+// ws(s), so we return an http(s) base here and let the WebSocket layer upgrade.
 export const useBackendServerUrl = () => {
-  // Get the backend server URL. This is a bit involved to support different deployment methods.
   const backendServerUrl = useMemo(() => {
-    const isInDocker = window.location.port !== '3000';
-
-    // For local development, you can set this environment variable or modify the URL directly
-    const customBackendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
-
-    if (!isInDocker && customBackendUrl) {
-      // Use custom backend URL for local development
-      return customBackendUrl.replace(/\/$/, '');
+    // Split deployment (e.g. Firebase Hosting PWA + Cloud Run backend):
+    // talk to the backend directly at its absolute URL.
+    if (BACKEND_BASE) {
+      return BACKEND_BASE;
     }
 
-    const prefix = isInDocker ? '/api' : '';
-
-    const url = new URL(prefix, window.location.href);
-    url.protocol = url.protocol === 'http:' ? 'ws' : 'wss';
-    if (!isInDocker) {
-      url.port = '8000';
-    }
-
-    const backendUrl = new URL('', window.location.href);
-    if (!isInDocker) {
-      backendUrl.port = '8000';
-    }
-    backendUrl.pathname = prefix;
-    backendUrl.search = ''; // strip any query parameters
-    return backendUrl.toString().replace(/\/$/, ''); // remove trailing slash
+    // Same-origin deployment (Docker behind Traefik): the backend is reachable
+    // under the "/api" prefix on the current origin.
+    const url = new URL('/api', window.location.href);
+    url.search = '';
+    return url.toString().replace(/\/$/, '');
   }, []);
 
   return backendServerUrl;

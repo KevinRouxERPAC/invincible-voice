@@ -18,15 +18,13 @@ async def _count_locks_by_pattern(redis_client: aioredis.Redis, pattern: str) ->
     return count
 
 
-async def update_redis_lock_metrics(redis_host: str, redis_port: str):
+async def update_redis_lock_metrics(redis_url: str):
     """Background task that periodically queries Redis and updates lock count metrics."""
     redis_client: aioredis.Redis | None = None
 
     try:
-        redis_client = await aioredis.from_url(f"redis://{redis_host}:{redis_port}")
-        logger.info(
-            f"Connected to Redis at {redis_host}:{redis_port} for metrics collection"
-        )
+        redis_client = await aioredis.from_url(redis_url)
+        logger.info("Connected to Redis for metrics collection")
 
         while True:
             try:
@@ -56,16 +54,15 @@ async def update_redis_lock_metrics(redis_host: str, redis_port: str):
 class RedisMetricsBackgroundTask:
     """Manages the lifecycle of the Redis metrics background task."""
 
-    def __init__(self, redis_host: str, redis_port: str):
-        self.redis_host = redis_host
-        self.redis_port = redis_port
+    def __init__(self, redis_url: str):
+        self.redis_url = redis_url
         self._task: asyncio.Task | None = None
 
     async def start(self):
         """Start the background task."""
         if self._task is None or self._task.done():
             self._task = asyncio.create_task(
-                update_redis_lock_metrics(self.redis_host, self.redis_port)
+                update_redis_lock_metrics(self.redis_url)
             )
             logger.info("Redis metrics background task started")
 

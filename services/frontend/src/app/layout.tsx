@@ -1,18 +1,32 @@
 /* eslint-disable react/function-component-definition */
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import localFont from 'next/font/local';
 import ContextProvider from '@/components/ContextProvider';
+import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
   title: 'InvincibleVoice by Kyutai',
   description: 'Help people with SLA.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Invincible',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+  },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: '#101010',
 };
 
 const satoshi = localFont({
@@ -50,6 +64,7 @@ export default function RootLayout({
         />
       </head>
       <body className='font-satoshi'>
+        <ServiceWorkerRegister />
         <ContextProvider>{children}</ContextProvider>
       </body>
     </html>

@@ -33,6 +33,9 @@ LLM_MODEL = os.environ["KYUTAI_LLM_MODEL"]
 # Redis Configuration for Locking
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+# Full Redis connection URL. Takes precedence over REDIS_HOST/REDIS_PORT when set
+# (e.g. a managed Redis like Upstash: "rediss://default:<password>@host:port").
+REDIS_URL = os.getenv("REDIS_URL") or f"redis://{REDIS_HOST}:{REDIS_PORT}"
 TTS_LOCK_TTL_SECONDS = int(os.getenv("TTS_LOCK_TTL_SECONDS", "30"))
 STT_LOCK_TTL_SECONDS = int(os.getenv("STT_LOCK_TTL_SECONDS", "600"))
 
@@ -60,3 +63,13 @@ ALLOW_PASSWORD = is_value_true(
     os.environ.get("ALLOW_PASSWORD", "true") or "true", "ALLOW_PASSWORD"
 )
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "REPLACE_ME")
+
+# Origins allowed to call the API cross-origin. Needed when the frontend is
+# served from a different origin than the backend (e.g. PWA on Firebase Hosting
+# calling the Cloud Run backend). Comma-separated, e.g.
+# "https://my-app.web.app,https://my-app.firebaseapp.com".
+_DEFAULT_CORS_ORIGINS = ["http://localhost", "http://localhost:3000"]
+_extra_cors = os.environ.get("CORS_ALLOW_ORIGINS", "")
+CORS_ALLOW_ORIGINS = _DEFAULT_CORS_ORIGINS + [
+    origin.strip() for origin in _extra_cors.split(",") if origin.strip()
+]

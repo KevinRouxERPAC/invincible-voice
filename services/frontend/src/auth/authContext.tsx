@@ -12,6 +12,7 @@ import {
 import Cookies from 'universal-cookie';
 import { useLocale } from '../i18n/I18nContext';
 import type { UserData } from '../types/user';
+import { apiUrl } from '../utils/backend';
 import { addAuthHeaders } from './authUtils';
 
 export const AUTH_STATUSES = {
@@ -70,7 +71,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       if (!bearerToken) {
         return;
       }
-      const response = await fetch(`/api/v1/user/`, {
+      const response = await fetch(apiUrl(`/v1/user/`), {
         method: 'GET',
         headers: addAuthHeaders({
           Authorization: `Bearer ${bearerToken}`,
@@ -92,7 +93,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       if (!bearerToken) {
         return;
       }
-      const response = await fetch(`/api/v1/user/accept_terms_of_services`, {
+      const response = await fetch(apiUrl(`/v1/user/accept_terms_of_services`), {
         method: 'POST',
         headers: addAuthHeaders({
           Authorization: `Bearer ${bearerToken}`,
@@ -118,7 +119,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         const body = new FormData();
         body.append('username', email);
         body.append('password', password);
-        const response = await fetch('/api/auth/login', {
+        const response = await fetch(apiUrl('/auth/login'), {
           method: 'POST',
           body,
         });
@@ -140,7 +141,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
     async (googleToken: string) => {
       try {
         setAuthError(false);
-        const response = await fetch('/api/auth/google', {
+        const response = await fetch(apiUrl('/auth/google'), {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         const body = new FormData();
         body.append('username', email);
         body.append('password', password);
-        const response = await fetch(`/api/auth/register?language=${locale}`, {
+        const response = await fetch(apiUrl(`/auth/register?language=${locale}`), {
           method: 'POST',
           body,
         });
@@ -218,7 +219,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         const bearerToken = new Cookies().get('bearerToken');
 
         if (bearerToken) {
-          const response = await fetch(`/api/v1/user/`, {
+          const response = await fetch(apiUrl(`/v1/user/`), {
             method: 'GET',
             headers: addAuthHeaders({
               Authorization: `Bearer ${bearerToken}`,
@@ -246,7 +247,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   useEffect(() => {
     async function checkAllowPassword() {
       try {
-        const response = await fetch('/api/auth/allow-password');
+        const response = await fetch(apiUrl('/auth/allow-password'));
         if (response.ok) {
           const data = await response.json();
           setAllowPassword(data.allow_password);
@@ -262,7 +263,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   useEffect(() => {
     async function fetchGoogleClientId() {
       try {
-        const response = await fetch('/api/auth/google-client-id');
+        const response = await fetch(apiUrl('/auth/google-client-id'));
         if (response.ok) {
           const data = await response.json();
           setGoogleClientId(data.google_client_id);

@@ -52,11 +52,18 @@ class UserData(pydantic.BaseModel):
         prompt += self.user_settings.prompt + "\n\n"
         prompt += "## User's friends\n"
         prompt += f"The friends of the user are: {self.user_settings.friends}\n\n"
+        if self.user_settings.additional_keywords:
+            prompt += "## User's frequently used keywords\n"
+            prompt += (
+                "These are words the user uses often in everyday life. Take them "
+                "into account when they are relevant to the conversation: "
+                f"{', '.join(self.user_settings.additional_keywords)}\n\n"
+            )
         prompt += "## User's documents\n"
         prompt += "The documents are here to get a better understanding of the user\n\n"
         for i, document in enumerate(self.user_settings.documents):
             prompt += f'### Document {i + 1} "{document.title}"\n'
-            prompt += "{document.content}\n\n"
+            prompt += f"{document.content}\n\n"
         prompt += "## Past conversations with dates\n"
         prompt += "The conversations here were done with the software, and are shown to give you"
         prompt += "context about the user\n\n"

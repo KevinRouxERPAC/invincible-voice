@@ -44,6 +44,7 @@ import useWakeLock from '@/hooks/useWakeLock';
 import { useTranslations } from '@/i18n';
 import { ChatMessage } from '@/types/chatHistory';
 import { base64EncodeOpus } from '@/utils/audioUtil';
+import { apiUrl } from '@/utils/backend';
 import {
   convertConversationToChat,
   getStaticContextOption,
@@ -834,7 +835,7 @@ const InvincibleVoice = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const response = await fetch(`/api/v1/health`, {
+        const response = await fetch(apiUrl(`/v1/health`), {
           signal: controller.signal,
           headers: addAuthHeaders(),
         });
