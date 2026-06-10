@@ -70,7 +70,12 @@
     "testVoiceMessage": "Bonjour, votre voix ressemblera à cela. Vous pouvez aussi cloner votre propre voix en fournissant un enregistrement audio de vous.",
     "expectedTranscriptionLanguage": "Langue de transcription attendue",
     "letSpeechToTextGuess": "Laisser la reconnaissance vocale deviner",
-    "moreSettingsAvailable": "Plus de paramètres sont disponibles sur la version ordinateur ou tablette d'Invincible Voice"
+    "moreSettingsAvailable": "Plus de paramètres sont disponibles sur la version ordinateur ou tablette d'Invincible Voice",
+    "quickPhrases": "Phrases rapides",
+    "quickPhrasesHelp": "Phrases prononcées instantanément d'un seul appui, sans passer par l'assistant. Leur audio est pré-enregistré avec votre voix.",
+    "noPhrasesAdded": "Aucune phrase ajoutée pour le moment.",
+    "addPhrasePlaceholder": "Ajouter une phrase…",
+    "phraseCategoryPlaceholder": "Catégorie"
   },
   "conversation": {
     "yesterday": "Hier",
@@ -106,7 +111,10 @@
       "no": "Non",
       "ok": "Ok",
       "tellMeMore": "Dis-m'en plus"
-    }
+    },
+    "quickPhrases": "Phrases rapides",
+    "emergencyButton": "À l'aide",
+    "emergencyPhrase": "J'ai besoin d'aide, venez s'il vous plaît !"
   },
   "documentEditor": {
     "editDocument": "Éditer un document",
@@ -123,6 +131,11 @@
     "stt": "STT",
     "llm": "LLM",
     "tts": "TTS",
-    "upButWithErrors": "En ligne, mais avec erreurs"
+    "upButWithErrors": "En ligne, mais avec erreurs",
+    "fallbackTitle": "Mode secours",
+    "fallbackHelp": "Le serveur est injoignable, mais vous pouvez toujours communiquer : vos phrases rapides utilisent l'audio enregistré, et le texte libre est lu par la voix de votre appareil.",
+    "fallbackInputPlaceholder": "Écrivez une phrase à prononcer…",
+    "speak": "Prononcer",
+    "retry": "Réessayer la connexion"
   }
 }

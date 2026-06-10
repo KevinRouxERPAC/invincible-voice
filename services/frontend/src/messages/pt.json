@@ -70,7 +70,12 @@
     "testVoiceMessage": "Olá, sua voz soará assim. Você também pode clonar sua própria voz fornecendo uma gravação de áudio de si mesmo.",
     "expectedTranscriptionLanguage": "Idioma de transcrição esperado",
     "letSpeechToTextGuess": "Deixar o reconhecimento de voz adivinhar",
-    "moreSettingsAvailable": "Mais configurações estão disponíveis na versão de desktop ou tablet do Invincible Voice"
+    "moreSettingsAvailable": "Mais configurações estão disponíveis na versão de desktop ou tablet do Invincible Voice",
+    "quickPhrases": "Frases rápidas",
+    "quickPhrasesHelp": "Frases pronunciadas instantaneamente com um único toque, sem passar pelo assistente. O áudio é pré-gravado com a sua voz.",
+    "noPhrasesAdded": "Ainda não foram adicionadas frases.",
+    "addPhrasePlaceholder": "Adicionar uma frase…",
+    "phraseCategoryPlaceholder": "Categoria"
   },
   "conversation": {
     "yesterday": "Ontem",
@@ -106,7 +111,10 @@
       "no": "Não",
       "ok": "Ok",
       "tellMeMore": "Me diga mais"
-    }
+    },
+    "quickPhrases": "Frases rápidas",
+    "emergencyButton": "Ajuda",
+    "emergencyPhrase": "Preciso de ajuda, venha por favor!"
   },
   "documentEditor": {
     "editDocument": "Editar documento",
@@ -123,6 +131,11 @@
     "stt": "STT",
     "llm": "LLM",
     "tts": "TTS",
-    "upButWithErrors": "Operacional, mas com erros"
+    "upButWithErrors": "Operacional, mas com erros",
+    "fallbackTitle": "Modo de emergência",
+    "fallbackHelp": "O servidor está inacessível, mas ainda pode comunicar: as suas frases rápidas usam o áudio gravado e o texto livre é lido pela voz do seu dispositivo.",
+    "fallbackInputPlaceholder": "Escreva uma frase para pronunciar…",
+    "speak": "Pronunciar",
+    "retry": "Tentar ligar novamente"
   }
 }

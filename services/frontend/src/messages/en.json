@@ -70,7 +70,12 @@
     "testVoiceMessage": "Hello, your voice will sound like this. You can also clone your own voice by providing an audio recording of yourself.",
     "expectedTranscriptionLanguage": "Expected transcription language",
     "letSpeechToTextGuess": "Let the speech-to-text guess",
-    "moreSettingsAvailable": "More settings are available on the desktop or tablet version of Invincible Voice"
+    "moreSettingsAvailable": "More settings are available on the desktop or tablet version of Invincible Voice",
+    "quickPhrases": "Quick phrases",
+    "quickPhrasesHelp": "Phrases spoken instantly with a single tap, without going through the assistant. Their audio is pre-recorded with your voice.",
+    "noPhrasesAdded": "No phrases added yet.",
+    "addPhrasePlaceholder": "Add a phrase…",
+    "phraseCategoryPlaceholder": "Category"
   },
   "conversation": {
     "yesterday": "Yesterday",
@@ -106,7 +111,10 @@
       "no": "No",
       "ok": "Ok",
       "tellMeMore": "Tell me more"
-    }
+    },
+    "quickPhrases": "Quick phrases",
+    "emergencyButton": "Help",
+    "emergencyPhrase": "I need help, please come!"
   },
   "documentEditor": {
     "editDocument": "Edit document",
@@ -123,6 +131,11 @@
     "stt": "STT",
     "llm": "LLM",
     "tts": "TTS",
-    "upButWithErrors": "Up, but with errors"
+    "upButWithErrors": "Up, but with errors",
+    "fallbackTitle": "Fallback mode",
+    "fallbackHelp": "The server is unreachable, but you can still communicate: your quick phrases use their recorded audio, and free text is read by your device voice.",
+    "fallbackInputPlaceholder": "Type a phrase to say out loud…",
+    "speak": "Speak",
+    "retry": "Retry connection"
   }
 }

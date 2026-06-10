@@ -31,12 +31,21 @@ class Document(pydantic.BaseModel):
     content: str
 
 
+class QuickPhrase(pydantic.BaseModel):
+    """A pre-written phrase the user can speak instantly, without going
+    through the LLM. Grouped by free-form category in the UI."""
+
+    text: str
+    category: str = ""
+
+
 class UserSettings(pydantic.BaseModel):
     name: str
     prompt: str
     additional_keywords: list[str]
     friends: list[str]
     documents: list[Document] = pydantic.Field(default_factory=list)
+    quick_phrases: list[QuickPhrase] = pydantic.Field(default_factory=list)
     voice: str | None = None
     expected_transcription_language: str | None = None
     accepted_terms_of_services: bool = False

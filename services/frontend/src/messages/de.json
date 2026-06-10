@@ -70,7 +70,12 @@
     "testVoiceMessage": "Hallo, Ihre Stimme wird so klingen. Sie können auch Ihre eigene Stimme klonen, indem Sie eine Audioaufnahme von sich selbst bereitstellen.",
     "expectedTranscriptionLanguage": "Erwartete Transkriptionssprache",
     "letSpeechToTextGuess": "Spracherkennung selbst erraten lassen",
-    "moreSettingsAvailable": "Weitere Einstellungen sind in der Desktop- oder Tablet-Version von Invincible Voice verfügbar"
+    "moreSettingsAvailable": "Weitere Einstellungen sind in der Desktop- oder Tablet-Version von Invincible Voice verfügbar",
+    "quickPhrases": "Schnellphrasen",
+    "quickPhrasesHelp": "Sätze, die mit einem Fingertipp sofort gesprochen werden, ohne den Assistenten. Ihr Audio wird mit Ihrer Stimme vorab aufgenommen.",
+    "noPhrasesAdded": "Noch keine Sätze hinzugefügt.",
+    "addPhrasePlaceholder": "Satz hinzufügen…",
+    "phraseCategoryPlaceholder": "Kategorie"
   },
   "conversation": {
     "yesterday": "Gestern",
@@ -106,7 +111,10 @@
       "no": "Nein",
       "ok": "Ok",
       "tellMeMore": "Erzähl mir mehr"
-    }
+    },
+    "quickPhrases": "Schnellphrasen",
+    "emergencyButton": "Hilfe",
+    "emergencyPhrase": "Ich brauche Hilfe, bitte kommen Sie!"
   },
   "documentEditor": {
     "editDocument": "Dokument bearbeiten",
@@ -123,6 +131,11 @@
     "stt": "STT",
     "llm": "LLM",
     "tts": "TTS",
-    "upButWithErrors": "Betriebsbereit, aber mit Fehler"
+    "upButWithErrors": "Betriebsbereit, aber mit Fehler",
+    "fallbackTitle": "Notfallmodus",
+    "fallbackHelp": "Der Server ist nicht erreichbar, aber Sie können weiterhin kommunizieren: Ihre Schnellphrasen nutzen das aufgenommene Audio, freier Text wird von der Gerätestimme vorgelesen.",
+    "fallbackInputPlaceholder": "Einen Satz zum Vorlesen eingeben…",
+    "speak": "Vorlesen",
+    "retry": "Verbindung erneut versuchen"
   }
 }

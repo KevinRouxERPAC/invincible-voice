@@ -10,6 +10,8 @@ import {
   KeyboardEvent,
   FC,
 } from 'react';
+import EmergencyButton from '@/components/EmergencyButton';
+import QuickPhrases from '@/components/QuickPhrases';
 import { PendingResponse } from '@/components/chat/ChatInterface';
 import ChatPanel from '@/components/mobile/ChatPanel';
 import HistoryPanel from '@/components/mobile/HistoryPanel';
@@ -18,7 +20,7 @@ import { ResponseSize, RESPONSES_SIZES } from '@/constants';
 import { useViewportHeight } from '@/hooks/useViewportHeight';
 import { useTranslations } from '@/i18n';
 import { ChatMessage } from '@/types/chatHistory';
-import { Conversation } from '@/utils/userData';
+import { Conversation, QuickPhrase } from '@/utils/userData';
 
 type ActivePanel = 'chat' | 'responses' | 'history';
 
@@ -48,6 +50,8 @@ interface MobileConversationLayoutProps {
   onBack?: () => void;
   isHistoryMode?: boolean;
   additionalKeywords?: string[];
+  quickPhrases?: QuickPhrase[];
+  onQuickPhraseSelect?: (text: string) => void;
 }
 
 // Size sent to the backend per tab:
@@ -86,6 +90,8 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   onBack = undefined,
   isHistoryMode = false,
   additionalKeywords = [],
+  quickPhrases = [],
+  onQuickPhraseSelect = undefined,
 }) => {
   const t = useTranslations();
   const [activePanel, setActivePanel] =
@@ -207,15 +213,18 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
             </div>
           </button>
         )}
-        <button
-          className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
-          onClick={onSettingsPress}
-          title={t('settings.changeSettings')}
-        >
-          <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center rounded-2xl px-3'>
-            <Settings size={20} />
-          </div>
-        </button>
+        <div className='flex flex-row items-center gap-2'>
+          <EmergencyButton compact />
+          <button
+            className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+            onClick={onSettingsPress}
+            title={t('settings.changeSettings')}
+          >
+            <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center rounded-2xl px-3'>
+              <Settings size={20} />
+            </div>
+          </button>
+        </div>
       </div>
 
       {/* Tab bar — hidden on tablet unless in history mode */}
@@ -304,6 +313,16 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
 
       {/* Always-visible text input footer */}
       <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-gray-700 shrink-0'>
+        {/* Quick phrases: instant speech, no LLM round-trip. Hidden when viewing history. */}
+        {!isHistoryMode && quickPhrases.length > 0 && onQuickPhraseSelect && (
+          <div className='mb-2 landscape:hidden'>
+            <QuickPhrases
+              phrases={quickPhrases}
+              onSelect={onQuickPhraseSelect}
+              compact
+            />
+          </div>
+        )}
         {/* Top LLM suggestions (up to 2) — hidden on Responses tab and in landscape */}
         {topSuggestions.length > 0 && (
           <div className='flex gap-2 mb-2 overflow-x-auto no-scrollbar landscape:hidden'>

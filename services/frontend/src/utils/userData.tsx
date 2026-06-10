@@ -40,6 +40,15 @@ export interface Document {
 }
 
 /**
+ * A pre-written phrase the user can speak instantly, without the LLM.
+ * Grouped by free-form category in the UI.
+ */
+export interface QuickPhrase {
+  text: string;
+  category: string;
+}
+
+/**
  * User settings and preferences
  */
 export interface UserSettings {
@@ -48,6 +57,7 @@ export interface UserSettings {
   additional_keywords: string[];
   friends: string[];
   documents: Document[];
+  quick_phrases: QuickPhrase[];
   voice: string | null;
   expected_transcription_language: string | null;
   accepted_terms_of_services: boolean;

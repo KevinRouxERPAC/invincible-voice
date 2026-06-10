@@ -15,7 +15,7 @@ from backend.storage import (
     get_user_data_path,
     validate_email,
 )
-from backend.typing import GoogleAuthRequest, Language, UserSettings
+from backend.typing import GoogleAuthRequest, Language, QuickPhrase, UserSettings
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -132,6 +132,50 @@ def get_new_user(
         ],
     }
 
+    # (text, category) pairs; the user can edit them freely in the settings
+    default_quick_phrases: dict[str, list[tuple[str, str]]] = {
+        "en": [
+            ("I need help, please.", "Needs"),
+            ("I'm thirsty.", "Needs"),
+            ("I'm hungry.", "Needs"),
+            ("Could you make me more comfortable?", "Comfort"),
+            ("Thank you so much!", "Social"),
+            ("I'm fine, don't worry.", "Social"),
+        ],
+        "fr": [
+            ("J'ai besoin d'aide, s'il te plaît.", "Besoins"),
+            ("J'ai soif.", "Besoins"),
+            ("J'ai faim.", "Besoins"),
+            ("Peux-tu m'installer plus confortablement ?", "Confort"),
+            ("Merci beaucoup !", "Social"),
+            ("Ça va, ne t'inquiète pas.", "Social"),
+        ],
+        "de": [
+            ("Ich brauche bitte Hilfe.", "Bedürfnisse"),
+            ("Ich habe Durst.", "Bedürfnisse"),
+            ("Ich habe Hunger.", "Bedürfnisse"),
+            ("Kannst du mich bequemer hinsetzen?", "Komfort"),
+            ("Vielen Dank!", "Soziales"),
+            ("Mir geht es gut, keine Sorge.", "Soziales"),
+        ],
+        "es": [
+            ("Necesito ayuda, por favor.", "Necesidades"),
+            ("Tengo sed.", "Necesidades"),
+            ("Tengo hambre.", "Necesidades"),
+            ("¿Puedes ponerme más cómodo?", "Comodidad"),
+            ("¡Muchas gracias!", "Social"),
+            ("Estoy bien, no te preocupes.", "Social"),
+        ],
+        "pt": [
+            ("Preciso de ajuda, por favor.", "Necessidades"),
+            ("Estou com sede.", "Necessidades"),
+            ("Estou com fome.", "Necessidades"),
+            ("Podes pôr-me mais confortável?", "Conforto"),
+            ("Muito obrigado!", "Social"),
+            ("Estou bem, não te preocupes.", "Social"),
+        ],
+    }
+
     return UserData(
         user_id=uuid.uuid4(),
         email=email,
@@ -143,6 +187,12 @@ def get_new_user(
             prompt="",
             additional_keywords=default_keywords.get(language, default_keywords["en"]),
             friends=[],
+            quick_phrases=[
+                QuickPhrase(text=text, category=category)
+                for text, category in default_quick_phrases.get(
+                    language, default_quick_phrases["en"]
+                )
+            ],
         ),
         conversations=[],
     )

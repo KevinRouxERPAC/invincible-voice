@@ -19,6 +19,7 @@ import { playTTSStream } from '@/utils/ttsUtil';
 import {
   updateUserSettings,
   Document,
+  QuickPhrase,
   getVoices,
   createVoice,
   deleteVoice,
@@ -46,6 +47,9 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [newFriendInput, setNewFriendInput] = useState<string>('');
   const [newKeywordInput, setNewKeywordInput] = useState<string>('');
+  const [newPhraseInput, setNewPhraseInput] = useState<string>('');
+  const [newPhraseCategoryInput, setNewPhraseCategoryInput] =
+    useState<string>('');
   const [isDocumentEditorOpen, setIsDocumentEditorOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<Document | null>(null);
   const [editingDocumentIndex, setEditingDocumentIndex] = useState<
@@ -73,7 +77,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   const handleInputChange = useCallback(
     (
       field: keyof UserSettings,
-      value: string | string[] | Document[] | boolean | null,
+      value: string | string[] | Document[] | QuickPhrase[] | boolean | null,
     ) => {
       setFormData((prev) => ({
         ...prev,
@@ -143,6 +147,42 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
       }
     },
     [handleAddKeyword],
+  );
+  const handleAddPhrase = useCallback(() => {
+    const text = newPhraseInput.trim();
+    const phrases = formData.quick_phrases || [];
+    if (text && !phrases.some((phrase) => phrase.text === text)) {
+      handleInputChange('quick_phrases', [
+        ...phrases,
+        { text, category: newPhraseCategoryInput.trim() },
+      ]);
+      setNewPhraseInput('');
+    }
+  }, [
+    formData.quick_phrases,
+    handleInputChange,
+    newPhraseInput,
+    newPhraseCategoryInput,
+  ]);
+  const handleRemovePhrase = useCallback(
+    (phraseToRemove: QuickPhrase) => {
+      handleInputChange(
+        'quick_phrases',
+        (formData.quick_phrases || []).filter(
+          (phrase) => phrase.text !== phraseToRemove.text,
+        ),
+      );
+    },
+    [formData.quick_phrases, handleInputChange],
+  );
+  const handlePhraseInputKeyPress = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        handleAddPhrase();
+      }
+    },
+    [handleAddPhrase],
   );
   const handleAddDocument = useCallback(() => {
     setEditingDocument(null);
@@ -393,6 +433,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
     setFormData({
       ...userSettings,
       documents: userSettings.documents || [],
+      quick_phrases: userSettings.quick_phrases || [],
     });
   }, [userSettings]);
 
@@ -748,6 +789,66 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               </div>
             </div>
             <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+              <div className='block mb-1 text-sm font-medium text-white'>
+                {t('settings.quickPhrases')}
+              </div>
+              <p className='text-xs text-gray-400'>
+                {t('settings.quickPhrasesHelp')}
+              </p>
+              <div className='flex flex-col w-full gap-0.5'>
+                <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
+                  {(formData.quick_phrases || []).map((phrase) => (
+                    <PhraseChip
+                      key={phrase.text}
+                      phrase={phrase}
+                      removePhrase={handleRemovePhrase}
+                    />
+                  ))}
+                  {(!formData.quick_phrases ||
+                    formData.quick_phrases.length === 0) && (
+                    <p className='text-sm italic text-gray-500'>
+                      {t('settings.noPhrasesAdded')}
+                    </p>
+                  )}
+                </div>
+                <div className='flex gap-2'>
+                  <input
+                    type='text'
+                    value={newPhraseInput}
+                    onChange={(e) => setNewPhraseInput(e.target.value)}
+                    onKeyDown={handlePhraseInputKeyPress}
+                    className='flex-1 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    placeholder={t('settings.addPhrasePlaceholder')}
+                  />
+                  <input
+                    type='text'
+                    value={newPhraseCategoryInput}
+                    onChange={(e) => setNewPhraseCategoryInput(e.target.value)}
+                    onKeyDown={handlePhraseInputKeyPress}
+                    className='w-32 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    placeholder={t('settings.phraseCategoryPlaceholder')}
+                  />
+                  <button
+                    onClick={handleAddPhrase}
+                    className='shrink-0 h-10 p-px w-fit green-to-purple-via-blue-gradient rounded-xl'
+                    style={{
+                      filter:
+                        'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
+                    }}
+                  >
+                    <div className='h-full w-full pl-4 pr-3 flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-xl text-sm'>
+                      {t('common.add')}
+                      <Plus
+                        width={24}
+                        height={24}
+                        className='shrink-0 text-white'
+                      />
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
               <div className='flex flex-row items-center justify-between w-full mb-2'>
                 <div className='block mb-1 text-sm font-medium text-white'>
                   {t('common.documents')}
@@ -910,6 +1011,44 @@ const AdditionalKeyword: FC<AdditionalKeywordProps> = ({
       >
         <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
           {keyword}
+        </div>
+      </button>
+
+      <button
+        type='button'
+        onClick={onClickRemove}
+        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 hover:bg-[#FF6459] group-hover:opacity-100'
+        title={t('common.delete')}
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
+interface PhraseChipProps {
+  phrase: QuickPhrase;
+  removePhrase: (phrase: QuickPhrase) => void;
+}
+
+const PhraseChip: FC<PhraseChipProps> = ({ phrase, removePhrase }) => {
+  const t = useTranslations();
+
+  const onClickRemove = useCallback(() => {
+    removePhrase(phrase);
+  }, [phrase, removePhrase]);
+
+  return (
+    <div className='relative group'>
+      <button
+        type='button'
+        className='h-10 p-px transition-colors purple-to-pink-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500'
+      >
+        <div className='flex flex-row items-center gap-2 px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+          {phrase.text}
+          {phrase.category && (
+            <span className='text-[10px] text-gray-400'>{phrase.category}</span>
+          )}
         </div>
       </button>
 

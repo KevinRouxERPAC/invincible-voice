@@ -2,6 +2,7 @@
 
 import { History, Settings } from 'lucide-react';
 import { FC } from 'react';
+import EmergencyButton from '@/components/EmergencyButton';
 import StartConversationButton from '@/components/ui/StartConversationButton';
 import { useTranslations } from '@/i18n';
 
@@ -28,6 +29,12 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
         className='shrink-0'
       />
 
+      <div
+        className='absolute top-4 left-4 z-10'
+        style={{ top: 'calc(1rem + var(--safe-area-inset-top))' }}
+      >
+        <EmergencyButton compact />
+      </div>
       <div
         className='absolute top-4 right-4 z-10'
         style={{ top: 'calc(1rem + var(--safe-area-inset-top))' }}

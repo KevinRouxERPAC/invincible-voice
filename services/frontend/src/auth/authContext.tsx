@@ -221,29 +221,35 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
 
   useEffect(() => {
     async function checkAuthStatus() {
-      try {
-        const bearerToken = new Cookies().get('bearerToken');
+      const bearerToken = new Cookies().get('bearerToken');
 
-        if (bearerToken) {
-          const response = await fetch(apiUrl(`/v1/user/`), {
-            method: 'GET',
-            headers: addAuthHeaders({
-              Authorization: `Bearer ${bearerToken}`,
-              'Content-Type': 'application/json',
-            }),
-          });
-          if (!response.ok) {
-            throw new Error('Unauthorized');
-          }
-          setAuthStatus(AUTH_STATUSES.LOGGED);
-          await fetchUserData();
-        } else {
-          setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
-        }
-      } catch {
-        new Cookies().remove('bearerToken');
+      if (!bearerToken) {
         setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
-        setUserData(null);
+        return;
+      }
+
+      try {
+        const response = await fetch(apiUrl(`/v1/user/`), {
+          method: 'GET',
+          headers: addAuthHeaders({
+            Authorization: `Bearer ${bearerToken}`,
+            'Content-Type': 'application/json',
+          }),
+        });
+        if (!response.ok) {
+          // The backend rejected the token: sign out for real
+          new Cookies().remove('bearerToken');
+          setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
+          setUserData(null);
+          return;
+        }
+        setAuthStatus(AUTH_STATUSES.LOGGED);
+        await fetchUserData();
+      } catch {
+        // Network error (offline, backend down): keep the token and let the
+        // app render its degraded mode instead of locking the user out on
+        // a login screen that cannot work without the backend.
+        setAuthStatus(AUTH_STATUSES.LOGGED);
       }
     }
 

@@ -14,8 +14,11 @@ import {
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import Cookies from 'universal-cookie';
 import { addAuthHeaders } from '@/auth/authUtils';
-import CouldNotConnect, { HealthStatus } from '@/components/CouldNotConnect';
+import { HealthStatus } from '@/components/CouldNotConnect';
+import EmergencyButton from '@/components/EmergencyButton';
 import KeywordsSuggestion from '@/components/KeywordsSuggestion';
+import OfflineFallback from '@/components/OfflineFallback';
+import QuickPhrases from '@/components/QuickPhrases';
 import ResponseOptions from '@/components/ResponseOptions';
 import ChatInterface, {
   PendingResponse,
@@ -50,6 +53,8 @@ import {
   getStaticContextOption,
   getStaticRepeatOption,
 } from '@/utils/conversationUtils';
+import { saveSettingsSnapshot } from '@/utils/localSettingsCache';
+import { playQuickPhrase, prefetchQuickPhrases } from '@/utils/phraseAudio';
 import { calculateTotalTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { ttsCache } from '@/utils/ttsCache';
 import { playTTSStream } from '@/utils/ttsUtil';
@@ -456,6 +461,58 @@ const InvincibleVoice = () => {
       t,
     ],
   );
+  const handleQuickPhraseSelect = useCallback(
+    (phraseText: string) => {
+      const phraseMessageId = crypto.randomUUID();
+
+      // Flush any pending speaker message to chat history first
+      if (currentSpeakerMessage.trim()) {
+        setRawChatHistory((prev) => [
+          ...prev,
+          {
+            role: 'user',
+            content: currentSpeakerMessage,
+            timestamp: currentSpeakerMessageStartTime || Date.now(),
+          },
+        ]);
+        setCurrentSpeakerMessage('');
+        setCurrentSpeakerMessageStartTime(null);
+      }
+
+      setRawChatHistory((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: phraseText,
+          timestamp: Date.now(),
+          messageId: phraseMessageId,
+        },
+      ]);
+      if (shouldConnect) {
+        sendMessage(
+          JSON.stringify({
+            type: 'response.selected.by.writer',
+            text: phraseText,
+            id: phraseMessageId,
+          }),
+        );
+      }
+      playQuickPhrase({
+        text: phraseText,
+        voiceName: userData?.user_settings?.voice,
+        lang:
+          userData?.user_settings?.expected_transcription_language ?? undefined,
+      }).catch(console.error);
+    },
+    [
+      currentSpeakerMessage,
+      currentSpeakerMessageStartTime,
+      sendMessage,
+      shouldConnect,
+      userData?.user_settings?.voice,
+      userData?.user_settings?.expected_transcription_language,
+    ],
+  );
   const handleWordBubbleClick = useCallback(
     (word: string) => {
       if (isInEditMode && insertTextAtCursor) {
@@ -823,44 +880,77 @@ const InvincibleVoice = () => {
     fetchUserData();
   }, []);
 
+  // Pre-cache the audio of quick phrases and of the emergency call (cloned
+  // voice) so they can be spoken instantly, even offline. No-op once
+  // everything is cached.
+  useEffect(() => {
+    if (!userData?.user_settings) {
+      return;
+    }
+    prefetchQuickPhrases(
+      [
+        { text: t('conversation.emergencyPhrase'), category: '' },
+        ...(userData.user_settings.quick_phrases ?? []),
+      ],
+      userData.user_settings.voice,
+    ).catch(console.error);
+  }, [userData?.user_settings, t]);
+
+  // Keep a local snapshot of the settings so the offline fallback knows the
+  // quick phrases and voice even when the backend is unreachable.
+  useEffect(() => {
+    if (userData?.user_settings) {
+      saveSettingsSnapshot(userData.user_settings);
+    }
+  }, [userData?.user_settings]);
+
   useWakeLock(shouldConnect);
+
+  const checkHealth = useCallback(async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
+
+      const response = await fetch(apiUrl(`/v1/health`), {
+        signal: controller.signal,
+        headers: addAuthHeaders(),
+      });
+
+      clearTimeout(timeoutId);
+      if (!response.ok) {
+        setHealthStatus({
+          connected: 'yes_request_fail',
+          ok: false,
+        });
+      }
+      const data = await response.json();
+      data.connected = 'yes_request_ok';
+
+      setHealthStatus(data);
+    } catch {
+      setHealthStatus({
+        connected: 'no',
+        ok: false,
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!backendServerUrl) {
       return;
     }
-
-    const checkHealth = async () => {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-        const response = await fetch(apiUrl(`/v1/health`), {
-          signal: controller.signal,
-          headers: addAuthHeaders(),
-        });
-
-        clearTimeout(timeoutId);
-        if (!response.ok) {
-          setHealthStatus({
-            connected: 'yes_request_fail',
-            ok: false,
-          });
-        }
-        const data = await response.json();
-        data.connected = 'yes_request_ok';
-
-        setHealthStatus(data);
-      } catch {
-        setHealthStatus({
-          connected: 'no',
-          ok: false,
-        });
-      }
-    };
-
     checkHealth();
-  }, [backendServerUrl]);
+  }, [backendServerUrl, checkHealth]);
+
+  // While unhealthy, retry periodically so the app recovers on its own when
+  // the connection comes back.
+  useEffect(() => {
+    if (!healthStatus || healthStatus.ok) {
+      return undefined;
+    }
+    const intervalId = setInterval(checkHealth, 10000);
+    return () => clearInterval(intervalId);
+  }, [healthStatus, checkHealth]);
 
   useEffect(() => {
     if (microphoneAccess === 'refused') {
@@ -1060,7 +1150,12 @@ const InvincibleVoice = () => {
   }
 
   if (healthStatus && !healthStatus.ok) {
-    return <CouldNotConnect healthStatus={healthStatus} />;
+    return (
+      <OfflineFallback
+        healthStatus={healthStatus}
+        onRetry={checkHealth}
+      />
+    );
   }
 
   // Mobile layout
@@ -1122,6 +1217,8 @@ const InvincibleVoice = () => {
             additionalKeywords={
               userData?.user_settings?.additional_keywords ?? []
             }
+            quickPhrases={userData?.user_settings?.quick_phrases ?? []}
+            onQuickPhraseSelect={handleQuickPhraseSelect}
             onBack={() => {
               if (isViewingPastConversation) {
                 // Viewing a past conversation → go back to history list
@@ -1177,6 +1274,9 @@ const InvincibleVoice = () => {
           />
         )}
         <div className='relative z-0 grid grow h-screen grid-cols-2 overflow-hidden'>
+          <div className='absolute bottom-4 left-4 z-30'>
+            <EmergencyButton />
+          </div>
           {!shouldConnect && !isViewingPastConversation && (
             <div className='absolute inset-0 z-20 flex items-center justify-center pointer-events-none'>
               <StartConversationButton
@@ -1332,6 +1432,10 @@ const InvincibleVoice = () => {
                     )}
                   </div>
                 </div>
+                <QuickPhrases
+                  phrases={userData?.user_settings?.quick_phrases ?? []}
+                  onSelect={handleQuickPhraseSelect}
+                />
                 <KeywordsSuggestion
                   keywords={pendingKeywords}
                   onSelect={handleKeywordSelect}
