@@ -81,8 +81,8 @@
     "startSpeaking": "Commencez à parler et votre voix sera transcrite. InvincibleVoice suggérera des réponses pour aider à communiquer.",
     "emptyConversation": "Conversation vide",
     "noMessages": "Cette conversation n'a aucun message.",
-    "lockResponses": "Vérouiller les réponses",
-    "unlockResponses": "Dévérouiller les réponses",
+    "lockResponses": "Verrouiller les réponses",
+    "unlockResponses": "Déverrouiller les réponses",
     "contextQuestion": "Tu peux donner ton prénom pour aider le logiciel à comprendre le contexte? Merci!",
     "repeatQuestion": "Peux-tu répéter ? Le logiciel n'a pas très bien compris.",
     "deleteConversation": "Supprimer la conversation",
@@ -109,7 +109,7 @@
     }
   },
   "documentEditor": {
-    "editDocument": "Editer un document",
+    "editDocument": "Éditer un document",
     "newDocument": "Nouveau document",
     "documentTitlePlaceholder": "Entrez le titre du document",
     "documentContentPlaceholder": "Entrez le contenu du document",
