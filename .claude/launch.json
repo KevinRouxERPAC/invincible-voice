@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "frontend",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "dev"],
+      "cwd": "services/frontend",
+      "port": 3000,
+      "env": {
+        "NEXT_PUBLIC_BACKEND_URL": "http://localhost:8000"
+      }
+    }
+  ]
+}
