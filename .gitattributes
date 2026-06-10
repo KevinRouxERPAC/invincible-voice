@@ -1,0 +1,28 @@
+# Force LF in the working tree for all text files, regardless of the local
+# core.autocrlf setting. Without this, a Windows checkout (autocrlf=true)
+# rewrites files to CRLF, which breaks Prettier/ESLint during `next build`
+# and the pre-commit hooks. Keep line endings LF everywhere.
+* text=auto eol=lf
+
+# Explicit binary types (never normalize / never diff as text).
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.svg   text eol=lf
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.mp3   binary
+*.wav   binary
+*.ogg   binary
+*.opus  binary
+*.pdf   binary
+
+# Lockfiles stay LF.
+*.lock      text eol=lf
+pnpm-lock.yaml text eol=lf
+uv.lock     text eol=lf
