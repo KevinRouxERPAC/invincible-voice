@@ -11,6 +11,12 @@ recordings/
 # env files (can opt-in for committing if needed)
 .env*
 
+# Deploiement : secrets et caches a ne jamais committer
+API keys.txt
+*.deploy-backend.log
+.deploy-backend.log
+services/frontend/.firebase/
+
 # vercel
 .vercel
 

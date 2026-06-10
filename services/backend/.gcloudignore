@@ -1,0 +1,9 @@
+# Exclut du tarball uploade vers Cloud Build (sinon gcloud envoie tout le
+# dossier, dont le .venv ~1 Go). Syntaxe type .gitignore.
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.dockerignore

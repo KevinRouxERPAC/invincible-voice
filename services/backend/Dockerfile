@@ -3,9 +3,12 @@ WORKDIR /app
 
 ENV UV_COMPILE_BYTECODE=1 UV_LOCKED=1
 
-RUN --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv run --no-dev echo hello
+# COPY instead of `RUN --mount=type=bind` so the image builds on builders
+# without BuildKit (e.g. Cloud Build's default gcr.io/cloud-builders/docker).
+# Same effect: dependencies are resolved/installed into a cached layer keyed on
+# the lock files; the later `COPY . .` re-adds them unchanged.
+COPY uv.lock pyproject.toml ./
+RUN uv run --no-dev echo hello
 
 COPY . .
 ENV HOSTNAME="0.0.0.0"
