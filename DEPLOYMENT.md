@@ -73,7 +73,7 @@ gcloud run deploy invincible-backend \
   --add-volume-mount volume=data,mount-path=/users_data \
   --set-env-vars "^@^\
 KYUTAI_LLM_URL=https://api.cerebras.ai/v1@\
-KYUTAI_LLM_MODEL=qwen-3-235b-a22b-instruct-2507@\
+KYUTAI_LLM_MODEL=gpt-oss-120b@\
 KYUTAI_LLM_API_KEY=VOTRE_CLE_CEREBRAS@\
 GRADIUM_API_KEY=VOTRE_CLE_GRADIUM@\
 TTS_SERVER=https://eu.api.gradium.ai/api/@\
@@ -163,7 +163,7 @@ d'accueil » → l'application s'installe avec une icône, en plein écran.
 | Variable | Exemple / valeur | Rôle |
 |---|---|---|
 | `KYUTAI_LLM_URL` | `https://api.cerebras.ai/v1` | API LLM |
-| `KYUTAI_LLM_MODEL` | `qwen-3-235b-a22b-instruct-2507` | Modèle LLM |
+| `KYUTAI_LLM_MODEL` | `gpt-oss-120b` | Modèle LLM |
 | `KYUTAI_LLM_API_KEY` | *(secret Cerebras)* | Clé LLM |
 | `GRADIUM_API_KEY` | *(secret Gradium)* | Clé STT/TTS |
 | `TTS_SERVER` | `https://eu.api.gradium.ai/api/` | Serveur TTS |
