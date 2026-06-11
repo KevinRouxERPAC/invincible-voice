@@ -215,3 +215,75 @@ select {
     display: none !important;
   }
 }
+
+/* --- Motor accessibility: switch scanning & dwell (see ScanProvider.tsx) --- */
+
+/* Highlight ring drawn over the active scan target. Positioned via inline
+   top/left/width/height from getBoundingClientRect(); only the look lives here. */
+.scan-highlight {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  border-radius: 1rem;
+  outline: 4px solid #ffd400;
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 3px #000,
+    0 0 14px 4px rgba(255, 212, 0, 0.65);
+  transition:
+    top 0.08s linear,
+    left 0.08s linear,
+    width 0.08s linear,
+    height 0.08s linear;
+}
+
+/* Dwell progress fill: a bar that grows over dwellMs to show the pending click.
+   The element is remounted (keyed) on each new target so the animation restarts. */
+@keyframes scan-dwell-fill-anim {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.scan-dwell-fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(255, 212, 0, 0.28);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+/* Full-width touch zone acting as a single switch (auto/step modes). */
+.scan-switch-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  min-height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #000;
+  background: #ffd400;
+  border: none;
+  border-top: 3px solid #000;
+  padding-bottom: var(--safe-area-inset-bottom, 0px);
+  touch-action: manipulation;
+  user-select: none;
+}
+.scan-switch-bar:active {
+  background: #f2b800;
+}
+
+/* Bigger hit targets when the user enables them. */
+.scan-big-targets [data-scan-item] {
+  min-height: 56px;
+  min-width: 56px;
+}

@@ -142,6 +142,7 @@ const BaseResponse: FC<BaseResponseProps> = ({
   return (
     <div className='relative w-full h-full'>
       <button
+        data-scan-item
         className={cn(
           'w-full h-full min-h-[44px] px-4 py-3 text-left rounded-[20px] border-2 transition-all duration-200 flex flex-col items-start justify-center overflow-hidden',
           {

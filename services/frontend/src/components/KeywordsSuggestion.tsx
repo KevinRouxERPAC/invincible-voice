@@ -94,6 +94,7 @@ const KeywordsSuggestion: FC<KeywordsSuggestionProps> = ({
           <DesktopKeyword
             key={keyword.id}
             keyword={keyword.text.trim() || '…'}
+            scannable={Boolean(keyword.text.trim())}
             onSelect={onSelectKeyword}
           />
         ))}
@@ -127,6 +128,7 @@ const MobileKeyword: FC<MobileKeywordProps> = ({
   return (
     <button
       onClick={handleClick}
+      data-scan-item
       className={cn(
         'shrink-0 px-4 py-2 text-sm rounded-full border transition-colors focus:outline-none focus:ring-2 whitespace-nowrap',
         {
@@ -156,10 +158,15 @@ const MobileKeyword: FC<MobileKeywordProps> = ({
 
 interface DesktopKeywordProps {
   keyword: string;
+  scannable?: boolean;
   onSelect: (text: string) => void;
 }
 
-const DesktopKeyword: FC<DesktopKeywordProps> = ({ keyword, onSelect }) => {
+const DesktopKeyword: FC<DesktopKeywordProps> = ({
+  keyword,
+  scannable = false,
+  onSelect,
+}) => {
   const handleClick = useCallback(() => {
     onSelect(keyword);
   }, [onSelect, keyword]);
@@ -168,6 +175,7 @@ const DesktopKeyword: FC<DesktopKeywordProps> = ({ keyword, onSelect }) => {
     <button
       className='h-10 p-px transition-colors cursor-pointer min-w-16 purple-to-pink-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500'
       onClick={handleClick}
+      data-scan-item={scannable ? true : undefined}
     >
       <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
         {keyword || '…'}

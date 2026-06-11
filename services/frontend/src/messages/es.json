@@ -77,7 +77,21 @@
     "quickPhrasesHelp": "Frases pronunciadas al instante con un solo toque, sin pasar por el asistente. Su audio se pregraba con tu voz.",
     "noPhrasesAdded": "Todavía no se han añadido frases.",
     "addPhrasePlaceholder": "Añadir una frase…",
-    "phraseCategoryPlaceholder": "Categoría"
+    "phraseCategoryPlaceholder": "Categoría",
+    "accessibility": "Accesibilidad motriz",
+    "accessMode": "Modo de acceso",
+    "accessModeOff": "Desactivado",
+    "accessModeAuto": "Barrido automático",
+    "accessModeStep": "Barrido por pasos",
+    "accessModeDwell": "Permanencia (hover)",
+    "scanInterval": "Velocidad de barrido (tiempo por elemento)",
+    "dwellTime": "Tiempo de permanencia antes de seleccionar",
+    "switchKey": "Tecla del conmutador",
+    "switchKeyHint": "Pulse la tecla del conmutador (o la barra en pantalla) para actuar. En barrido automático selecciona el elemento resaltado; en barrido por pasos una pulsación corta avanza y una larga selecciona.",
+    "bigTargets": "Objetivos más grandes"
+  },
+  "accessibility": {
+    "scanBarLabel": "Conmutador — pulse para seleccionar"
   },
   "conversation": {
     "yesterday": "Ayer",

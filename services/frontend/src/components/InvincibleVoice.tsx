@@ -1369,6 +1369,7 @@ const InvincibleVoice = () => {
                       (word) => (
                         <button
                           key={word}
+                          data-scan-item
                           className='h-10 p-px transition-colors cursor-pointer green-to-light-green-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500'
                           onClick={() => handleWordBubbleClick(word)}
                         >
@@ -1415,6 +1416,7 @@ const InvincibleVoice = () => {
                       >
                         <button
                           key={friend}
+                          data-scan-item
                           onClick={() => handleWordBubbleClick(friend)}
                           className='h-10 p-px transition-colors cursor-pointer blue-to-light-blue-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
                         >
@@ -1444,6 +1446,7 @@ const InvincibleVoice = () => {
                 <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px] grow flex flex-col gap-2'>
                   <div className='grid grid-cols-2 gap-2 pb-2'>
                     <button
+                      data-scan-item
                       onClick={() =>
                         handleResponseSelection(staticContextOption.id)
                       }
@@ -1463,6 +1466,7 @@ const InvincibleVoice = () => {
                       </div>
                     </button>
                     <button
+                      data-scan-item
                       onClick={() =>
                         handleResponseSelection(staticRepeatOption.id)
                       }

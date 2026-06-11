@@ -358,6 +358,7 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
   return (
     <button
       data-response-index={index}
+      data-scan-item
       onClick={onClickSelect}
       className={cn(
         'p-px text-left rounded-tr-sm rounded-b-2xl rounded-tl-2xl transition-all duration-200 h-16 black-to-light-green-via-white-gradient group relative focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50',

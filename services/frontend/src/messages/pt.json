@@ -77,7 +77,21 @@
     "quickPhrasesHelp": "Frases pronunciadas instantaneamente com um único toque, sem passar pelo assistente. O áudio é pré-gravado com a sua voz.",
     "noPhrasesAdded": "Ainda não foram adicionadas frases.",
     "addPhrasePlaceholder": "Adicionar uma frase…",
-    "phraseCategoryPlaceholder": "Categoria"
+    "phraseCategoryPlaceholder": "Categoria",
+    "accessibility": "Acessibilidade motora",
+    "accessMode": "Modo de acesso",
+    "accessModeOff": "Desativado",
+    "accessModeAuto": "Varrimento automático",
+    "accessModeStep": "Varrimento por passos",
+    "accessModeDwell": "Permanência (hover)",
+    "scanInterval": "Velocidade de varrimento (tempo por item)",
+    "dwellTime": "Tempo de permanência antes de selecionar",
+    "switchKey": "Tecla do comutador",
+    "switchKeyHint": "Pressione a tecla do comutador (ou a barra no ecrã) para agir. No varrimento automático seleciona o item realçado; no varrimento por passos um toque curto avança e um toque longo seleciona.",
+    "bigTargets": "Alvos maiores"
+  },
+  "accessibility": {
+    "scanBarLabel": "Comutador — pressione para selecionar"
   },
   "conversation": {
     "yesterday": "Ontem",

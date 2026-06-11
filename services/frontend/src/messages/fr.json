@@ -77,7 +77,21 @@
     "quickPhrasesHelp": "Phrases prononcées instantanément d'un seul appui, sans passer par l'assistant. Leur audio est pré-enregistré avec votre voix.",
     "noPhrasesAdded": "Aucune phrase ajoutée pour le moment.",
     "addPhrasePlaceholder": "Ajouter une phrase…",
-    "phraseCategoryPlaceholder": "Catégorie"
+    "phraseCategoryPlaceholder": "Catégorie",
+    "accessibility": "Accessibilité motrice",
+    "accessMode": "Mode d'accès",
+    "accessModeOff": "Désactivé",
+    "accessModeAuto": "Balayage auto",
+    "accessModeStep": "Balayage par pas",
+    "accessModeDwell": "Survol (dwell)",
+    "scanInterval": "Vitesse de balayage (temps par élément)",
+    "dwellTime": "Temps de survol avant sélection",
+    "switchKey": "Touche-contacteur",
+    "switchKeyHint": "Appuyez sur la touche-contacteur (ou la barre à l'écran) pour agir. En balayage auto, cela sélectionne l'élément surligné ; en balayage par pas, un appui court avance et un appui long sélectionne.",
+    "bigTargets": "Cibles plus grandes"
+  },
+  "accessibility": {
+    "scanBarLabel": "Contacteur — appuyez pour sélectionner"
   },
   "conversation": {
     "yesterday": "Hier",

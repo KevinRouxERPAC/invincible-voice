@@ -77,7 +77,21 @@
     "quickPhrasesHelp": "Phrases spoken instantly with a single tap, without going through the assistant. Their audio is pre-recorded with your voice.",
     "noPhrasesAdded": "No phrases added yet.",
     "addPhrasePlaceholder": "Add a phrase…",
-    "phraseCategoryPlaceholder": "Category"
+    "phraseCategoryPlaceholder": "Category",
+    "accessibility": "Motor accessibility",
+    "accessMode": "Access mode",
+    "accessModeOff": "Off",
+    "accessModeAuto": "Auto scan",
+    "accessModeStep": "Step scan",
+    "accessModeDwell": "Dwell (hover)",
+    "scanInterval": "Scan speed (time per item)",
+    "dwellTime": "Dwell time before selecting",
+    "switchKey": "Switch key",
+    "switchKeyHint": "Press the switch key (or the on-screen bar) to act. In auto scan it selects the highlighted item; in step scan a short press moves on and a long press selects.",
+    "bigTargets": "Bigger targets"
+  },
+  "accessibility": {
+    "scanBarLabel": "Switch — press to select"
   },
   "conversation": {
     "yesterday": "Yesterday",

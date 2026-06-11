@@ -329,6 +329,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
             {topSuggestions.map((r) => (
               <button
                 key={r.id}
+                data-scan-item
                 className='shrink-0 px-3 min-h-[28px] bg-gray-800 border border-gray-600 rounded-full text-xs text-gray-300 hover:bg-gray-700 transition-colors max-w-[48vw] truncate'
                 onClick={() => onResponseSelect(r.id)}
                 title={r.text}

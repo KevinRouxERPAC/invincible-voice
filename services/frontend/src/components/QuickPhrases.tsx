@@ -37,6 +37,7 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
         {phrases.map((phrase) => (
           <button
             key={`${phrase.category}|${phrase.text}`}
+            data-scan-item
             className='shrink-0 px-3 min-h-[32px] bg-gray-800 border border-purple-400 rounded-full text-xs text-gray-100 hover:bg-gray-700 transition-colors max-w-[64vw] truncate'
             onClick={() => onSelect(phrase.text)}
             title={phrase.text}
@@ -65,6 +66,7 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
               {groupPhrases.map((phrase) => (
                 <button
                   key={phrase.text}
+                  data-scan-item
                   className='h-10 p-px transition-colors cursor-pointer purple-to-pink-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500'
                   onClick={() => onSelect(phrase.text)}
                 >

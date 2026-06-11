@@ -36,6 +36,8 @@ const EmergencyButton: FC<EmergencyButtonProps> = ({
   return (
     <button
       onClick={onClick}
+      data-scan-item
+      data-scan-order={-1}
       aria-label={t('conversation.emergencyButton')}
       title={t('conversation.emergencyButton')}
       className={cn(

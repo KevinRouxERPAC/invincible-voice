@@ -77,7 +77,21 @@
     "quickPhrasesHelp": "Sätze, die mit einem Fingertipp sofort gesprochen werden, ohne den Assistenten. Ihr Audio wird mit Ihrer Stimme vorab aufgenommen.",
     "noPhrasesAdded": "Noch keine Sätze hinzugefügt.",
     "addPhrasePlaceholder": "Satz hinzufügen…",
-    "phraseCategoryPlaceholder": "Kategorie"
+    "phraseCategoryPlaceholder": "Kategorie",
+    "accessibility": "Motorische Zugänglichkeit",
+    "accessMode": "Zugriffsmodus",
+    "accessModeOff": "Aus",
+    "accessModeAuto": "Automatisches Scannen",
+    "accessModeStep": "Schrittweises Scannen",
+    "accessModeDwell": "Verweilen (Hover)",
+    "scanInterval": "Scangeschwindigkeit (Zeit pro Element)",
+    "dwellTime": "Verweildauer vor der Auswahl",
+    "switchKey": "Schaltertaste",
+    "switchKeyHint": "Drücken Sie die Schaltertaste (oder die Leiste auf dem Bildschirm). Beim automatischen Scannen wählt sie das markierte Element aus; beim schrittweisen Scannen wechselt ein kurzer Druck weiter, ein langer Druck wählt aus.",
+    "bigTargets": "Größere Ziele"
+  },
+  "accessibility": {
+    "scanBarLabel": "Schalter — zum Auswählen drücken"
   },
   "conversation": {
     "yesterday": "Gestern",

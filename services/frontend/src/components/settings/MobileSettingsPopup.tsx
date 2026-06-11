@@ -5,6 +5,7 @@ import { useAuthContext } from '@/auth/authContext';
 import { useTranslations } from '@/i18n';
 import { updateUserSettings } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
+import AccessibilitySettings from './AccessibilitySettings';
 import EmailField from './EmailField';
 import NameField from './NameField';
 import SettingsHeader from './SettingsHeader';
@@ -57,6 +58,9 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
           onChange={setName}
           placeholder={t('settings.yourNamePlaceholder')}
         />
+        <div className='w-full px-4 py-4 bg-[#101010] rounded-3xl'>
+          <AccessibilitySettings />
+        </div>
         <p className='text-xs text-gray-500 text-center mt-1'>
           {t('settings.moreSettingsAvailable')}
         </p>

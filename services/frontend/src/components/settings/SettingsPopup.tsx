@@ -25,6 +25,7 @@ import {
   deleteVoice,
 } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
+import AccessibilitySettings from './AccessibilitySettings';
 import DocumentEditorPopup from './DocumentEditorPopup';
 import EmailField from './EmailField';
 
@@ -668,6 +669,10 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               <option value='es'>Español</option>
               <option value='pt'>Português</option>
             </select>
+          </div>
+
+          <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+            <AccessibilitySettings />
           </div>
 
           <div className='flex flex-col flex-1 gap-2'>
