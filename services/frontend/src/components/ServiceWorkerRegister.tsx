@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { isNativeApp } from '@/utils/platform';
 
 // Registers the PWA service worker (public/sw.js) on the client.
 // Renders nothing; mounted once from the root layout.
@@ -8,6 +9,7 @@ const ServiceWorkerRegister = () => {
   useEffect(() => {
     if (
       typeof window === 'undefined' ||
+      isNativeApp() ||
       !('serviceWorker' in navigator) ||
       process.env.NODE_ENV !== 'production'
     ) {

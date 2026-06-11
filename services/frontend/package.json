@@ -5,6 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:export": "node scripts/build-export.mjs",
+    "build:android": "node scripts/build-android.mjs",
+    "cap:sync": "cap sync android",
+    "cap:open:android": "cap open android",
+    "android:run": "cap run android",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -12,6 +17,8 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.0",
+    "@capacitor/core": "^8.4.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.503.0",
     "next": "15.5.9",
@@ -24,6 +31,7 @@
     "universal-cookie": "^8.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.4.0",
     "@eslint/eslintrc": "^3",
     "@jest/globals": "30.2.0",
     "@next/eslint-plugin-next": "^15.3.2",
