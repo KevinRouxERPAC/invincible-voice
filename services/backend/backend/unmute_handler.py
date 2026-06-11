@@ -164,6 +164,11 @@ class UnmuteHandler(AsyncStreamHandler):
         logger.info("Desired responses length set to %s", message.length)
         await self._generate_response()
 
+    async def set_initiating(self, message: ora.InitiateConversation) -> None:
+        self.chatbot.initiating = message.active
+        logger.info("Initiating mode set to %s", message.active)
+        await self._generate_response()
+
     async def select_response(self, message_content: str, id_: uuid.UUID):
         self.chatbot.select_response(message_content, id_)
         await self._generate_response()

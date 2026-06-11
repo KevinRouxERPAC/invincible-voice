@@ -88,10 +88,26 @@
     "dwellTime": "Temps de survol avant sélection",
     "switchKey": "Touche-contacteur",
     "switchKeyHint": "Appuyez sur la touche-contacteur (ou la barre à l'écran) pour agir. En balayage auto, cela sélectionne l'élément surligné ; en balayage par pas, un appui court avance et un appui long sélectionne.",
-    "bigTargets": "Cibles plus grandes"
+    "bigTargets": "Cibles plus grandes",
+    "learnStyle": "Adapter les suggestions à mon style",
+    "learnStyleHint": "L'assistant s'appuie sur les phrases que vous avez déjà choisies pour coller à votre ton et vos formulations."
   },
   "accessibility": {
     "scanBarLabel": "Contacteur — appuyez pour sélectionner"
+  },
+  "appointments": {
+    "title": "Rendez-vous",
+    "help": "Préparez une liste de phrases pour une situation (visite médicale, appel…) et dites-les une par une pendant le rendez-vous.",
+    "titlePlaceholder": "Nom du rendez-vous",
+    "phrasePlaceholder": "Ajouter une phrase…",
+    "newPlaceholder": "Nouveau rendez-vous…",
+    "choose": "Choisir un rendez-vous",
+    "phrasesCount": "phrases",
+    "empty": "Ce rendez-vous n'a pas encore de phrases.",
+    "speak": "Dire cette phrase",
+    "previous": "Précédente",
+    "next": "Suivante",
+    "close": "Fermer"
   },
   "conversation": {
     "yesterday": "Hier",
@@ -130,7 +146,9 @@
     },
     "quickPhrases": "Phrases rapides",
     "emergencyButton": "À l'aide",
-    "emergencyPhrase": "J'ai besoin d'aide, venez s'il vous plaît !"
+    "emergencyPhrase": "J'ai besoin d'aide, venez s'il vous plaît !",
+    "takeFloor": "Je prends la parole",
+    "takeFloorHint": "Prendre la parole : obtenir des suggestions pour lancer ou orienter la conversation au lieu de répondre."
   },
   "documentEditor": {
     "editDocument": "Éditer un document",

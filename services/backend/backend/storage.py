@@ -10,7 +10,13 @@ from cloudpathlib import AnyPath
 from backend import kyutai_constants
 from backend import openai_realtime_api_events as ora
 from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
-from backend.typing import Conversation, LLMMessage, SpeakerMessage, UserSettings
+from backend.typing import (
+    Conversation,
+    LLMMessage,
+    SpeakerMessage,
+    UserSettings,
+    WriterMessage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +47,10 @@ class UserData(pydantic.BaseModel):
         logger.info(f"User data saved to {user_data_path}")
 
     def to_llm_ready_conversation(
-        self, user_text_hint: str | None, desired_responses_length: ora.ResponsesLenght
+        self,
+        user_text_hint: str | None,
+        desired_responses_length: ora.ResponsesLenght,
+        initiating: bool = False,
     ) -> list[LLMMessage]:
         result = []
 
@@ -65,6 +74,19 @@ class UserData(pydantic.BaseModel):
         for i, document in enumerate(self.user_settings.documents):
             prompt += f'### Document {i + 1} "{document.title}"\n'
             prompt += f"{document.content}\n\n"
+        if self.user_settings.learn_style:
+            style_examples = self._chosen_style_examples()
+            if len(style_examples) >= 3:
+                prompt += "## How the user likes to phrase things\n"
+                prompt += (
+                    "Below are sentences the user actually chose to say in the past. "
+                    "Use them to match their tone, vocabulary, and typical sentence "
+                    "length when you write the suggested answers — without copying them "
+                    "verbatim unless it fits the current conversation.\n"
+                )
+                for example in style_examples:
+                    prompt += f"* {example}\n"
+                prompt += "\n"
         prompt += "## Past conversations with dates\n"
         prompt += "The conversations here were done with the software, and are shown to give you"
         prompt += "context about the user\n\n"
@@ -104,8 +126,37 @@ class UserData(pydantic.BaseModel):
                 f"use those concept in **all** of your responses: {user_text_hint}."
             )
 
+        if initiating:
+            prompt += "\n\n## Initiating mode\n"
+            prompt += (
+                "The user wants to TAKE THE FLOOR rather than reply. Ignore the idea "
+                "of answering a speaker: instead, suggest 4 things the user could SAY "
+                "to start or steer the conversation — greetings, questions, requests, "
+                "or statements that open a topic. Follow the user's keywords, persona, "
+                "and documents when they indicate a direction. Keep the keyword "
+                "suggestions as related topics the user might want to bring up.\n"
+            )
+
         _add_to_llm_ready_conversation(result, "system", prompt)
         return result
+
+    def _chosen_style_examples(self, limit: int = 12) -> list[str]:
+        """The most recent sentences the user actually chose to say, across past
+        conversations (deduplicated, oldest-to-newest). Used to teach the LLM the
+        user's phrasing style."""
+        seen: set[str] = set()
+        examples: list[str] = []
+        # Skip the current (last) conversation: it has no finalized choices yet.
+        for conversation in self.conversations[:-1]:
+            for message in conversation.messages:
+                if not isinstance(message, WriterMessage):
+                    continue
+                text = message.content.strip()
+                if not text or text in seen:
+                    continue
+                seen.add(text)
+                examples.append(text)
+        return examples[-limit:]
 
 
 def _add_to_llm_ready_conversation(

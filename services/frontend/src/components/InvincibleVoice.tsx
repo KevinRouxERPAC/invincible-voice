@@ -20,6 +20,7 @@ import KeywordsSuggestion from '@/components/KeywordsSuggestion';
 import OfflineFallback from '@/components/OfflineFallback';
 import QuickPhrases from '@/components/QuickPhrases';
 import ResponseOptions from '@/components/ResponseOptions';
+import AppointmentLauncher from '@/components/appointments/AppointmentLauncher';
 import ChatInterface, {
   PendingResponse,
 } from '@/components/chat/ChatInterface';
@@ -48,6 +49,7 @@ import { useTranslations } from '@/i18n';
 import { ChatMessage } from '@/types/chatHistory';
 import { base64EncodeOpus } from '@/utils/audioUtil';
 import { apiUrl } from '@/utils/backend';
+import { cn } from '@/utils/cn';
 import {
   convertConversationToChat,
   getStaticContextOption,
@@ -128,6 +130,8 @@ const InvincibleVoice = () => {
     RESPONSES_SIZES.M,
   );
   const [shouldConnect, setShouldConnect] = useState(false);
+  // "Take the floor" mode: ask the backend for openers instead of replies.
+  const [isInitiating, setIsInitiating] = useState(false);
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
@@ -345,9 +349,26 @@ const InvincibleVoice = () => {
     },
     [sendMessage],
   );
+  const sendInitiating = useCallback(
+    (active: boolean) => {
+      setIsInitiating(active);
+      sendMessage(
+        JSON.stringify({
+          type: 'initiate.conversation',
+          active,
+        }),
+      );
+    },
+    [sendMessage],
+  );
+  const handleToggleInitiating = useCallback(() => {
+    sendInitiating(!isInitiating);
+  }, [isInitiating, sendInitiating]);
 
   const handleResponseSelection = useCallback(
     async (responseId: string) => {
+      // After speaking, the backend leaves "take the floor" mode; mirror it here.
+      setIsInitiating(false);
       if (
         responseId === 'static-context-question' ||
         responseId === 'static-repeat-question'
@@ -887,10 +908,18 @@ const InvincibleVoice = () => {
     if (!userData?.user_settings) {
       return;
     }
+    const appointmentPhrases = (
+      userData.user_settings.appointments ?? []
+    ).flatMap((appointment) =>
+      appointment.phrases
+        .filter((phrase) => phrase.trim())
+        .map((phrase) => ({ text: phrase, category: '' })),
+    );
     prefetchQuickPhrases(
       [
         { text: t('conversation.emergencyPhrase'), category: '' },
         ...(userData.user_settings.quick_phrases ?? []),
+        ...appointmentPhrases,
       ],
       userData.user_settings.voice,
     ).catch(console.error);
@@ -1219,6 +1248,8 @@ const InvincibleVoice = () => {
             }
             quickPhrases={userData?.user_settings?.quick_phrases ?? []}
             onQuickPhraseSelect={handleQuickPhraseSelect}
+            isInitiating={isInitiating}
+            onToggleInitiating={handleToggleInitiating}
             onBack={() => {
               if (isViewingPastConversation) {
                 // Viewing a past conversation → go back to history list
@@ -1301,7 +1332,24 @@ const InvincibleVoice = () => {
           )}
           {!hidePanes && (
             <div className='relative z-0 flex flex-col h-screen gap-8 px-4 pt-6 pb-4 overflow-y-auto'>
-              <div className='flex flex-row items-center justify-end h-10'>
+              <div className='flex flex-row items-center justify-between h-10'>
+                {shouldConnect && !isViewingPastConversation ? (
+                  <button
+                    onClick={handleToggleInitiating}
+                    data-scan-item
+                    title={t('conversation.takeFloorHint')}
+                    className={cn(
+                      'shrink-0 h-10 px-5 flex flex-row items-center justify-center gap-2 rounded-2xl text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
+                      isInitiating
+                        ? 'bg-green text-black border-green'
+                        : 'bg-[#181818] text-white border-white/40 hover:bg-[#222]',
+                    )}
+                  >
+                    {t('conversation.takeFloor')}
+                  </button>
+                ) : (
+                  <span />
+                )}
                 {shouldConnect && !isViewingPastConversation && (
                   <button
                     onClick={onConnectButtonPress}
@@ -1350,7 +1398,14 @@ const InvincibleVoice = () => {
           )}
           <div className='relative z-0 flex flex-col h-screen gap-4 px-4 pt-6 overflow-y-auto pb-14'>
             {!shouldConnect && !isViewingPastConversation && (
-              <div className='flex flex-row items-center justify-end h-10'>
+              <div className='flex flex-row items-center justify-between gap-2 h-10'>
+                <AppointmentLauncher
+                  appointments={userData?.user_settings?.appointments ?? []}
+                  voiceName={userData?.user_settings?.voice}
+                  lang={
+                    userData?.user_settings?.expected_transcription_language
+                  }
+                />
                 <SettingsButton
                   onClick={handleSettingsOpen}
                   label={t('settings.changeSettings')}

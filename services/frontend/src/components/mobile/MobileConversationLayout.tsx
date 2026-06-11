@@ -52,6 +52,8 @@ interface MobileConversationLayoutProps {
   additionalKeywords?: string[];
   quickPhrases?: QuickPhrase[];
   onQuickPhraseSelect?: (text: string) => void;
+  isInitiating?: boolean;
+  onToggleInitiating?: () => void;
 }
 
 // Size sent to the backend per tab:
@@ -92,6 +94,8 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   additionalKeywords = [],
   quickPhrases = [],
   onQuickPhraseSelect = undefined,
+  isInitiating = false,
+  onToggleInitiating = undefined,
 }) => {
   const t = useTranslations();
   const [activePanel, setActivePanel] =
@@ -214,6 +218,20 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
           </button>
         )}
         <div className='flex flex-row items-center gap-2'>
+          {isConnected && !isHistoryMode && onToggleInitiating && (
+            <button
+              onClick={onToggleInitiating}
+              data-scan-item
+              title={t('conversation.takeFloorHint')}
+              className={`shrink-0 h-11 px-3 rounded-2xl text-xs font-medium border transition-colors ${
+                isInitiating
+                  ? 'bg-green text-black border-green'
+                  : 'bg-[#181818] text-white border-white/40'
+              }`}
+            >
+              {t('conversation.takeFloor')}
+            </button>
+          )}
           <EmergencyButton compact />
           <button
             className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'

@@ -39,6 +39,14 @@ class QuickPhrase(pydantic.BaseModel):
     category: str = ""
 
 
+class Appointment(pydantic.BaseModel):
+    """A prepared script for a specific situation (e.g. a doctor's visit): an
+    ordered list of phrases the user steps through one by one."""
+
+    title: str
+    phrases: list[str] = pydantic.Field(default_factory=list)
+
+
 class UserSettings(pydantic.BaseModel):
     name: str
     prompt: str
@@ -46,9 +54,13 @@ class UserSettings(pydantic.BaseModel):
     friends: list[str]
     documents: list[Document] = pydantic.Field(default_factory=list)
     quick_phrases: list[QuickPhrase] = pydantic.Field(default_factory=list)
+    appointments: list[Appointment] = pydantic.Field(default_factory=list)
     voice: str | None = None
     expected_transcription_language: str | None = None
     accepted_terms_of_services: bool = False
+    # When True, the LLM is given examples of the user's past chosen phrasings
+    # so its suggestions match their style.
+    learn_style: bool = True
 
 
 # Languages supported by the default user settings, see get_new_user()

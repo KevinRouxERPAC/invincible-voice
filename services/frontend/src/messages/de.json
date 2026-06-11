@@ -88,10 +88,26 @@
     "dwellTime": "Verweildauer vor der Auswahl",
     "switchKey": "Schaltertaste",
     "switchKeyHint": "Drücken Sie die Schaltertaste (oder die Leiste auf dem Bildschirm). Beim automatischen Scannen wählt sie das markierte Element aus; beim schrittweisen Scannen wechselt ein kurzer Druck weiter, ein langer Druck wählt aus.",
-    "bigTargets": "Größere Ziele"
+    "bigTargets": "Größere Ziele",
+    "learnStyle": "Vorschläge an meinen Stil anpassen",
+    "learnStyleHint": "Der Assistent nutzt zuvor gewählte Sätze, um Ihren Ton und Ihre Formulierungen zu treffen."
   },
   "accessibility": {
     "scanBarLabel": "Schalter — zum Auswählen drücken"
+  },
+  "appointments": {
+    "title": "Termine",
+    "help": "Bereiten Sie eine Liste von Sätzen für eine Situation vor (Arztbesuch, Anruf…) und sprechen Sie sie während des Termins nacheinander.",
+    "titlePlaceholder": "Name des Termins",
+    "phrasePlaceholder": "Satz hinzufügen…",
+    "newPlaceholder": "Neuer Termin…",
+    "choose": "Termin auswählen",
+    "phrasesCount": "Sätze",
+    "empty": "Dieser Termin hat noch keine Sätze.",
+    "speak": "Diesen Satz sprechen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "close": "Schließen"
   },
   "conversation": {
     "yesterday": "Gestern",
@@ -130,7 +146,9 @@
     },
     "quickPhrases": "Schnellphrasen",
     "emergencyButton": "Hilfe",
-    "emergencyPhrase": "Ich brauche Hilfe, bitte kommen Sie!"
+    "emergencyPhrase": "Ich brauche Hilfe, bitte kommen Sie!",
+    "takeFloor": "Ich ergreife das Wort",
+    "takeFloorHint": "Das Wort ergreifen: Vorschläge erhalten, um das Gespräch zu beginnen oder zu lenken, statt zu antworten."
   },
   "documentEditor": {
     "editDocument": "Dokument bearbeiten",

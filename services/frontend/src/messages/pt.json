@@ -88,10 +88,26 @@
     "dwellTime": "Tempo de permanência antes de selecionar",
     "switchKey": "Tecla do comutador",
     "switchKeyHint": "Pressione a tecla do comutador (ou a barra no ecrã) para agir. No varrimento automático seleciona o item realçado; no varrimento por passos um toque curto avança e um toque longo seleciona.",
-    "bigTargets": "Alvos maiores"
+    "bigTargets": "Alvos maiores",
+    "learnStyle": "Adaptar as sugestões ao meu estilo",
+    "learnStyleHint": "O assistente usa frases que você escolheu antes para imitar o seu tom e as suas expressões."
   },
   "accessibility": {
     "scanBarLabel": "Comutador — pressione para selecionar"
+  },
+  "appointments": {
+    "title": "Compromissos",
+    "help": "Prepare uma lista de frases para uma situação (uma consulta médica, uma chamada…) e diga-as uma a uma durante o compromisso.",
+    "titlePlaceholder": "Nome do compromisso",
+    "phrasePlaceholder": "Adicionar uma frase…",
+    "newPlaceholder": "Novo compromisso…",
+    "choose": "Escolha um compromisso",
+    "phrasesCount": "frases",
+    "empty": "Este compromisso ainda não tem frases.",
+    "speak": "Dizer esta frase",
+    "previous": "Anterior",
+    "next": "Seguinte",
+    "close": "Fechar"
   },
   "conversation": {
     "yesterday": "Ontem",
@@ -130,7 +146,9 @@
     },
     "quickPhrases": "Frases rápidas",
     "emergencyButton": "Ajuda",
-    "emergencyPhrase": "Preciso de ajuda, venha por favor!"
+    "emergencyPhrase": "Preciso de ajuda, venha por favor!",
+    "takeFloor": "Vou falar",
+    "takeFloorHint": "Tomar a palavra: receba sugestões para iniciar ou orientar a conversa em vez de responder."
   },
   "documentEditor": {
     "editDocument": "Editar documento",

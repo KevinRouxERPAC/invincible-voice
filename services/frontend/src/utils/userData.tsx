@@ -49,6 +49,15 @@ export interface QuickPhrase {
 }
 
 /**
+ * A prepared script for a specific situation (e.g. a doctor's visit): an
+ * ordered list of phrases the user steps through one by one.
+ */
+export interface Appointment {
+  title: string;
+  phrases: string[];
+}
+
+/**
  * User settings and preferences
  */
 export interface UserSettings {
@@ -58,9 +67,12 @@ export interface UserSettings {
   friends: string[];
   documents: Document[];
   quick_phrases: QuickPhrase[];
+  appointments?: Appointment[];
   voice: string | null;
   expected_transcription_language: string | null;
   accepted_terms_of_services: boolean;
+  /** When true, the LLM adapts its suggestions to the user's past phrasings. */
+  learn_style?: boolean;
 }
 
 /**

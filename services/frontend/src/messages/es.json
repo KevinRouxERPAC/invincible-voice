@@ -88,10 +88,26 @@
     "dwellTime": "Tiempo de permanencia antes de seleccionar",
     "switchKey": "Tecla del conmutador",
     "switchKeyHint": "Pulse la tecla del conmutador (o la barra en pantalla) para actuar. En barrido automático selecciona el elemento resaltado; en barrido por pasos una pulsación corta avanza y una larga selecciona.",
-    "bigTargets": "Objetivos más grandes"
+    "bigTargets": "Objetivos más grandes",
+    "learnStyle": "Adaptar las sugerencias a mi estilo",
+    "learnStyleHint": "El asistente usa frases que elegiste antes para imitar tu tono y tus expresiones."
   },
   "accessibility": {
     "scanBarLabel": "Conmutador — pulse para seleccionar"
+  },
+  "appointments": {
+    "title": "Citas",
+    "help": "Prepara una lista de frases para una situación (una visita médica, una llamada…) y dilas una por una durante la cita.",
+    "titlePlaceholder": "Nombre de la cita",
+    "phrasePlaceholder": "Añadir una frase…",
+    "newPlaceholder": "Nueva cita…",
+    "choose": "Elige una cita",
+    "phrasesCount": "frases",
+    "empty": "Esta cita aún no tiene frases.",
+    "speak": "Decir esta frase",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "close": "Cerrar"
   },
   "conversation": {
     "yesterday": "Ayer",
@@ -130,7 +146,9 @@
     },
     "quickPhrases": "Frases rápidas",
     "emergencyButton": "Ayuda",
-    "emergencyPhrase": "¡Necesito ayuda, ven por favor!"
+    "emergencyPhrase": "¡Necesito ayuda, ven por favor!",
+    "takeFloor": "Tomo la palabra",
+    "takeFloorHint": "Tomar la palabra: recibe sugerencias para iniciar o dirigir la conversación en lugar de responder."
   },
   "documentEditor": {
     "editDocument": "Editar documento",

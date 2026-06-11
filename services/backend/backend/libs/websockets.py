@@ -178,6 +178,9 @@ async def receive_loop(
         elif isinstance(message, ora.DesiredResponsesLenght):
             await handler.set_desired_responses_length(message)
 
+        elif isinstance(message, ora.InitiateConversation):
+            await handler.set_initiating(message)
+
         elif isinstance(message, ora.ResponseSelectedByWriter):
             await handler.select_response(message.text, message.id)
 

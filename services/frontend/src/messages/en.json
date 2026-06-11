@@ -88,10 +88,26 @@
     "dwellTime": "Dwell time before selecting",
     "switchKey": "Switch key",
     "switchKeyHint": "Press the switch key (or the on-screen bar) to act. In auto scan it selects the highlighted item; in step scan a short press moves on and a long press selects.",
-    "bigTargets": "Bigger targets"
+    "bigTargets": "Bigger targets",
+    "learnStyle": "Adapt suggestions to my style",
+    "learnStyleHint": "The assistant uses sentences you chose before to match your tone and wording."
   },
   "accessibility": {
     "scanBarLabel": "Switch — press to select"
+  },
+  "appointments": {
+    "title": "Appointments",
+    "help": "Prepare a list of phrases for a situation (a doctor's visit, a call…) and speak them one by one during the appointment.",
+    "titlePlaceholder": "Appointment name",
+    "phrasePlaceholder": "Add a phrase…",
+    "newPlaceholder": "New appointment…",
+    "choose": "Choose an appointment",
+    "phrasesCount": "phrases",
+    "empty": "This appointment has no phrases yet.",
+    "speak": "Speak this phrase",
+    "previous": "Previous",
+    "next": "Next",
+    "close": "Close"
   },
   "conversation": {
     "yesterday": "Yesterday",
@@ -130,7 +146,9 @@
     },
     "quickPhrases": "Quick phrases",
     "emergencyButton": "Help",
-    "emergencyPhrase": "I need help, please come!"
+    "emergencyPhrase": "I need help, please come!",
+    "takeFloor": "I'll speak",
+    "takeFloorHint": "Take the floor: get suggestions to start or steer the conversation instead of replying."
   },
   "documentEditor": {
     "editDocument": "Edit document",

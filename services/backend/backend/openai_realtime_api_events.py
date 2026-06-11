@@ -127,6 +127,13 @@ class DesiredResponsesLenght(BaseEvent[Literal["desired.responses.length"]]):
     length: ResponsesLenght
 
 
+class InitiateConversation(BaseEvent[Literal["initiate.conversation"]]):
+    """The user wants to take the floor: suggest conversation openers instead of
+    replies to the speaker."""
+
+    active: bool
+
+
 class ResponseAudioDone(BaseEvent[Literal["response.audio.done"]]):
     pass
 
@@ -189,6 +196,7 @@ ClientEvent = Union[
     ResponseSelectedByWriter,
     CurrentKeywords,
     DesiredResponsesLenght,
+    InitiateConversation,
 ]
 
 Event = ClientEvent | ServerEvent

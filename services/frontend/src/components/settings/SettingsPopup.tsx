@@ -18,6 +18,7 @@ import { estimateTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { playTTSStream } from '@/utils/ttsUtil';
 import {
   updateUserSettings,
+  Appointment,
   Document,
   QuickPhrase,
   getVoices,
@@ -26,6 +27,7 @@ import {
 } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
+import AppointmentsEditor from './AppointmentsEditor';
 import DocumentEditorPopup from './DocumentEditorPopup';
 import EmailField from './EmailField';
 
@@ -78,7 +80,14 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   const handleInputChange = useCallback(
     (
       field: keyof UserSettings,
-      value: string | string[] | Document[] | QuickPhrase[] | boolean | null,
+      value:
+        | string
+        | string[]
+        | Document[]
+        | QuickPhrase[]
+        | Appointment[]
+        | boolean
+        | null,
     ) => {
       setFormData((prev) => ({
         ...prev,
@@ -435,6 +444,8 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
       ...userSettings,
       documents: userSettings.documents || [],
       quick_phrases: userSettings.quick_phrases || [],
+      appointments: userSettings.appointments || [],
+      learn_style: userSettings.learn_style ?? true,
     });
   }, [userSettings]);
 
@@ -671,6 +682,23 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
             </select>
           </div>
 
+          <label className='flex items-center justify-between gap-2 cursor-pointer px-2'>
+            <span className='text-sm font-medium text-white'>
+              {t('settings.learnStyle')}
+            </span>
+            <input
+              type='checkbox'
+              checked={formData.learn_style ?? true}
+              onChange={(e) =>
+                handleInputChange('learn_style', e.target.checked)
+              }
+              className='size-5 accent-green'
+            />
+          </label>
+          <p className='-mt-4 px-2 text-xs text-white/60'>
+            {t('settings.learnStyleHint')}
+          </p>
+
           <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
             <AccessibilitySettings />
           </div>
@@ -852,6 +880,14 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   </button>
                 </div>
               </div>
+            </div>
+            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+              <AppointmentsEditor
+                appointments={formData.appointments || []}
+                onChange={(appointments) =>
+                  handleInputChange('appointments', appointments)
+                }
+              />
             </div>
             <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
               <div className='flex flex-row items-center justify-between w-full mb-2'>

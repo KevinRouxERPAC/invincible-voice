@@ -18,6 +18,9 @@ class Chatbot:
         self.conversation_state_override: ConversationState | None = None
         # Text to guide the answers of the LLM
         self.current_keywords: str | None = None
+        # When True, the user wants to take the floor: the LLM suggests openers
+        # instead of replies to the speaker.
+        self.initiating: bool = False
         self.user_data = user_data
         # We start a new conversation in the user data
         # Note that the system prompt is not there, it's set dynamically
@@ -41,6 +44,7 @@ class Chatbot:
                 len(self.user_data.conversations[-1].messages),
                 last_message_len,
                 self.desired_responses_length,
+                self.initiating,
             )
         )
 
@@ -127,7 +131,9 @@ class Chatbot:
         logger.info(f"Length of chat history {len(self.current_conversation)}")
 
         result = self.user_data.to_llm_ready_conversation(
-            self.current_keywords, self.desired_responses_length
+            self.current_keywords,
+            self.desired_responses_length,
+            initiating=self.initiating,
         )
         messages = [x.model_dump(mode="json") for x in result]
 
@@ -140,3 +146,5 @@ class Chatbot:
                 content=text,
             )
         )
+        # Once the user has spoken an opener, go back to the reactive mode.
+        self.initiating = False
