@@ -49,6 +49,7 @@ describe('TTS Utility', () => {
         connect: jest.fn(),
         start: jest.fn(),
         buffer: null,
+        playbackRate: { value: 1 },
       })),
       destination: {},
       currentTime: 0,

@@ -51,6 +51,8 @@
     "changeSettings": "Alterar configurações",
     "configureAssistant": "Configure seu assistente de chat",
     "cloneYourVoice": "Clone sua própria voz",
+    "speechRate": "Velocidade da fala",
+    "speechRateHint": "Ajuste a rapidez com que as sugestões são lidas em voz alta.",
     "testYourVoice": "Teste sua voz",
     "createVoice": "Criar voz",
     "noFriendsAdded": "Nenhum amigo adicionado ainda. Adicione-os nas configurações.",

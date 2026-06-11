@@ -20,9 +20,14 @@ def get_openai_client() -> AsyncOpenAI:
     return AsyncOpenAI(api_key=LLM_API_KEY, base_url=LLM_URL)
 
 
+# NOTE: field order matters. The LLM is queried with strict JSON-schema
+# constrained decoding, which generates the object's keys in the order they are
+# declared here. We put `suggested_answers` first so the full replies — what the
+# user actually speaks to intervene in a conversation — stream in before the
+# (longer) list of keywords, minimizing the perceived latency.
 class StructuredLLMResponse(pydantic.BaseModel):
-    suggested_keywords: list[str]
     suggested_answers: list[str]
+    suggested_keywords: list[str]
 
 
 class VLLMStream:

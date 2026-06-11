@@ -51,6 +51,8 @@
     "changeSettings": "Changer les paramètres",
     "configureAssistant": "Configurez votre assistant conversationnel",
     "cloneYourVoice": "Cloner votre propre voix",
+    "speechRate": "Vitesse de la parole",
+    "speechRateHint": "Réglez la vitesse à laquelle les suggestions sont lues à voix haute.",
     "testYourVoice": "Tester votre voix",
     "createVoice": "Créer la voix",
     "noFriendsAdded": "Aucun ami ajouté pour le moment. Ajoutez-les dans les paramètres.",

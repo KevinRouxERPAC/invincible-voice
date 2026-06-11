@@ -1,5 +1,6 @@
 import { addAuthHeaders } from '../auth/authUtils';
 import { apiUrl } from './backend';
+import { getSpeechRate } from './speechRate';
 import { ttsCache, CacheType } from './ttsCache';
 
 export interface TTSOptions {
@@ -7,6 +8,11 @@ export interface TTSOptions {
   cacheType?: CacheType;
   messageId: string;
   voiceName?: string;
+  /**
+   * Playback speed multiplier. When omitted, the user's persisted speech-rate
+   * preference is used (1.0 = normal speed).
+   */
+  playbackRate?: number;
 }
 
 /**
@@ -21,6 +27,7 @@ export async function playTTSStream(
     res.json().then((data) => data.sample_rate),
   );
   const { text, messageId, cacheType = 'temporary', voiceName } = options;
+  const playbackRate = options.playbackRate ?? getSpeechRate();
   const audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
 
   // Use voiceName as part of cache key so different voices have separate entries
@@ -35,6 +42,7 @@ export async function playTTSStream(
     audioBuffer.copyToChannel(fullAudio, 0);
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
+    source.playbackRate.value = playbackRate;
     source.connect(audioContext.destination);
     source.start();
 
@@ -92,6 +100,7 @@ export async function playTTSStream(
 
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
+      source.playbackRate.value = playbackRate;
       source.connect(audioContext.destination);
 
       if (isFirstChunk) {
@@ -101,7 +110,9 @@ export async function playTTSStream(
       }
 
       source.start(nextStartTime);
-      nextStartTime += audioBuffer.duration;
+      // The chunk plays back in `duration / playbackRate` seconds, so the next
+      // chunk must be scheduled accordingly to avoid gaps or overlaps.
+      nextStartTime += audioBuffer.duration / playbackRate;
     }
   };
 

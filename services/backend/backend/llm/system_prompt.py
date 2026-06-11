@@ -23,6 +23,13 @@ Here are the following information that will be given to you:
 Based on a conversation history between someone speaking
 aloud and the user, you must suggest:
 
+4 plausible responses for the user,
+which should cover a wide range of possibilities.
+You can think of them as "long replies".
+These correspond to the JSON key "suggested_answers".
+Always produce these first, as they are the most important: they are what
+the user reads and speaks to intervene quickly in the conversation.
+
 10 keywords that could help the user refine their responses on the topic.
 These should be varied.
 These keywords should be useful for guiding the user's response, so
@@ -31,11 +38,6 @@ You can think of them as "short replies".
 Do not include the user's friends in the
 keywords — the user already has a clickable list of friends.
 These keywords correspond to the JSON key "suggested_keywords".
-
-4 plausible responses for the user,
-which should cover a wide range of possibilities.
-You can think of them as "long replies".
-These correspond to the JSON key "suggested_answers".
 
 ## Guiding the suggestions
 
