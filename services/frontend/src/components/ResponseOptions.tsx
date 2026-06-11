@@ -361,34 +361,34 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
       data-scan-item
       onClick={onClickSelect}
       className={cn(
-        'p-px text-left rounded-tr-sm rounded-b-2xl rounded-tl-2xl transition-all duration-200 h-16 black-to-light-green-via-white-gradient group relative focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50',
+        'glass-card p-4 text-left rounded-2xl w-full h-24 group relative focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex flex-row items-center gap-4',
         {
           'cursor-pointer': responseText.trim() && isComplete,
-          'cursor-wait': !responseText.trim() || !isComplete,
+          'cursor-wait opacity-70': !responseText.trim() || !isComplete,
         },
       )}
       disabled={!responseText.trim() || !isComplete}
     >
-      <div className='px-3 py-1 overflow-hidden bg-[#101010] group-hover:bg-[#181818] flex flex-row items-center text-base font-bold rounded-tr-sm rounded-b-2xl rounded-tl-2xl size-full gap-4'>
-        <div className='flex flex-col items-center gap-1'>
-          <span className='flex flex-col items-center justify-center font-light text-white border border-white rounded-sm size-10 font-base bg-[#101010]'>
+        <div className='flex flex-col items-center gap-2'>
+          <span className='flex flex-col items-center justify-center font-bold text-white/80 border border-white/20 rounded-full size-10 font-base bg-white/5 shadow-inner'>
             {shortcut}
           </span>
           {responseText.trim() && !isComplete && (
             <div className='w-4 h-4 border-2 border-green-300 rounded-full border-t-transparent animate-spin' />
           )}
         </div>
-        <div className='flex flex-col justify-center grow h-full overflow-y-auto'>
-          <p className='text-xs leading-tight text-white'>
+        </div>
+        <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
+          <p className='text-sm md:text-base leading-snug text-white font-medium'>
             {responseText.trim() ? (
               <Fragment>
                 {responseText}
                 {!isComplete && (
-                  <span className='inline-block w-1 h-3 ml-1 bg-gray-400 animate-pulse' />
+                  <span className='inline-block w-2 h-4 ml-2 bg-green-400/80 animate-pulse rounded-sm' />
                 )}
               </Fragment>
             ) : (
-              <span className='italic text-gray-400'>
+              <span className='italic text-white/40'>
                 {t('conversation.waitingForResponse')}
               </span>
             )}
@@ -399,16 +399,15 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
           <div
             aria-label={`Edit the response. Shortcut is Shift + ${shortcut}`}
             onClick={onClickEdit}
-            className='p-1 transition-colors rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700'
+            className='p-2 transition-colors rounded-full cursor-pointer bg-white/5 hover:bg-white/20 ml-auto'
             title={`Edit the response. Shortcut is Shift + ${shortcut}`}
           >
-            <Edit2 className='w-3 h-3 text-gray-600 dark:text-gray-400' />
+            <Edit2 className='w-4 h-4 text-white/70 group-hover:text-white' />
             <div className='absolute px-2 py-1 mb-2 text-xs text-white transition-opacity transform -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap group-hover:opacity-100'>
               Edit the response. Shortcut is Shift + {shortcut}
             </div>
           </div>
         )}
-      </div>
     </button>
   );
 };

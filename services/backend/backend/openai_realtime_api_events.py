@@ -121,6 +121,7 @@ class ResponseSelectedByWriter(BaseEvent[Literal["response.selected.by.writer"]]
 
 class CurrentKeywords(BaseEvent[Literal["current.keywords"]]):
     keywords: str | None
+    intent: str | None = None
 
 
 class DesiredResponsesLenght(BaseEvent[Literal["desired.responses.length"]]):
@@ -132,6 +133,7 @@ class InitiateConversation(BaseEvent[Literal["initiate.conversation"]]):
     replies to the speaker."""
 
     active: bool
+    topic: str | None = None
 
 
 class ResponseAudioDone(BaseEvent[Literal["response.audio.done"]]):

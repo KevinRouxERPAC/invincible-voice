@@ -101,6 +101,7 @@ const InvincibleVoice = () => {
   const [currentSpeakerMessageStartTime, setCurrentSpeakerMessageStartTime] =
     useState<number | null>(null);
   const [textInput, setTextInput] = useState<string>('');
+  const [directiveInput, setDirectiveInput] = useState<string>('');
   const [lastSentKeywords, setLastSentKeywords] = useState<string | null>(null);
   const [lastSentText, setLastSentText] = useState<string>('');
   const textInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -350,20 +351,21 @@ const InvincibleVoice = () => {
     [sendMessage],
   );
   const sendInitiating = useCallback(
-    (active: boolean) => {
+    (active: boolean, topic?: string) => {
       setIsInitiating(active);
       sendMessage(
         JSON.stringify({
           type: 'initiate.conversation',
           active,
+          topic,
         }),
       );
     },
     [sendMessage],
   );
   const handleToggleInitiating = useCallback(() => {
-    sendInitiating(!isInitiating);
-  }, [isInitiating, sendInitiating]);
+    sendInitiating(!isInitiating, directiveInput.trim() ? directiveInput.trim() : undefined);
+  }, [isInitiating, sendInitiating, directiveInput]);
 
   const handleResponseSelection = useCallback(
     async (responseId: string) => {
@@ -607,6 +609,30 @@ const InvincibleVoice = () => {
     },
     [],
   );
+
+  const handleDirectiveSubmit = useCallback(() => {
+    if (!directiveInput.trim()) return;
+    sendMessage(
+      JSON.stringify({
+        type: 'current.keywords',
+        keywords: directiveInput,
+        intent: 'directive',
+      }),
+    );
+    setDirectiveInput('');
+    unfreezeResponses();
+  }, [directiveInput, sendMessage, unfreezeResponses]);
+
+  const handleIntentClick = useCallback((word: string, intent: string) => {
+    sendMessage(
+      JSON.stringify({
+        type: 'current.keywords',
+        keywords: word,
+        intent: intent,
+      }),
+    );
+    unfreezeResponses();
+  }, [sendMessage, unfreezeResponses]);
   const handleSettingsOpen = useCallback(() => {
     if (shouldConnect) {
       setSettingsBlockedMessage(
@@ -1422,16 +1448,22 @@ const InvincibleVoice = () => {
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
                     {userData?.user_settings?.additional_keywords?.map(
                       (word) => (
-                        <button
-                          key={word}
-                          data-scan-item
-                          className='h-10 p-px transition-colors cursor-pointer green-to-light-green-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500'
-                          onClick={() => handleWordBubbleClick(word)}
-                        >
-                          <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
-                            {word}
+                        <div key={word} className='flex flex-row items-center p-px green-to-light-green-gradient rounded-2xl group transition-all'>
+                          <button
+                            data-scan-item
+                            className='h-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 rounded-l-2xl'
+                            onClick={() => handleWordBubbleClick(word)}
+                          >
+                            <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-l-2xl group-hover:rounded-r-none rounded-r-2xl'>
+                              {word}
+                            </div>
+                          </button>
+                          <div className='hidden group-hover:flex flex-row items-center h-10 bg-[#181818] rounded-r-2xl pr-2 pl-1'>
+                            <button onClick={() => handleIntentClick(word, 'poser une question')} title="Poser une question" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">?</button>
+                            <button onClick={() => handleIntentClick(word, 'donner mon avis')} title="Donner un avis" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">+</button>
+                            <button onClick={() => handleIntentClick(word, 'changer de sujet')} title="Changer de sujet" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">➔</button>
                           </div>
-                        </button>
+                        </div>
                       ),
                     ) || []}
                     {(!userData?.user_settings?.additional_keywords ||
@@ -1539,6 +1571,27 @@ const InvincibleVoice = () => {
                           </p>
                         </div>
                       </div>
+                    </button>
+                  </div>
+                  <div className='flex flex-row gap-2'>
+                    <input
+                      className='grow px-6 py-4 text-sm text-white bg-[#1B1B1B] border border-white rounded-3xl focus:outline-none focus:border-green'
+                      placeholder="Guider l'IA (ex: je veux parler de...)"
+                      value={directiveInput}
+                      onChange={(e) => setDirectiveInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleDirectiveSubmit();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={handleDirectiveSubmit}
+                      className='px-6 py-4 text-sm font-bold text-white bg-[#1B1B1B] border border-white rounded-3xl hover:bg-green-700/30 disabled:opacity-50 transition-colors focus:outline-none focus:border-green'
+                      disabled={!directiveInput.trim()}
+                    >
+                      Piloter l'IA
                     </button>
                   </div>
                   <textarea

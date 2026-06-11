@@ -140,6 +140,56 @@
   );
 }
 
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.1) translate(20px, -20px);
+    opacity: 1;
+  }
+}
+
+.animate-orb-breathe {
+  animation: orb-breathe 15s ease-in-out infinite;
+}
+
+@keyframes orb-breathe-reverse {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15) translate(-20px, 30px);
+    opacity: 0.9;
+  }
+}
+
+.animate-orb-breathe-reverse {
+  animation: orb-breathe-reverse 18s ease-in-out infinite;
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(57, 242, 174, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px 0 rgba(57, 242, 174, 0.1);
+}
+
+.glass-card:active {
+  transform: scale(0.98);
+}
+
 .scrollbar-hidden::-webkit-scrollbar {
   display: none;
 }

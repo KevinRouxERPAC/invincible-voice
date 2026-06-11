@@ -153,7 +153,8 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def add_keywords(self, message: ora.CurrentKeywords) -> None:
         self.chatbot.current_keywords = message.keywords
-        if self.chatbot.current_keywords is not None:
+        self.chatbot.current_intent = message.intent
+        if self.chatbot.current_keywords is not None or self.chatbot.current_intent is not None:
             # If there was a generated response before, it likely didn't have the keywords
             await self._generate_response()
 
@@ -166,7 +167,8 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def set_initiating(self, message: ora.InitiateConversation) -> None:
         self.chatbot.initiating = message.active
-        logger.info("Initiating mode set to %s", message.active)
+        self.chatbot.initiating_topic = message.topic
+        logger.info("Initiating mode set to %s, topic: %s", message.active, message.topic)
         await self._generate_response()
 
     async def select_response(self, message_content: str, id_: uuid.UUID):

@@ -5,8 +5,8 @@ import InvincibleVoice from '@/components/InvincibleVoice';
 export default function Home() {
   return (
     <div className='relative flex flex-col w-full h-full min-h-screen overflow-hidden'>
-      <div className='green-bubble-gradient absolute left-80 -bottom-73.75 -z-10 size-147.5 rounded-full blur-3xl' />
-      <div className='grey-bubble-gradient absolute -right-20 -top-36 -z-10 size-147.5 rounded-full blur-3xl' />
+      <div className='green-bubble-gradient absolute left-80 -bottom-73.75 -z-10 size-147.5 rounded-full blur-3xl animate-orb-breathe' />
+      <div className='grey-bubble-gradient absolute -right-20 -top-36 -z-10 size-147.5 rounded-full blur-3xl animate-orb-breathe-reverse' />
       <div className='flex flex-row grow'>
         <AuthWrapper>
           <InvincibleVoice />

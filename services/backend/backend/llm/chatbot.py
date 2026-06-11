@@ -16,11 +16,12 @@ class Chatbot:
         # It's actually a list of ChatCompletionStreamRequestMessagesTypedDict but then
         # it's really difficult to convince Python you're passing in the right type
         self.conversation_state_override: ConversationState | None = None
-        # Text to guide the answers of the LLM
         self.current_keywords: str | None = None
+        self.current_intent: str | None = None
         # When True, the user wants to take the floor: the LLM suggests openers
         # instead of replies to the speaker.
         self.initiating: bool = False
+        self.initiating_topic: str | None = None
         self.user_data = user_data
         # We start a new conversation in the user data
         # Note that the system prompt is not there, it's set dynamically
@@ -41,10 +42,12 @@ class Chatbot:
         return hash(
             (
                 self.current_keywords,
+                self.current_intent,
                 len(self.user_data.conversations[-1].messages),
                 last_message_len,
                 self.desired_responses_length,
                 self.initiating,
+                self.initiating_topic,
             )
         )
 
@@ -134,6 +137,8 @@ class Chatbot:
             self.current_keywords,
             self.desired_responses_length,
             initiating=self.initiating,
+            user_intent=self.current_intent,
+            initiating_topic=self.initiating_topic,
         )
         messages = [x.model_dump(mode="json") for x in result]
 
