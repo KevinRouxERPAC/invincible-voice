@@ -4,11 +4,11 @@
     {
       "name": "frontend",
       "runtimeExecutable": "corepack",
-      "runtimeArgs": ["pnpm", "dev"],
+      "runtimeArgs": ["pnpm", "dev", "--port", "3100"],
       "cwd": "services/frontend",
-      "port": 3000,
+      "port": 3100,
       "env": {
-        "NEXT_PUBLIC_BACKEND_URL": "http://localhost:8000"
+        "NEXT_PUBLIC_BACKEND_URL": "http://localhost:8800"
       }
     }
   ]
