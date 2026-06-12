@@ -65,13 +65,28 @@ const bearerCookieOptions = () => ({
     typeof window !== 'undefined' && window.location.protocol === 'https:',
 });
 
+// The Google button is hidden while the client id is unknown. The backend can
+// take tens of seconds to answer on a Cloud Run cold start, so cache the last
+// known value per device: returning users see the button immediately and the
+// fetch below only corrects the cache if the server config changed.
+const GOOGLE_CLIENT_ID_CACHE_KEY = 'invincible-voice-google-client-id';
+
+const getCachedGoogleClientId = (): string => {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+  return localStorage.getItem(GOOGLE_CLIENT_ID_CACHE_KEY) ?? '';
+};
+
 const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   const [authError, setAuthError] = useState<boolean>(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(
     AUTH_STATUSES.NOT_CHECKED,
   );
   const [allowPassword, setAllowPassword] = useState<boolean>(true);
-  const [googleClientId, setGoogleClientId] = useState<string>('');
+  const [googleClientId, setGoogleClientId] = useState<string>(
+    getCachedGoogleClientId,
+  );
   const [userData, setUserData] = useState<UserData | null>(null);
   const router = useRouter();
   const locale = useLocale();
@@ -302,9 +317,14 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         if (response.ok) {
           const data = await response.json();
           setGoogleClientId(data.google_client_id);
+          localStorage.setItem(
+            GOOGLE_CLIENT_ID_CACHE_KEY,
+            data.google_client_id,
+          );
         }
       } catch {
-        setGoogleClientId('');
+        // Network error (offline, cold start timeout): keep the cached value
+        // instead of hiding the button on a device that has seen it before.
       }
     }
 

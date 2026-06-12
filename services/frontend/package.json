@@ -19,6 +19,7 @@
   "dependencies": {
     "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^8.4.0",
+    "@capgo/capacitor-social-login": "^8.3.22",
     "clsx": "^2.1.1",
     "lucide-react": "^0.503.0",
     "next": "15.5.18",
