@@ -54,6 +54,17 @@ export const AuthContext = createContext<AuthContextInterface>({
 
 export const useAuthContext = () => useContext(AuthContext);
 
+// The token is only ever read from JS to fill the Authorization header, never
+// sent automatically, so SameSite=Strict costs nothing. `secure` must stay
+// conditional: the Capacitor Android app serves from http://localhost where a
+// Secure cookie would be silently dropped.
+const bearerCookieOptions = () => ({
+  path: '/',
+  sameSite: 'strict' as const,
+  secure:
+    typeof window !== 'undefined' && window.location.protocol === 'https:',
+});
+
 const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   const [authError, setAuthError] = useState<boolean>(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(
@@ -128,7 +139,11 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set('bearerToken', data.access_token, { path: '/' });
+          new Cookies().set(
+            'bearerToken',
+            data.access_token,
+            bearerCookieOptions(),
+          );
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         } else {
@@ -153,7 +168,11 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set('bearerToken', data.access_token, { path: '/' });
+          new Cookies().set(
+            'bearerToken',
+            data.access_token,
+            bearerCookieOptions(),
+          );
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         } else {
@@ -182,7 +201,11 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set('bearerToken', data.access_token, { path: '/' });
+          new Cookies().set(
+            'bearerToken',
+            data.access_token,
+            bearerCookieOptions(),
+          );
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         }
