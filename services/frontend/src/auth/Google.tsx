@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useTranslations } from '@/i18n';
 import { useAuthContext } from './authContext';
 
@@ -10,7 +10,9 @@ const Google = () => {
   const redirect = window.location.origin;
   const response = 'id_token';
   const scope = 'openid profile email';
-  const nonce = 'secureRandomString';
+  // Fresh random value per mount; a fixed string would let an attacker replay
+  // a previously captured id_token URL.
+  const nonce = useMemo(() => crypto.randomUUID().replace(/-/g, ''), []);
 
   useEffect(() => {
     if (window.location.hash) {
@@ -22,6 +24,15 @@ const Google = () => {
       }
     }
   }, [googleSignIn]);
+
+  // No OAuth client configured on the backend (GOOGLE_CLIENT_ID empty): hide the
+  // button entirely. Showing it would send `client_id=` (empty) to Google and
+  // fail with "Missing required parameter: client_id". The hash-handling effect
+  // above still runs (hooks execute before this return) so a redirect coming
+  // back from Google is processed once a client id is configured.
+  if (!clientID) {
+    return null;
+  }
 
   return (
     <a

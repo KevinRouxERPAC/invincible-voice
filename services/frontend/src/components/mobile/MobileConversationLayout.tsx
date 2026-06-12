@@ -104,10 +104,17 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   const { vh, visualVh } = useViewportHeight();
   const keyboardHeight = Math.max(0, vh - visualVh);
 
-  // Notify backend of size whenever active tab changes (and on mount)
+  // Active session (connected, not browsing history): show chat AND the four
+  // responses on the same screen so picking an answer is one tap, no tab switch.
+  // History/past-conversation browsing keeps the Chat/History tabs.
+  const isSplitView = isConnected && !isHistoryMode;
+
+  // Notify backend of the desired response size. In the split view the four
+  // medium cards are always visible (M); otherwise it follows the active tab.
   useEffect(() => {
-    onResponseSizeChange?.(SIZE_BY_PANEL[activePanel]);
-  }, [activePanel, onResponseSizeChange]);
+    const size = isSplitView ? RESPONSES_SIZES.M : SIZE_BY_PANEL[activePanel];
+    onResponseSizeChange?.(size);
+  }, [activePanel, isSplitView, onResponseSizeChange]);
 
   // Switch to chat when a past conversation is selected; back to history when returning to history list
   useEffect(() => {
@@ -150,23 +157,6 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
     },
     [onTextInputChange],
   );
-
-  const hiddenTabClass = isHistoryMode
-    ? 'hidden'
-    : 'hidden md:flex md:flex-col md:flex-1 md:min-h-0';
-  const chatPanelClass =
-    activePanel === 'chat' ? 'flex flex-col flex-1 min-h-0' : hiddenTabClass;
-  const responsesPanelClass =
-    activePanel === 'responses'
-      ? 'flex flex-col flex-1 min-h-0'
-      : hiddenTabClass;
-
-  // Top 2 complete LLM suggestions to show above the text input (hidden on Responses tab to avoid duplication)
-  const responsesToShow = frozenResponses ?? pendingResponses;
-  const topSuggestions =
-    activePanel === 'chat'
-      ? responsesToShow.filter((r) => r.text.trim() && r.isComplete).slice(0, 2)
-      : [];
 
   return (
     <div
@@ -245,34 +235,20 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
         </div>
       </div>
 
-      {/* Tab bar — hidden on tablet unless in history mode */}
-      {/* History mode (not connected): show Chat (read-only) + History tabs */}
-      {/* Active session (connected): show Chat + Responses tabs only */}
-      <div
-        className={`flex border-b border-gray-700 shrink-0 ${isHistoryMode ? '' : 'md:hidden'}`}
-      >
-        <button
-          className={`flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors ${
-            activePanel === 'chat'
-              ? 'text-blue-400 border-b-2 border-blue-400'
-              : 'text-gray-400 hover:text-gray-200'
-          }`}
-          onClick={() => setActivePanel('chat')}
-        >
-          {t('conversation.chat')}
-        </button>
-        {isConnected ? (
+      {/* Tab bar — only while browsing history (Chat read-only + History).
+          During an active session the split view below replaces the tabs. */}
+      {!isSplitView && (
+        <div className='flex border-b border-gray-700 shrink-0'>
           <button
             className={`flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors ${
-              activePanel === 'responses'
+              activePanel === 'chat'
                 ? 'text-blue-400 border-b-2 border-blue-400'
                 : 'text-gray-400 hover:text-gray-200'
             }`}
-            onClick={() => setActivePanel('responses')}
+            onClick={() => setActivePanel('chat')}
           >
-            {t('conversation.responses')}
+            {t('conversation.chat')}
           </button>
-        ) : (
           <button
             className={`flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors ${
               activePanel === 'history'
@@ -283,51 +259,68 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
           >
             {t('conversation.history')}
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* Main panel — flex-1 min-h-0 ensures it fills remaining space without overflow */}
-      {/* On tablet (md:): two-column grid with both panels always visible side-by-side */}
-      <div
-        className={`flex-1 min-h-0 flex flex-col ${isHistoryMode ? '' : 'md:grid md:grid-cols-2 md:gap-4 md:px-2'}`}
-      >
-        {/* On mobile: only show active panel. On tablet (md:): both always visible (unless history mode) */}
-        <div className={chatPanelClass}>
-          <ChatPanel
-            chatHistory={chatHistory}
-            isConnected={isConnected}
-            currentSpeakerMessage={currentSpeakerMessage}
-            pastConversation={pastConversation}
-            isViewingPastConversation={isViewingPastConversation}
-          />
+      {/* Main panel — flex-1 min-h-0 fills the remaining space without overflow. */}
+      {isSplitView ? (
+        // Active session: chat on top, the four responses below, both visible.
+        // Tablet/landscape: side by side. Chat gets a bit more room than the cards.
+        <div className='flex-1 min-h-0 flex flex-col md:flex-row md:gap-4 md:px-2 landscape:flex-row landscape:gap-2'>
+          <div className='flex flex-col flex-[3] min-h-0 md:flex-1 landscape:flex-1'>
+            <ChatPanel
+              chatHistory={chatHistory}
+              isConnected={isConnected}
+              currentSpeakerMessage={currentSpeakerMessage}
+              pastConversation={pastConversation}
+              isViewingPastConversation={isViewingPastConversation}
+            />
+          </div>
+          <div className='flex flex-col flex-[4] min-h-0 border-t border-gray-700 md:flex-1 md:border-t-0 landscape:flex-1 landscape:border-t-0'>
+            <ResponsePanel
+              frozenResponses={frozenResponses}
+              onFreezeToggle={onFreezeToggle}
+              pendingResponses={pendingResponses}
+              onResponseEdit={onResponseEdit}
+              onResponseSelect={onResponseSelect}
+              onEditResponseInChat={handleEditResponse}
+              additionalKeywords={additionalKeywords}
+            />
+          </div>
         </div>
-        <div className={responsesPanelClass}>
-          <ResponsePanel
-            frozenResponses={frozenResponses}
-            onFreezeToggle={onFreezeToggle}
-            pendingResponses={pendingResponses}
-            onResponseEdit={onResponseEdit}
-            onResponseSelect={onResponseSelect}
-            onEditResponseInChat={handleEditResponse}
-            additionalKeywords={additionalKeywords}
-          />
+      ) : (
+        // History/past-conversation browsing: tabs drive which panel is shown.
+        <div className='flex-1 min-h-0 flex flex-col'>
+          <div
+            className={
+              activePanel === 'chat' ? 'flex flex-col flex-1 min-h-0' : 'hidden'
+            }
+          >
+            <ChatPanel
+              chatHistory={chatHistory}
+              isConnected={isConnected}
+              currentSpeakerMessage={currentSpeakerMessage}
+              pastConversation={pastConversation}
+              isViewingPastConversation={isViewingPastConversation}
+            />
+          </div>
+          <div
+            className={
+              activePanel === 'history'
+                ? 'flex flex-col flex-1 min-h-0'
+                : 'hidden'
+            }
+          >
+            <HistoryPanel
+              conversations={conversations}
+              selectedConversationIndex={selectedConversationIndex}
+              onConversationSelect={onConversationSelect}
+              onNewConversation={onNewConversation}
+              onDeleteConversation={onDeleteConversation}
+            />
+          </div>
         </div>
-        <div
-          className={
-            activePanel === 'history'
-              ? 'flex flex-col flex-1 min-h-0'
-              : 'hidden'
-          }
-        >
-          <HistoryPanel
-            conversations={conversations}
-            selectedConversationIndex={selectedConversationIndex}
-            onConversationSelect={onConversationSelect}
-            onNewConversation={onNewConversation}
-            onDeleteConversation={onDeleteConversation}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Always-visible text input footer */}
       <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-gray-700 shrink-0'>
@@ -341,28 +334,12 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
             />
           </div>
         )}
-        {/* Top LLM suggestions (up to 2) — hidden on Responses tab and in landscape */}
-        {topSuggestions.length > 0 && (
-          <div className='flex gap-2 mb-2 overflow-x-auto no-scrollbar landscape:hidden'>
-            {topSuggestions.map((r) => (
-              <button
-                key={r.id}
-                data-scan-item
-                className='shrink-0 px-3 min-h-[28px] bg-gray-800 border border-gray-600 rounded-full text-xs text-gray-300 hover:bg-gray-700 transition-colors max-w-[48vw] truncate'
-                onClick={() => onResponseSelect(r.id)}
-                title={r.text}
-              >
-                {r.text}
-              </button>
-            ))}
-          </div>
-        )}
         <div className='flex gap-2 pb-1'>
           <textarea
             ref={textareaRef}
-            className='flex-1 p-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm landscape:max-h-[38px] landscape:overflow-y-auto'
+            className='flex-1 p-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm max-h-[96px] overflow-y-auto'
             placeholder={t('conversation.typeMessagePlaceholder')}
-            rows={2}
+            rows={1}
             value={textInput}
             onChange={onMessageChange}
             onKeyDown={onMessageKeyDown}
@@ -372,7 +349,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
             onClick={onSendMessage}
             disabled={!textInput.trim()}
           >
-            Send
+            {t('conversation.sendMessage')}
           </button>
         </div>
       </div>

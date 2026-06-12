@@ -81,22 +81,22 @@ const ResponsePanel: FC<ResponsePanelProps> = ({
         </button>
       </div>
 
-      {/* Response grid — 4-row portrait layout, 2x2 grid in landscape */}
-      <div className='flex-1 overflow-hidden px-4 pb-4 grid grid-rows-4 gap-1 pt-2 landscape:grid-rows-2 landscape:grid-cols-2'>
+      {/* Response cards — adaptive: cards grow to fill the available height but
+          never shrink below a tappable minimum; the list scrolls when space is
+          too tight (small phones, split view). Landscape stays a 2x2 grid. */}
+      <div className='flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-2 flex flex-col gap-2 landscape:grid landscape:grid-cols-2 landscape:grid-rows-2 landscape:gap-1 landscape:overflow-hidden'>
         {allResponses.slice(0, 4).map((response) => (
           <div
             key={response.id}
-            className='min-h-0'
+            className='flex-1 min-h-[3.25rem] landscape:min-h-0'
           >
-            <div className='w-full h-full px-4 py-2 bg-[#101010] rounded-[20px]'>
-              <BaseResponse
-                isFrozen={isFrozen}
-                onResponseEdit={onResponseEdit}
-                onResponseSelect={onResponseSelect}
-                response={response}
-                onEditResponseInChat={onEditResponseInChat}
-              />
-            </div>
+            <BaseResponse
+              isFrozen={isFrozen}
+              onResponseEdit={onResponseEdit}
+              onResponseSelect={onResponseSelect}
+              response={response}
+              onEditResponseInChat={onEditResponseInChat}
+            />
           </div>
         ))}
       </div>

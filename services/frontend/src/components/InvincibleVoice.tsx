@@ -364,7 +364,10 @@ const InvincibleVoice = () => {
     [sendMessage],
   );
   const handleToggleInitiating = useCallback(() => {
-    sendInitiating(!isInitiating, directiveInput.trim() ? directiveInput.trim() : undefined);
+    sendInitiating(
+      !isInitiating,
+      directiveInput.trim() ? directiveInput.trim() : undefined,
+    );
   }, [isInitiating, sendInitiating, directiveInput]);
 
   const handleResponseSelection = useCallback(
@@ -623,16 +626,19 @@ const InvincibleVoice = () => {
     unfreezeResponses();
   }, [directiveInput, sendMessage, unfreezeResponses]);
 
-  const handleIntentClick = useCallback((word: string, intent: string) => {
-    sendMessage(
-      JSON.stringify({
-        type: 'current.keywords',
-        keywords: word,
-        intent: intent,
-      }),
-    );
-    unfreezeResponses();
-  }, [sendMessage, unfreezeResponses]);
+  const handleIntentClick = useCallback(
+    (word: string, intent: string) => {
+      sendMessage(
+        JSON.stringify({
+          type: 'current.keywords',
+          keywords: word,
+          intent,
+        }),
+      );
+      unfreezeResponses();
+    },
+    [sendMessage, unfreezeResponses],
+  );
   const handleSettingsOpen = useCallback(() => {
     if (shouldConnect) {
       setSettingsBlockedMessage(
@@ -1216,7 +1222,7 @@ const InvincibleVoice = () => {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className='flex flex-col w-full h-screen text-white'>
+      <div className='flex flex-col w-full h-dvh overflow-hidden text-white'>
         <ErrorMessages
           errors={errors}
           setErrors={setErrors}
@@ -1448,7 +1454,10 @@ const InvincibleVoice = () => {
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
                     {userData?.user_settings?.additional_keywords?.map(
                       (word) => (
-                        <div key={word} className='flex flex-row items-center p-px green-to-light-green-gradient rounded-2xl group transition-all'>
+                        <div
+                          key={word}
+                          className='flex flex-row items-center p-px green-to-light-green-gradient rounded-2xl group transition-all'
+                        >
                           <button
                             data-scan-item
                             className='h-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 rounded-l-2xl'
@@ -1459,9 +1468,33 @@ const InvincibleVoice = () => {
                             </div>
                           </button>
                           <div className='hidden group-hover:flex flex-row items-center h-10 bg-[#181818] rounded-r-2xl pr-2 pl-1'>
-                            <button onClick={() => handleIntentClick(word, 'poser une question')} title="Poser une question" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">?</button>
-                            <button onClick={() => handleIntentClick(word, 'donner mon avis')} title="Donner un avis" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">+</button>
-                            <button onClick={() => handleIntentClick(word, 'changer de sujet')} title="Changer de sujet" className="text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full">➔</button>
+                            <button
+                              onClick={() =>
+                                handleIntentClick(word, 'poser une question')
+                              }
+                              title='Poser une question'
+                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                            >
+                              ?
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleIntentClick(word, 'donner mon avis')
+                              }
+                              title='Donner un avis'
+                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                            >
+                              +
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleIntentClick(word, 'changer de sujet')
+                              }
+                              title='Changer de sujet'
+                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                            >
+                              ➔
+                            </button>
                           </div>
                         </div>
                       ),
@@ -1591,7 +1624,7 @@ const InvincibleVoice = () => {
                       className='px-6 py-4 text-sm font-bold text-white bg-[#1B1B1B] border border-white rounded-3xl hover:bg-green-700/30 disabled:opacity-50 transition-colors focus:outline-none focus:border-green'
                       disabled={!directiveInput.trim()}
                     >
-                      Piloter l'IA
+                      Piloter l&apos;IA
                     </button>
                   </div>
                   <textarea

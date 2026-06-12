@@ -96,6 +96,7 @@ const SignInScreen: FC<SignInScreenProps> = ({
   onSwitchToRegister,
 }) => {
   const t = useTranslations();
+  const { googleClientId } = useAuthContext();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const onSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -188,7 +189,9 @@ const SignInScreen: FC<SignInScreenProps> = ({
                 {t('common.signIn')}
               </div>
             </button>
-            <p className='font-bold text-sm text-center'>{t('common.or')}</p>
+            {googleClientId && (
+              <p className='font-bold text-sm text-center'>{t('common.or')}</p>
+            )}
           </React.Fragment>
         )}
         <Google />
@@ -222,6 +225,7 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
   onSwitchToSignIn,
 }) => {
   const t = useTranslations();
+  const { googleClientId } = useAuthContext();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -352,7 +356,9 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
                 {t('common.signUp')}
               </span>
             </button>
-            <p className='font-bold text-sm text-center'>{t('common.or')}</p>
+            {googleClientId && (
+              <p className='font-bold text-sm text-center'>{t('common.or')}</p>
+            )}
           </React.Fragment>
         )}
         <Google />
