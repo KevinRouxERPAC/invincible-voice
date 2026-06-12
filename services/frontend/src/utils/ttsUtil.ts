@@ -15,6 +15,32 @@ export interface TTSOptions {
   playbackRate?: number;
 }
 
+// One AudioContext for the whole session, kept alive by this module-level
+// reference. Creating a fresh context per call (the previous behaviour) let the
+// browser garbage-collect it while audio was still scheduled — on the Android
+// WebView this cut playback off mid-sentence — and leaked contexts until the
+// per-tab limit (~4-6) was hit, after which no further audio played at all.
+let sharedAudioContext: AudioContext | null = null;
+
+function getSharedAudioContext(sampleRate: number): AudioContext {
+  if (
+    !sharedAudioContext ||
+    sharedAudioContext.state === 'closed' ||
+    sharedAudioContext.sampleRate !== sampleRate
+  ) {
+    sharedAudioContext = new AudioContext({ sampleRate });
+  }
+  // Mobile WebViews hand back a suspended context; resume it or scheduled
+  // sources stay silent. resume() is absent on some test mocks — guard it.
+  if (
+    sharedAudioContext.state === 'suspended' &&
+    typeof sharedAudioContext.resume === 'function'
+  ) {
+    sharedAudioContext.resume().catch(() => {});
+  }
+  return sharedAudioContext;
+}
+
 /**
  * Plays TTS audio progressively using streaming
  * @param options - TTS options including text, cacheType
@@ -28,7 +54,7 @@ export async function playTTSStream(
   );
   const { text, messageId, cacheType = 'temporary', voiceName } = options;
   const playbackRate = options.playbackRate ?? getSpeechRate();
-  const audioContext = new AudioContext({ sampleRate: SAMPLE_RATE });
+  const audioContext = getSharedAudioContext(SAMPLE_RATE);
 
   // Use voiceName as part of cache key so different voices have separate entries
   const cacheKey = voiceName ? `${text}|${voiceName}` : text;
