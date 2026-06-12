@@ -30,6 +30,7 @@ import AccessibilitySettings from './AccessibilitySettings';
 import AppointmentsEditor from './AppointmentsEditor';
 import DocumentEditorPopup from './DocumentEditorPopup';
 import EmailField from './EmailField';
+import SpeechRateSlider from './SpeechRateSlider';
 
 interface SettingsPopupProps {
   userSettings: UserSettings;
@@ -658,6 +659,8 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               </div>
             )}
           </div>
+
+          <SpeechRateSlider />
 
           <div className='flex flex-col gap-2'>
             <label

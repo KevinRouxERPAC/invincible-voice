@@ -9,6 +9,7 @@ import AccessibilitySettings from './AccessibilitySettings';
 import EmailField from './EmailField';
 import NameField from './NameField';
 import SettingsHeader from './SettingsHeader';
+import SpeechRateSlider from './SpeechRateSlider';
 
 interface MobileSettingsPopupProps {
   userSettings: UserSettings;
@@ -58,6 +59,9 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
           onChange={setName}
           placeholder={t('settings.yourNamePlaceholder')}
         />
+        <div className='w-full px-4 py-4 bg-[#101010] rounded-3xl'>
+          <SpeechRateSlider />
+        </div>
         <div className='w-full px-4 py-4 bg-[#101010] rounded-3xl'>
           <AccessibilitySettings />
         </div>
