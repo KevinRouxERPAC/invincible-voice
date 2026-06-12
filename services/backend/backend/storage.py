@@ -122,7 +122,7 @@ class UserData(pydantic.BaseModel):
         prompt += f"Each response should be between {min_nb_words} and {max_nb_words} words long.\n\n"
         prompt += "## User's keywords and directives to guide your answers\n\n"
         if user_intent == "directive":
-            prompt += f"The user has given you a direct instruction for the next responses: \"{user_text_hint}\". Follow this instruction closely to generate 4 suggested responses.\n\n"
+            prompt += f'The user has given you a direct instruction for the next responses: "{user_text_hint}". Follow this instruction closely to generate 4 suggested responses.\n\n'
         elif user_text_hint is not None or user_intent is not None:
             prompt += "The user chose the following keywords and intents to guide the answers:\n"
             if user_text_hint:
