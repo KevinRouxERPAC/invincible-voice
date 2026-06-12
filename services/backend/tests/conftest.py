@@ -21,3 +21,16 @@ _TEST_ENV_DEFAULTS = {
 }
 for _key, _value in _TEST_ENV_DEFAULTS.items():
     os.environ.setdefault(_key, _value)
+
+
+import pytest  # noqa: E402  (must come after the env is set above)
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    """Keep the in-process auth rate limiter from leaking state across tests."""
+    from backend.libs.rate_limit import reset_rate_limits
+
+    reset_rate_limits()
+    yield
+    reset_rate_limits()

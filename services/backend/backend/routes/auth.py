@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,6 +7,7 @@ from typing_extensions import Annotated
 
 from backend.kyutai_constants import ALLOW_PASSWORD, GOOGLE_CLIENT_ID
 from backend.libs.google import verify_google_token
+from backend.libs.rate_limit import rate_limit
 from backend.security import create_access_token, hash_password, verify_password
 from backend.storage import (
     InvalidEmailError,
@@ -19,10 +21,17 @@ from backend.typing import GoogleAuthRequest, Language, QuickPhrase, UserSetting
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+# Per-IP cap on authentication attempts within a 60s window. Tunable via env so
+# operators can tighten it on a public deployment. Applied to login, register
+# and Google sign-in to blunt brute-force and abuse.
+_AUTH_RATE_PER_MINUTE = int(os.environ.get("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
+_auth_rate_limit = rate_limit("auth", _AUTH_RATE_PER_MINUTE, 60.0)
+
 
 @auth_router.post("/login")
 def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    _rate_limited: Annotated[None, Depends(_auth_rate_limit)] = None,
 ):
     if not ALLOW_PASSWORD:
         raise HTTPException(
@@ -202,6 +211,7 @@ def get_new_user(
 def register(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     language: Language,
+    _rate_limited: Annotated[None, Depends(_auth_rate_limit)] = None,
 ):
     if not ALLOW_PASSWORD:
         raise HTTPException(
@@ -234,7 +244,10 @@ def register(
 
 
 @auth_router.post("/google")
-def google_login(data: GoogleAuthRequest):
+def google_login(
+    data: GoogleAuthRequest,
+    _rate_limited: Annotated[None, Depends(_auth_rate_limit)] = None,
+):
     google_user = verify_google_token(data.token)
 
     email = google_user["email"]

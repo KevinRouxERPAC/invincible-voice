@@ -107,8 +107,12 @@ global.WebSocket = jest.fn().mockImplementation(() => ({
 
 // Mock authUtils to avoid authentication in tests
 jest.mock('@/auth/authUtils', () => ({
+  BEARER_COOKIE: 'bearerToken',
   addAuthHeaders: (headers = {}) => headers,
   getAuthHeaders: () => ({}),
+  getBearerToken: () => undefined,
+  setBearerToken: () => {},
+  clearBearerToken: () => {},
 }));
 
 // Mock fetch function with proper blob support

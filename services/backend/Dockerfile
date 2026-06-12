@@ -13,8 +13,10 @@ RUN uv run --no-dev echo hello
 COPY . .
 ENV HOSTNAME="0.0.0.0"
 
+# Liveness probe hits the root endpoint (cheap, always public) rather than
+# /metrics, which may be token-protected via METRICS_TOKEN.
 HEALTHCHECK --start-period=15s \
-    CMD curl --fail http://localhost:80/metrics || exit 1
+    CMD curl --fail http://localhost:80/ || exit 1
 
 FROM build AS prod
 # Running through uvicorn directly to be able to deactive the Websocket per message deflate which is slowing

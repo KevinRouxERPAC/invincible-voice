@@ -369,45 +369,44 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
       )}
       disabled={!responseText.trim() || !isComplete}
     >
-        <div className='flex flex-col items-center gap-2'>
-          <span className='flex flex-col items-center justify-center font-bold text-white/80 border border-white/20 rounded-full size-10 font-base bg-white/5 shadow-inner'>
-            {shortcut}
-          </span>
-          {responseText.trim() && !isComplete && (
-            <div className='w-4 h-4 border-2 border-green-300 rounded-full border-t-transparent animate-spin' />
-          )}
-        </div>
-        </div>
-        <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
-          <p className='text-sm md:text-base leading-snug text-white font-medium'>
-            {responseText.trim() ? (
-              <Fragment>
-                {responseText}
-                {!isComplete && (
-                  <span className='inline-block w-2 h-4 ml-2 bg-green-400/80 animate-pulse rounded-sm' />
-                )}
-              </Fragment>
-            ) : (
-              <span className='italic text-white/40'>
-                {t('conversation.waitingForResponse')}
-              </span>
-            )}
-          </p>
-        </div>
-        {isEditable && (
-          // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-          <div
-            aria-label={`Edit the response. Shortcut is Shift + ${shortcut}`}
-            onClick={onClickEdit}
-            className='p-2 transition-colors rounded-full cursor-pointer bg-white/5 hover:bg-white/20 ml-auto'
-            title={`Edit the response. Shortcut is Shift + ${shortcut}`}
-          >
-            <Edit2 className='w-4 h-4 text-white/70 group-hover:text-white' />
-            <div className='absolute px-2 py-1 mb-2 text-xs text-white transition-opacity transform -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap group-hover:opacity-100'>
-              Edit the response. Shortcut is Shift + {shortcut}
-            </div>
-          </div>
+      <div className='flex flex-col items-center gap-2'>
+        <span className='flex flex-col items-center justify-center font-bold text-white/80 border border-white/20 rounded-full size-10 font-base bg-white/5 shadow-inner'>
+          {shortcut}
+        </span>
+        {responseText.trim() && !isComplete && (
+          <div className='w-4 h-4 border-2 border-green-300 rounded-full border-t-transparent animate-spin' />
         )}
+      </div>
+      <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
+        <p className='text-sm md:text-base leading-snug text-white font-medium'>
+          {responseText.trim() ? (
+            <Fragment>
+              {responseText}
+              {!isComplete && (
+                <span className='inline-block w-2 h-4 ml-2 bg-green-400/80 animate-pulse rounded-sm' />
+              )}
+            </Fragment>
+          ) : (
+            <span className='italic text-white/40'>
+              {t('conversation.waitingForResponse')}
+            </span>
+          )}
+        </p>
+      </div>
+      {isEditable && (
+        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
+        <div
+          aria-label={`Edit the response. Shortcut is Shift + ${shortcut}`}
+          onClick={onClickEdit}
+          className='p-2 transition-colors rounded-full cursor-pointer bg-white/5 hover:bg-white/20 ml-auto'
+          title={`Edit the response. Shortcut is Shift + ${shortcut}`}
+        >
+          <Edit2 className='w-4 h-4 text-white/70 group-hover:text-white' />
+          <div className='absolute px-2 py-1 mb-2 text-xs text-white transition-opacity transform -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap group-hover:opacity-100'>
+            Edit the response. Shortcut is Shift + {shortcut}
+          </div>
+        </div>
+      )}
     </button>
   );
 };

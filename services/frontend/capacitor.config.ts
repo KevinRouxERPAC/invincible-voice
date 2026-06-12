@@ -13,7 +13,10 @@ const config: CapacitorConfig = {
       }
     : undefined,
   android: {
-    allowMixedContent: true,
+    // Only permit cleartext/mixed content for the live-reload dev server
+    // (CAPACITOR_SERVER_URL over http). Production builds talk to an https
+    // backend and must not load mixed content.
+    allowMixedContent: Boolean(devServerUrl),
   },
 };
 

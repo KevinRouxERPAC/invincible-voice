@@ -99,6 +99,14 @@ def delete_conversation(
     conversation_id: int,
     user: Annotated[UserData, Depends(get_current_user)],
 ):
+    # conversation_id is client-controlled: reject out-of-range and negative
+    # indices so we never raise a 500 or silently delete the wrong conversation
+    # (del list[-1] would drop the most recent one).
+    if conversation_id < 0 or conversation_id >= len(user.conversations):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        )
     del user.conversations[conversation_id]
     user.save()
 

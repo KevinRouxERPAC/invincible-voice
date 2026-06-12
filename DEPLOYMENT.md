@@ -84,12 +84,19 @@ REDIS_URL=rediss://default:MOT_DE_PASSE@VOTRE-HOST.upstash.io:6379@\
 KYUTAI_USERS_DATA_PATH=/users_data@\
 JWT_SECRET_KEY=UNE_LONGUE_CHAINE_ALEATOIRE@\
 ALLOW_PASSWORD=true@\
+METRICS_TOKEN=UN_AUTRE_SECRET_ALEATOIRE@\
 GOOGLE_CLIENT_ID="
 ```
 
 Notes :
 - `--timeout 3600` : durée max d'une conversation WebSocket (1 h, le maximum).
 - `--allow-unauthenticated` : le backend est public (protégé par mot de passe + JWT).
+- `METRICS_TOKEN` : comme le backend est public, l'endpoint Prometheus `/metrics`
+  ne doit pas être ouvert. Avec cette variable, `/metrics` exige l'en-tête
+  `Authorization: Bearer <METRICS_TOKEN>` et renvoie 404 sinon. Laissez-la vide
+  uniquement si vous ne scrapez pas les métriques publiquement.
+- Les tentatives d'authentification sont limitées par IP (`AUTH_RATE_LIMIT_PER_MINUTE`,
+  défaut 10/min) pour freiner la force brute.
 - `GOOGLE_CLIENT_ID=` (vide) masque le bouton « Se connecter avec Google » :
   on utilise l'authentification par mot de passe, plus simple pour un seul
   utilisateur.
@@ -174,6 +181,9 @@ d'accueil » → l'application s'installe avec une icône, en plein écran.
 | `KYUTAI_USERS_DATA_PATH` | `/users_data` | Données (bucket monté) |
 | `JWT_SECRET_KEY` | *(chaîne aléatoire)* | Signature des jetons |
 | `ALLOW_PASSWORD` | `true` | Connexion par mot de passe |
+| `METRICS_TOKEN` | *(secret aléatoire)* | Protège `/metrics` (bearer requis) |
+| `AUTH_RATE_LIMIT_PER_MINUTE` | `10` *(optionnel)* | Limite des tentatives d'auth par IP |
+| `MAX_PAST_CONVERSATIONS_IN_PROMPT` | `10` *(optionnel)* | Conversations passées injectées au LLM |
 | `GOOGLE_CLIENT_ID` | *(vide)* | Masque le login Google |
 | `CORS_ALLOW_ORIGINS` | `https://VOTRE-PROJET.web.app,…` | Autorise la PWA |
 | `TTS_VOICE_ID` | *(optionnel)* | Voix par défaut |
