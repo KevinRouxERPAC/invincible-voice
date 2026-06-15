@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only overlay. Gradle merges this over the main config for debug builds,
+  so the Capacitor live-reload dev server (CAPACITOR_SERVER_URL over http, on
+  localhost / the emulator loopback 10.0.2.2 / a LAN IP) keeps working.
+  Release builds never see this file and forbid cleartext (see main config).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

@@ -58,17 +58,6 @@ export const AuthContext = createContext<AuthContextInterface>({
 
 export const useAuthContext = () => useContext(AuthContext);
 
-// The token is only ever read from JS to fill the Authorization header, never
-// sent automatically, so SameSite=Strict costs nothing. `secure` must stay
-// conditional: the Capacitor Android app serves from http://localhost where a
-// Secure cookie would be silently dropped.
-const bearerCookieOptions = () => ({
-  path: '/',
-  sameSite: 'strict' as const,
-  secure:
-    typeof window !== 'undefined' && window.location.protocol === 'https:',
-});
-
 // The Google button is hidden while the client id is unknown. The backend can
 // take tens of seconds to answer on a Cloud Run cold start, so cache the last
 // known value per device: returning users see the button immediately and the
@@ -158,11 +147,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set(
-            'bearerToken',
-            data.access_token,
-            bearerCookieOptions(),
-          );
+          setBearerToken(data.access_token);
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         } else {
@@ -187,11 +172,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         });
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set(
-            'bearerToken',
-            data.access_token,
-            bearerCookieOptions(),
-          );
+          setBearerToken(data.access_token);
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         } else {
@@ -220,11 +201,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         );
         if (response.ok) {
           const data = await response.json();
-          new Cookies().set(
-            'bearerToken',
-            data.access_token,
-            bearerCookieOptions(),
-          );
+          setBearerToken(data.access_token);
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         }

@@ -3,6 +3,10 @@
 .DS_Store
 services/backend/node_modules/
 debug/
+# ...but the Android debug-variant resource overlay is source, not a build
+# artifact: it makes debug builds permit cleartext for the live-reload dev
+# server while release builds forbid it. Keep it tracked.
+!/services/frontend/android/app/src/debug/
 recordings/
 .venv/
 # only ignore voices/ in the root directory

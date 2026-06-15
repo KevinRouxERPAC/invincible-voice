@@ -1,4 +1,4 @@
-"""Lightweight in-process rate limiting for sensitive endpoints.
+"""Rate limiting for sensitive endpoints.
 
 The authentication routes are otherwise unprotected against brute force: with
 ``ALLOW_PASSWORD=true`` on a publicly reachable backend (e.g. Cloud Run with
@@ -6,20 +6,28 @@ The authentication routes are otherwise unprotected against brute force: with
 server answers. Argon2 slows each attempt down but nothing caps the volume.
 
 This module provides a sliding-window limiter keyed by ``(scope, client IP)``,
-exposed as a FastAPI dependency. It is intentionally dependency-free and stored
-in process memory:
+exposed as a FastAPI dependency. Two backends are available:
 
-- The vulnerable deployment (single-user Cloud Run, password enabled) runs a
-  single instance, so per-process counting is exactly right.
-- Multi-replica deployments disable password login, so per-process counting is
-  acceptable defense-in-depth for the remaining endpoints.
+- **In-process** (default): a dependency-free counter stored in process memory.
+  Exact on a single instance; on a multi-replica deployment each replica counts
+  independently, so the effective budget is multiplied by the replica count.
+  Acceptable defense-in-depth, but not a hard cap.
+- **Redis** (opt-in via ``RATE_LIMIT_USE_REDIS=true``): a sliding window stored
+  in Redis (reusing the same ``REDIS_URL`` as the TTS/STT locks), shared across
+  replicas so the budget is enforced globally. If Redis is unreachable the
+  limiter *fails open onto the in-process counter* — a Redis outage degrades the
+  guarantee but never locks every user out of authentication.
 """
 
+import logging
+import os
 import threading
 import time
 from collections import defaultdict, deque
 
 from fastapi import HTTPException, Request, status
+
+logger = logging.getLogger(__name__)
 
 
 def client_ip(request: Request) -> str:
@@ -78,6 +86,104 @@ def reset_rate_limits() -> None:
     _limiter.reset()
 
 
+def _redis_enabled() -> bool:
+    return os.getenv("RATE_LIMIT_USE_REDIS", "false").lower() in ("1", "true")
+
+
+def _redis_url() -> str:
+    return os.getenv("REDIS_URL") or (
+        f"redis://{os.getenv('REDIS_HOST', 'localhost')}:"
+        f"{os.getenv('REDIS_PORT', '6379')}"
+    )
+
+
+# Lazily created synchronous Redis client. The auth endpoints are sync ``def``
+# functions (FastAPI runs them in a threadpool), so a synchronous client keeps
+# the limiter a plain blocking call rather than dragging async into the route.
+_redis_client = None
+_redis_unavailable = False
+
+
+def _get_redis():
+    """Return a connected Redis client, or ``None`` if Redis can't be reached.
+
+    The result of a failed connection is cached so we don't pay a connection
+    timeout on every request once Redis is known to be down.
+    """
+    global _redis_client, _redis_unavailable
+    if _redis_unavailable:
+        return None
+    if _redis_client is None:
+        try:
+            import redis  # imported lazily; only needed when the backend is on
+
+            _redis_client = redis.Redis.from_url(
+                _redis_url(),
+                socket_connect_timeout=0.5,
+                socket_timeout=0.5,
+            )
+        except Exception as exc:  # pragma: no cover - defensive
+            logger.warning(
+                "Redis rate-limit backend unavailable, using in-process counter: %s",
+                exc,
+            )
+            _redis_unavailable = True
+            return None
+    return _redis_client
+
+
+def _check_redis(scope: str, ip: str, max_requests: int, window_seconds: float) -> bool:
+    """Enforce the sliding window in Redis.
+
+    Returns ``True`` when the request was counted by Redis (and allowed), raises
+    429 when the budget is exceeded, and returns ``False`` when Redis is
+    unreachable so the caller can fall back to the in-process counter.
+    """
+    client = _get_redis()
+    if client is None:
+        return False
+
+    key = f"ratelimit:{scope}:{ip}"
+    now = time.time()
+    cutoff = now - window_seconds
+    try:
+        pipe = client.pipeline()
+        pipe.zremrangebyscore(key, 0, cutoff)
+        pipe.zcard(key)
+        _, current = pipe.execute()
+    except Exception as exc:
+        logger.warning("Redis rate-limit check failed, falling back: %s", exc)
+        return False
+
+    if current >= max_requests:
+        retry_after = window_seconds
+        try:
+            oldest = client.zrange(key, 0, 0, withscores=True)
+            if oldest:
+                retry_after = oldest[0][1] + window_seconds - now
+        except Exception:  # pragma: no cover - best-effort Retry-After only
+            pass
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many attempts. Please wait and try again.",
+            headers={"Retry-After": str(max(1, int(retry_after)))},
+        )
+
+    try:
+        # The member must be unique so concurrent requests at the same instant
+        # don't collapse into a single sorted-set entry.
+        member = f"{now}:{os.urandom(6).hex()}"
+        pipe = client.pipeline()
+        pipe.zadd(key, {member: now})
+        pipe.expire(key, int(window_seconds) + 1)
+        pipe.execute()
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning(
+            "Redis rate-limit record failed (request still allowed): %s", exc
+        )
+    return True
+
+
 def rate_limit(scope: str, max_requests: int, window_seconds: float):
     """Build a FastAPI dependency that enforces a per-IP rate limit.
 
@@ -89,6 +195,10 @@ def rate_limit(scope: str, max_requests: int, window_seconds: float):
     """
 
     def dependency(request: Request) -> None:
-        _limiter.check(scope, client_ip(request), max_requests, window_seconds)
+        ip = client_ip(request)
+        if _redis_enabled() and _check_redis(scope, ip, max_requests, window_seconds):
+            return
+        # Redis disabled or unreachable: in-process counter (also the default).
+        _limiter.check(scope, ip, max_requests, window_seconds)
 
     return dependency

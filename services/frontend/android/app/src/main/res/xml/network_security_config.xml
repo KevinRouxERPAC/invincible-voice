@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production / release configuration: cleartext (unencrypted HTTP) is forbidden.
+  The production build talks to an https Cloud Run backend, so no plaintext
+  traffic is ever needed and we must not silently accept a downgraded
+  connection for an app handling voice and health data.
+
+  Live-reload over http during development is handled by the debug-only overlay
+  at src/debug/res/xml/network_security_config.xml, which Gradle merges over
+  this file for debug builds only.
+-->
 <network-security-config>
-    <!-- Allows HTTP backends during local development (emulator / LAN). -->
-    <base-config cleartextTrafficPermitted="true">
+    <base-config cleartextTrafficPermitted="false">
         <trust-anchors>
             <certificates src="system" />
         </trust-anchors>
