@@ -12,8 +12,7 @@ import {
   useMemo,
 } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import Cookies from 'universal-cookie';
-import { addAuthHeaders } from '@/auth/authUtils';
+import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
 import { HealthStatus } from '@/components/CouldNotConnect';
 import EmergencyButton from '@/components/EmergencyButton';
 import KeywordsSuggestion from '@/components/KeywordsSuggestion';
@@ -136,7 +135,7 @@ const InvincibleVoice = () => {
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
-  const bearerToken = useMemo(() => new Cookies().get('bearerToken'), []);
+  const bearerToken = useMemo(() => getBearerToken(), []);
 
   const staticContextOption = useMemo(() => getStaticContextOption(t), [t]);
   const staticRepeatOption = useMemo(() => getStaticRepeatOption(t), [t]);

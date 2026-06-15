@@ -56,13 +56,6 @@ export default function RootLayout({
       lang='en'
       className={satoshi.className}
     >
-      <head>
-        {/* Needed for debugging JSON styling */}
-        <link
-          rel='stylesheet'
-          href='https://cdn.jsdelivr.net/npm/pretty-print-json@3.0/dist/css/pretty-print-json.dark-mode.css'
-        />
-      </head>
       <body className='font-satoshi'>
         <ServiceWorkerRegister />
         <ContextProvider>{children}</ContextProvider>

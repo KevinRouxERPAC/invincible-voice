@@ -97,6 +97,12 @@ services:
       - "traefik.http.routers.block-metrics.priority=300"
       - "traefik.http.routers.block-metrics.service=noop@internal"
       - "traefik.http.routers.block-metrics.entrypoints=web"
+      # Also block /metrics over HTTPS (websecure); the web-only router above
+      # left the endpoint reachable through the TLS entrypoint.
+      - "traefik.http.routers.block-metrics-secure.rule=Path(`/api/metrics`)"
+      - "traefik.http.routers.block-metrics-secure.priority=300"
+      - "traefik.http.routers.block-metrics-secure.service=noop@internal"
+      - "traefik.http.routers.block-metrics-secure.entrypoints=websecure"
 
   redis:
     image: redis:8-alpine

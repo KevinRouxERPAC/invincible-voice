@@ -64,6 +64,13 @@ ALLOW_PASSWORD = is_value_true(
 )
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "REPLACE_ME")
 
+# Optional bearer token guarding the Prometheus /metrics endpoint. When set,
+# /metrics requires `Authorization: Bearer <token>` and returns 404 otherwise.
+# Leave unset for same-origin deployments where Prometheus scrapes the backend
+# over the internal network and Traefik blocks external /metrics access. Set it
+# on a publicly reachable deployment (e.g. Cloud Run) to keep metrics private.
+METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "")
+
 # Origins allowed to call the API cross-origin. Needed when the frontend is
 # served from a different origin than the backend (e.g. PWA on Firebase Hosting
 # calling the Cloud Run backend). Comma-separated, e.g.

@@ -1,4 +1,5 @@
 import logging
+import secrets
 from contextlib import asynccontextmanager
 from typing import Annotated
 
@@ -14,6 +15,7 @@ from backend import metrics as mt
 from backend.kyutai_constants import (
     CORS_ALLOW_ORIGINS,
     MAX_VOICE_FILE_SIZE_MB,
+    METRICS_TOKEN,
     REDIS_URL,
     USERS_SETTINGS_AND_HISTORY_DIR,
 )
@@ -54,6 +56,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(openapi_prefix="/api", lifespan=lifespan)
+
+
+@app.middleware("http")
+async def protect_metrics(request: Request, call_next):
+    """Gate /metrics behind a bearer token when METRICS_TOKEN is configured.
+
+    Returns 404 (rather than 401) so the endpoint's existence isn't advertised.
+    When METRICS_TOKEN is empty the endpoint is left open, matching same-origin
+    deployments that rely on internal-network scraping plus a Traefik block.
+    """
+    if request.url.path == "/metrics" and METRICS_TOKEN:
+        expected = f"Bearer {METRICS_TOKEN}"
+        provided = request.headers.get("authorization", "")
+        if not secrets.compare_digest(provided, expected):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+    return await call_next(request)
+
 
 # Instrument Prometheus metrics
 Instrumentator().instrument(app).expose(app)

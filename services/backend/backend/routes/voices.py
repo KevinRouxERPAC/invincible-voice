@@ -31,6 +31,25 @@ async def _get_voice_uid(voice_name: str, user_email: str) -> str:
     raise HTTPException(status_code=404, detail="Voice not found")
 
 
+# Audio MIME types accepted for voice cloning uploads. The content type is
+# client-controlled, so this is a first cheap gate; Gradium rejects anything
+# that isn't really audio. Maps a type to a safe file extension we control,
+# instead of trusting the uploaded filename's extension.
+_ALLOWED_AUDIO_TYPES: dict[str, str] = {
+    "audio/wav": ".wav",
+    "audio/x-wav": ".wav",
+    "audio/wave": ".wav",
+    "audio/webm": ".webm",
+    "audio/ogg": ".ogg",
+    "audio/mpeg": ".mp3",
+    "audio/mp3": ".mp3",
+    "audio/mp4": ".m4a",
+    "audio/x-m4a": ".m4a",
+    "audio/aac": ".aac",
+    "audio/flac": ".flac",
+    "audio/x-flac": ".flac",
+}
+
 voices_router = APIRouter(prefix="/v1", tags=["Voices"])
 
 
@@ -120,14 +139,24 @@ async def create_voice(
             status_code=400, detail="Voice creation is only supported with Gradium TTS"
         )
 
+    # Validate the declared content type and derive a safe extension from it,
+    # rather than trusting the client-supplied filename.
+    safe_ext = _ALLOWED_AUDIO_TYPES.get((audio_file.content_type or "").lower())
+    if safe_ext is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unsupported audio format. Allowed: "
+                + ", ".join(sorted(set(_ALLOWED_AUDIO_TYPES.values())))
+            ),
+        )
+
     client = gradium.GradiumClient(
         base_url="https://eu.api.gradium.ai/api/",
     )
 
     # Save uploaded file to a temporary file since gradium.voices.create requires a file path
-    # Preserve the original file extension for proper format handling
-    original_ext = pathlib.Path(audio_file.filename).suffix
-    with tempfile.NamedTemporaryFile(suffix=original_ext) as tmp:
+    with tempfile.NamedTemporaryFile(suffix=safe_ext) as tmp:
         content = await audio_file.read()
         tmp.write(content)
         tmp_path = pathlib.Path(tmp.name)

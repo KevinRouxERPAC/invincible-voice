@@ -9,11 +9,15 @@ import {
   useMemo,
   useState,
 } from 'react';
-import Cookies from 'universal-cookie';
 import { useLocale } from '../i18n/I18nContext';
 import type { UserData } from '../types/user';
 import { apiUrl } from '../utils/backend';
-import { addAuthHeaders } from './authUtils';
+import {
+  addAuthHeaders,
+  clearBearerToken,
+  getBearerToken,
+  setBearerToken,
+} from './authUtils';
 
 export const AUTH_STATUSES = {
   LOGGED: 'LOGGED',
@@ -93,7 +97,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
 
   const fetchUserData = useCallback(async () => {
     try {
-      const bearerToken = new Cookies().get('bearerToken');
+      const bearerToken = getBearerToken();
       if (!bearerToken) {
         return;
       }
@@ -115,7 +119,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
 
   const acceptTermsOfServices = useCallback(async () => {
     try {
-      const bearerToken = new Cookies().get('bearerToken');
+      const bearerToken = getBearerToken();
       if (!bearerToken) {
         return;
       }
@@ -136,7 +140,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   }, [fetchUserData]);
 
   const signOut = useCallback(() => {
-    new Cookies().remove('bearerToken');
+    clearBearerToken();
     setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
     setUserData(null);
   }, []);
@@ -259,7 +263,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
 
   useEffect(() => {
     async function checkAuthStatus() {
-      const bearerToken = new Cookies().get('bearerToken');
+      const bearerToken = getBearerToken();
 
       if (!bearerToken) {
         setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
@@ -276,7 +280,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
         });
         if (!response.ok) {
           // The backend rejected the token: sign out for real
-          new Cookies().remove('bearerToken');
+          clearBearerToken();
           setAuthStatus(AUTH_STATUSES.NOT_LOGGED);
           setUserData(null);
           return;

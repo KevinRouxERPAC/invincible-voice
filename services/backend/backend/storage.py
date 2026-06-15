@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 import uuid
 from typing import Literal
@@ -28,6 +29,15 @@ LENGHT_TO_NB_WORDS = {
     "L": (8, 20),
     "XL": (12, 25),
 }
+
+# Cap how many past conversations are replayed into the system prompt. Without
+# this, every turn re-sends the user's entire history, so suggestions get slower
+# and more expensive the longer the user has used the app — the opposite of the
+# product's "fast suggestions" goal. The current conversation is always kept;
+# this bounds how many *previous* ones are included. Tunable via env.
+MAX_PAST_CONVERSATIONS_IN_PROMPT = int(
+    os.environ.get("MAX_PAST_CONVERSATIONS_IN_PROMPT", "10")
+)
 
 
 class UserData(pydantic.BaseModel):
@@ -93,7 +103,12 @@ class UserData(pydantic.BaseModel):
         prompt += "The conversations here were done with the software, and are shown to give you"
         prompt += "context about the user\n\n"
 
-        for conversation in self.conversations:
+        # Keep the current conversation (always the last one) plus a bounded
+        # window of previous ones, so the prompt doesn't grow without limit.
+        recent_conversations = self.conversations[
+            -(MAX_PAST_CONVERSATIONS_IN_PROMPT + 1) :
+        ]
+        for conversation in recent_conversations:
             if len(conversation.messages) == 0:
                 continue
             readable_datetime = conversation.start_time.strftime(
