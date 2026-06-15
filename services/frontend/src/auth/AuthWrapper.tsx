@@ -123,7 +123,7 @@ const SignInScreen: FC<SignInScreenProps> = ({
   return (
     <div className='flex flex-col gap-3 max-w-md w-[90%] my-16'>
       <form
-        className='flex flex-col gap-4 w-full bg-[#101010] px-11 py-9 rounded-4xl'
+        className='flex flex-col gap-4 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl'
         onSubmit={onSubmit}
       >
         <div className='flex flex-row items-center justify-center shrink gap-2 pb-2 text-xs'>
@@ -159,7 +159,7 @@ const SignInScreen: FC<SignInScreenProps> = ({
                 id='auth-email-input'
                 type='email'
                 onChange={onChangeEmail}
-                className='w-full px-6 py-3 text-base bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder='prenom.nom@exemple.com'
               />
             </div>
@@ -174,7 +174,7 @@ const SignInScreen: FC<SignInScreenProps> = ({
                 id='auth-password-input'
                 type='password'
                 onChange={onChangePassword}
-                className='w-full px-6 py-3 text-base bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder='*********'
               />
             </div>
@@ -183,11 +183,9 @@ const SignInScreen: FC<SignInScreenProps> = ({
             </p>
             <button
               type='submit'
-              className='shrink-0 p-px mt-4 font-bold cursor-pointer pointer-events-auto green-to-purple-via-blue-gradient rounded-2xl h-14'
+              className='shrink-0 mt-4 h-14 flex items-center justify-center px-8 text-sm font-bold cursor-pointer pointer-events-auto text-white bg-blue hover:bg-blue-600 transition-colors rounded-2xl'
             >
-              <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
-                {t('common.signIn')}
-              </div>
+              {t('common.signIn')}
             </button>
             {googleClientId && (
               <p className='font-bold text-sm text-center'>{t('common.or')}</p>
@@ -196,17 +194,15 @@ const SignInScreen: FC<SignInScreenProps> = ({
         )}
         <Google />
       </form>
-      <div className='flex flex-col gap-2 w-full bg-[#101010] px-11 py-9 rounded-4xl font-bold'>
+      <div className='flex flex-col gap-2 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl font-bold'>
         <p className='mb-4 font-bold text-sm text-center'>
           {t('common.noAccount')}
         </p>
         <button
           onClick={onSwitchToRegister}
-          className='shrink-0 p-px cursor-pointer pointer-events-auto rounded-2xl h-14'
+          className='shrink-0 h-14 flex items-center justify-center px-8 text-sm cursor-pointer pointer-events-auto text-ink-2 bg-surface border border-hairline-2 hover:bg-paper transition-colors rounded-2xl'
         >
-          <span className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
-            {t('common.createAccount')}
-          </span>
+          {t('common.createAccount')}
         </button>
       </div>
     </div>
@@ -277,7 +273,7 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
   return (
     <div className='flex flex-col gap-3 max-w-md w-[90%] my-16'>
       <form
-        className='flex flex-col gap-4 w-full bg-[#101010] px-11 py-9 rounded-4xl'
+        className='flex flex-col gap-4 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl'
         onSubmit={onSubmit}
       >
         <div className='flex flex-row items-center justify-center shrink-0 gap-2 pb-2 text-xs'>
@@ -313,7 +309,7 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
                 id='register-email-input'
                 type='email'
                 onChange={onChangeEmail}
-                className='w-full px-6 py-3 text-base bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder='Email'
               />
             </div>
@@ -328,7 +324,7 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
                 id='register-password-input'
                 type='password'
                 onChange={onChangePassword}
-                className='w-full px-6 py-3 text-base bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder='*********'
               />
             </div>
@@ -343,18 +339,16 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
                 id='register-confirm-password-input'
                 type='password'
                 onChange={onChangeConfirmPassword}
-                className='w-full px-6 py-3 text-base bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder='*********'
               />
               <span className='block h-4 italic text-xs'>{error}</span>
             </div>
             <button
               type='submit'
-              className='shrink-0 p-px font-bold cursor-pointer pointer-events-auto green-to-purple-via-blue-gradient rounded-2xl h-14'
+              className='shrink-0 h-14 flex items-center justify-center px-8 text-sm font-bold cursor-pointer pointer-events-auto text-white bg-blue hover:bg-blue-600 transition-colors rounded-2xl'
             >
-              <span className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
-                {t('common.signUp')}
-              </span>
+              {t('common.signUp')}
             </button>
             {googleClientId && (
               <p className='font-bold text-sm text-center'>{t('common.or')}</p>
@@ -363,17 +357,15 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
         )}
         <Google />
       </form>
-      <div className='flex flex-col gap-2 w-full bg-[#101010] px-11 py-9 rounded-4xl font-bold'>
+      <div className='flex flex-col gap-2 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl font-bold'>
         <p className='mb-4 font-bold text-sm text-center'>
           {t('common.alreadyHaveAccount')}
         </p>
         <button
           onClick={onSwitchToSignIn}
-          className='shrink-0 p-px cursor-pointer pointer-events-auto rounded-2xl h-14'
+          className='shrink-0 h-14 flex items-center justify-center px-8 text-sm cursor-pointer pointer-events-auto text-ink-2 bg-surface border border-hairline-2 hover:bg-paper transition-colors rounded-2xl'
         >
-          <span className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
-            {t('common.signIn')}
-          </span>
+          {t('common.signIn')}
         </button>
       </div>
     </div>

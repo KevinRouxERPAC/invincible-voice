@@ -38,12 +38,12 @@ const VoiceUploadForm: FC<VoiceUploadFormProps> = ({
   };
 
   return (
-    <div className='mt-2 px-4 py-3 bg-[#181818] border border-white rounded-2xl'>
+    <div className='mt-2 px-4 py-3 bg-surface-2 border border-hairline rounded-2xl'>
       <div className='flex flex-col gap-3'>
         <div className='flex flex-col gap-1'>
           <label
             htmlFor='voice-upload-name-input'
-            className='text-xs font-medium text-gray-300'
+            className='text-xs font-medium text-ink-2'
           >
             {t('settings.voiceName')}
           </label>
@@ -53,7 +53,7 @@ const VoiceUploadForm: FC<VoiceUploadFormProps> = ({
             type='text'
             value={voiceName}
             onChange={(e) => onVoiceNameChange(e.target.value)}
-            className='w-full px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green'
+            className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
             placeholder={t('settings.voiceNamePlaceholder')}
           />
         </div>
@@ -61,7 +61,7 @@ const VoiceUploadForm: FC<VoiceUploadFormProps> = ({
         <div className='flex flex-col gap-1'>
           <label
             htmlFor='voice-upload-file-input'
-            className='text-xs font-medium text-gray-300'
+            className='text-xs font-medium text-ink-2'
           >
             {t('settings.audioFile')}
           </label>
@@ -71,17 +71,17 @@ const VoiceUploadForm: FC<VoiceUploadFormProps> = ({
             type='file'
             accept='.mp3,.wav'
             onChange={handleFileChange}
-            className='w-full px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-[#39F2AE] file:text-black file:text-sm file:cursor-pointer'
+            className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-sage file:text-white file:text-sm file:cursor-pointer'
           />
         </div>
 
-        {error && <p className='text-xs text-red-400'>{error}</p>}
+        {error && <p className='text-xs text-red'>{error}</p>}
 
         <div className='flex gap-2'>
           <button
             type='button'
             onClick={onCancel}
-            className='flex-1 px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green hover:bg-[#2B2B2B]'
+            className='flex-1 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue hover:bg-paper'
           >
             {t('common.cancel')}
           </button>
@@ -90,7 +90,7 @@ const VoiceUploadForm: FC<VoiceUploadFormProps> = ({
             type='button'
             onClick={onCreateVoice}
             disabled={isCreating}
-            className='flex-1 px-4 py-2 text-sm text-white bg-[#39F2AE] rounded-xl focus:outline-none hover:bg-[#2EDB9B] disabled:opacity-50 disabled:cursor-not-allowed'
+            className='flex-1 px-4 py-2 text-sm text-white bg-sage rounded-xl focus:outline-none hover:bg-sage-600 disabled:opacity-50 disabled:cursor-not-allowed'
           >
             {isCreating ? (
               <LoaderCircleIcon

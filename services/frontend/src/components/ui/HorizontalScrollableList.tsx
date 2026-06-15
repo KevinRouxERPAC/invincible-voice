@@ -21,7 +21,7 @@ const HorizontalScrollableList: FC<HorizontalScrollableListProps> = ({
   return (
     <div className='px-4'>
       {(!items || items.length === 0) && (
-        <p className='text-xs text-gray-500 italic'>{emptyMessage}</p>
+        <p className='text-xs text-muted italic'>{emptyMessage}</p>
       )}
       {items && items.length > 0 && (
         <div className='flex gap-2 overflow-x-auto scrollbar-hidden'>
@@ -60,7 +60,7 @@ const HorizontalScrollableListItem: FC<HorizontalScrollableListItemProps> = ({
     <button
       onClick={onItemClick}
       className={cn(
-        'px-4 py-2 text-white text-sm rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 whitespace-nowrap shrink-0',
+        'px-4 py-2 text-ink text-sm rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 whitespace-nowrap shrink-0',
         itemClassName,
       )}
     >

@@ -52,11 +52,11 @@ const ResponsePanel: FC<ResponsePanelProps> = ({
     <div className='flex flex-col flex-1 min-h-0 overflow-hidden'>
       {/* Quick response keywords from user settings */}
       {additionalKeywords.length > 0 && (
-        <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-b border-gray-700 shrink-0 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain'>
+        <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-b border-hairline shrink-0 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain'>
           {additionalKeywords.map((keyword) => (
             <button
               key={keyword}
-              className='shrink-0 px-4 min-h-[36px] bg-gray-800 border border-gray-600 rounded-full text-sm text-gray-200 hover:bg-gray-700 transition-colors'
+              className='shrink-0 px-4 min-h-[36px] bg-sage-tint border border-sage rounded-full text-sm text-sage-600 hover:bg-sage-tint transition-colors'
               onClick={() => onResponseEdit?.(keyword)}
             >
               {keyword}
@@ -66,13 +66,13 @@ const ResponsePanel: FC<ResponsePanelProps> = ({
       )}
 
       {/* Freeze toggle control */}
-      <div className='px-4 py-2 landscape:py-1 border-b border-gray-700 shrink-0 flex items-center justify-end'>
+      <div className='px-4 py-2 landscape:py-1 border-b border-hairline shrink-0 flex items-center justify-end'>
         <button
           className={cn(
             'px-3 py-1.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors',
             isFrozen
-              ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500'
-              : 'bg-gray-800 text-gray-400 border border-gray-600 hover:text-gray-200',
+              ? 'bg-blue text-white border border-blue'
+              : 'bg-surface text-ink-2 border border-hairline-2 hover:bg-paper',
           )}
           onClick={onFreezeToggle}
           title={t('conversation.freezeResponses')}
@@ -146,13 +146,13 @@ const BaseResponse: FC<BaseResponseProps> = ({
         className={cn(
           'w-full h-full min-h-[44px] px-4 py-3 text-left rounded-[20px] border-2 transition-all duration-200 flex flex-col items-start justify-center overflow-hidden',
           {
-            'border-cyan-400 bg-[#181818] hover:border-cyan-500':
+            'border-blue bg-surface hover:border-blue-600':
               isFrozen && response.text.trim() && response.isComplete,
-            'border-green-500 bg-[#181818] hover:border-green-400':
+            'border-sage bg-surface hover:border-sage-600':
               !isFrozen && response.text.trim() && response.isComplete,
-            'border-gray-600 bg-[#1B1B1B]':
+            'border-hairline-2 bg-surface-2':
               !isFrozen && response.text.trim() && !response.isComplete,
-            'border-gray-700 bg-[#1B1B1B]':
+            'border-hairline bg-surface-2':
               !isFrozen && !response.text.trim() && !response.isComplete,
             'cursor-pointer': response.text.trim() && response.isComplete,
             'cursor-default': !response.text.trim() || !response.isComplete,
@@ -162,16 +162,16 @@ const BaseResponse: FC<BaseResponseProps> = ({
         onClick={onClickResponse}
       >
         <div className='w-full overflow-hidden text-ellipsis line-clamp-3 pr-8'>
-          <p className='text-white leading-relaxed wrap-break-word text-base'>
+          <p className='text-ink leading-relaxed wrap-break-word text-base'>
             {response.text.trim() ? (
               <Fragment>
                 {response.text}
                 {!response.isComplete && (
-                  <span className='inline-block w-1 h-4 bg-gray-400 ml-1 animate-pulse' />
+                  <span className='inline-block w-1 h-4 bg-muted ml-1 animate-pulse' />
                 )}
               </Fragment>
             ) : (
-              <span className='text-gray-500 italic text-base'>
+              <span className='text-muted italic text-base'>
                 {t('conversation.waitingForResponse')}
               </span>
             )}
@@ -179,7 +179,7 @@ const BaseResponse: FC<BaseResponseProps> = ({
         </div>
         {response.text.trim() && !response.isComplete && (
           <div className='flex justify-end mt-1'>
-            <div className='w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin' />
+            <div className='w-4 h-4 border-2 border-sage border-t-transparent rounded-full animate-spin' />
           </div>
         )}
       </button>
@@ -187,11 +187,11 @@ const BaseResponse: FC<BaseResponseProps> = ({
         response.isComplete &&
         (onResponseEdit || onEditResponseInChat) && (
           <button
-            className='absolute top-1 right-1 w-11 h-11 flex items-center justify-center rounded hover:bg-gray-700 transition-colors cursor-pointer'
+            className='absolute top-1 right-1 w-11 h-11 flex items-center justify-center rounded hover:bg-paper transition-colors cursor-pointer'
             onClick={onClickEdit}
             title={t('conversation.editResponse')}
           >
-            <Edit2 className='w-5 h-5 text-gray-400' />
+            <Edit2 className='w-5 h-5 text-muted' />
           </button>
         )}
     </div>

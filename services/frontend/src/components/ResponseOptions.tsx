@@ -169,7 +169,7 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
   return (
     <div className='flex flex-col gap-4 pb-12'>
       {displayLoadingPlaceholder && (
-        <div className='mt-2 text-xs text-center text-gray-500'>
+        <div className='mt-2 text-xs text-center text-muted'>
           {t('settings.responsesLoading')} {t('settings.audioWillBeReady')}
         </div>
       )}
@@ -211,8 +211,9 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
               className={cn(
                 'size-8 font-medium text-sm flex flex-col items-center justify-center rounded-xl transition-all duration-200 border',
                 {
-                  'bg-[#101010] border-white': size === currentResponseSize,
-                  'border-transparent bg-[#1010103D] hover:bg-[#181818] hover:border-black':
+                  'bg-blue text-white border-blue':
+                    size === currentResponseSize,
+                  'bg-surface text-ink-2 border-hairline-2 hover:bg-paper':
                     size !== currentResponseSize,
                 },
               )}
@@ -230,8 +231,8 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
               className={cn(
                 'h-8 px-6 font-medium text-sm flex gap-3 items-center justify-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50',
                 {
-                  'bg-[#101010] border-white': isFrozen,
-                  'border-transparent bg-[#1010103D] hover:bg-[#181818] hover:border-black':
+                  'bg-blue text-white border-blue': isFrozen,
+                  'bg-surface text-ink-2 border-hairline-2 hover:bg-paper':
                     !isFrozen,
                 },
               )}
@@ -241,9 +242,9 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
                 ? t('conversation.unlockResponses')
                 : t('conversation.lockResponses')}
               {isFrozen ? (
-                <Lock className='w-4 h-4 text-white' />
+                <Lock className='w-4 h-4' />
               ) : (
-                <Unlock className='w-4 h-4 text-white' />
+                <Unlock className='w-4 h-4' />
               )}
             </button>
           )}
@@ -304,13 +305,13 @@ const EditingResponseOption: FC<EditingResponseOptionProps> = ({
   }, []);
 
   return (
-    <div className='flex flex-col h-16 p-3 border-2 border-green-400 rounded-tr-sm rounded-b-2xl rounded-tl-2xl bg-green-50 dark:bg-green-900/20'>
+    <div className='flex flex-col h-16 p-3 border-2 border-sage rounded-tr-sm rounded-b-2xl rounded-tl-2xl bg-sage-tint'>
       <textarea
         ref={ref}
         value={editingText}
         onChange={onChange}
         onKeyDown={onKeyDown}
-        className='flex-1 text-xs text-gray-900 bg-transparent outline-none resize-none dark:text-gray-100'
+        className='flex-1 text-xs text-ink bg-transparent outline-none resize-none'
         placeholder='Type your message…'
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
@@ -370,24 +371,24 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
       disabled={!responseText.trim() || !isComplete}
     >
       <div className='flex flex-col items-center gap-2'>
-        <span className='flex flex-col items-center justify-center font-bold text-white/80 border border-white/20 rounded-full size-10 font-base bg-white/5 shadow-inner'>
+        <span className='flex flex-col items-center justify-center font-bold text-muted border border-hairline rounded-full size-10 font-base bg-paper'>
           {shortcut}
         </span>
         {responseText.trim() && !isComplete && (
-          <div className='w-4 h-4 border-2 border-green-300 rounded-full border-t-transparent animate-spin' />
+          <div className='w-4 h-4 border-2 border-blue rounded-full border-t-transparent animate-spin' />
         )}
       </div>
       <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
-        <p className='text-sm md:text-base leading-snug text-white font-medium'>
+        <p className='text-sm md:text-base leading-snug text-ink font-medium'>
           {responseText.trim() ? (
             <Fragment>
               {responseText}
               {!isComplete && (
-                <span className='inline-block w-2 h-4 ml-2 bg-green-400/80 animate-pulse rounded-sm' />
+                <span className='inline-block w-2 h-4 ml-2 bg-blue animate-pulse rounded-sm' />
               )}
             </Fragment>
           ) : (
-            <span className='italic text-white/40'>
+            <span className='italic text-muted'>
               {t('conversation.waitingForResponse')}
             </span>
           )}
@@ -398,10 +399,10 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
         <div
           aria-label={`Edit the response. Shortcut is Shift + ${shortcut}`}
           onClick={onClickEdit}
-          className='p-2 transition-colors rounded-full cursor-pointer bg-white/5 hover:bg-white/20 ml-auto'
+          className='p-2 transition-colors rounded-full cursor-pointer bg-paper hover:bg-blue-tint ml-auto'
           title={`Edit the response. Shortcut is Shift + ${shortcut}`}
         >
-          <Edit2 className='w-4 h-4 text-white/70 group-hover:text-white' />
+          <Edit2 className='w-4 h-4 text-muted group-hover:text-blue-600' />
           <div className='absolute px-2 py-1 mb-2 text-xs text-white transition-opacity transform -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap group-hover:opacity-100'>
             Edit the response. Shortcut is Shift + {shortcut}
           </div>

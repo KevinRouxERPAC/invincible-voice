@@ -77,16 +77,16 @@ const AppointmentsEditor: FC<AppointmentsEditorProps> = ({
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='text-sm font-medium text-white'>
+      <div className='text-sm font-medium text-ink'>
         {t('appointments.title')}
       </div>
-      <p className='text-xs text-white/60'>{t('appointments.help')}</p>
+      <p className='text-xs text-muted'>{t('appointments.help')}</p>
 
       {appointments.map((appointment, index) => (
         <div
           // eslint-disable-next-line react/no-array-index-key
           key={index}
-          className='flex flex-col gap-2 p-3 rounded-2xl bg-[#181818] border border-white/20'
+          className='flex flex-col gap-2 p-3 rounded-2xl bg-surface-2 border border-hairline'
         >
           <div className='flex gap-2'>
             <input
@@ -94,17 +94,17 @@ const AppointmentsEditor: FC<AppointmentsEditorProps> = ({
               value={appointment.title}
               onChange={(e) => renameAppointment(index, e.target.value)}
               placeholder={t('appointments.titlePlaceholder')}
-              className='flex-1 px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green'
+              className='flex-1 px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
             />
             <button
               type='button'
               onClick={() => removeAppointment(index)}
               aria-label={t('common.delete')}
-              className='size-9 shrink-0 flex items-center justify-center rounded-xl bg-[#101010]'
+              className='size-9 shrink-0 flex items-center justify-center rounded-xl bg-paper border border-hairline'
             >
               <Trash2
                 size={18}
-                className='text-[#FF6459]'
+                className='text-red'
               />
             </button>
           </div>
@@ -114,18 +114,18 @@ const AppointmentsEditor: FC<AppointmentsEditorProps> = ({
               <span
                 // eslint-disable-next-line react/no-array-index-key
                 key={phraseIndex}
-                className='flex items-center gap-1 pl-3 pr-1 py-1 text-sm text-white bg-[#101010] rounded-full'
+                className='flex items-center gap-1 pl-3 pr-1 py-1 text-sm text-ink-2 bg-surface-2 border border-hairline-2 rounded-full'
               >
                 {phrase}
                 <button
                   type='button'
                   onClick={() => removePhrase(index, phraseIndex)}
                   aria-label={t('common.delete')}
-                  className='size-5 flex items-center justify-center rounded-full hover:bg-[#FF6459]/30'
+                  className='size-5 flex items-center justify-center rounded-full hover:bg-red/20'
                 >
                   <X
                     size={12}
-                    className='text-gray-300'
+                    className='text-muted'
                   />
                 </button>
               </span>
@@ -149,12 +149,12 @@ const AppointmentsEditor: FC<AppointmentsEditorProps> = ({
                 }
               }}
               placeholder={t('appointments.phrasePlaceholder')}
-              className='flex-1 px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green'
+              className='flex-1 px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
             />
             <button
               type='button'
               onClick={() => addPhrase(index)}
-              className='px-3 shrink-0 flex items-center gap-1 text-sm text-white bg-[#101010] border border-white/40 rounded-xl hover:bg-[#222]'
+              className='px-3 shrink-0 flex items-center gap-1 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-xl hover:bg-paper'
             >
               {t('common.add')}
               <Plus size={16} />
@@ -175,12 +175,12 @@ const AppointmentsEditor: FC<AppointmentsEditorProps> = ({
             }
           }}
           placeholder={t('appointments.newPlaceholder')}
-          className='flex-1 px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green'
+          className='flex-1 px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
         />
         <button
           type='button'
           onClick={addAppointment}
-          className='px-3 shrink-0 flex items-center gap-1 text-sm text-white bg-[#101010] border border-white/40 rounded-xl hover:bg-[#222]'
+          className='px-3 shrink-0 flex items-center gap-1 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-xl hover:bg-paper'
         >
           {t('common.add')}
           <Plus size={16} />

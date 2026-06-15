@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#101010',
+  themeColor: '#f4f2ec',
 };
 
 const satoshi = localFont({

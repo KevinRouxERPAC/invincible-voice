@@ -45,23 +45,23 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
   );
 
   return (
-    <div className='fixed inset-0 z-50 flex flex-col items-center gap-6 px-4 py-10 overflow-y-auto bg-[#121212] text-white'>
+    <div className='fixed inset-0 z-50 flex flex-col items-center gap-6 px-4 py-10 overflow-y-auto bg-paper text-ink'>
       <div className='w-full max-w-2xl flex flex-row items-center justify-between'>
         <h1 className='text-2xl font-bold truncate'>{appointment.title}</h1>
         <button
           onClick={onClose}
           aria-label={t('appointments.close')}
-          className='size-10 shrink-0 flex items-center justify-center rounded-2xl bg-[#101010]'
+          className='size-10 shrink-0 flex items-center justify-center rounded-2xl bg-surface-2 border border-hairline hover:bg-paper transition-colors'
         >
           <X
             size={24}
-            className='text-white'
+            className='text-ink-2'
           />
         </button>
       </div>
 
       {phrases.length === 0 ? (
-        <p className='text-sm text-gray-400'>{t('appointments.empty')}</p>
+        <p className='text-sm text-muted'>{t('appointments.empty')}</p>
       ) : (
         <Fragment>
           <div className='w-full max-w-2xl flex flex-col gap-2'>
@@ -74,8 +74,8 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
                 className={cn(
                   'w-full text-left px-5 py-4 rounded-2xl border text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
                   i === index
-                    ? 'bg-green text-black border-green font-semibold'
-                    : 'bg-[#181818] text-white border-white/30 hover:bg-[#222]',
+                    ? 'bg-sage text-white border-sage font-semibold'
+                    : 'bg-surface text-ink border-hairline hover:bg-paper',
                 )}
               >
                 {phrase}
@@ -89,7 +89,7 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
               data-scan-item
               disabled={index === 0}
               aria-label={t('appointments.previous')}
-              className='flex-1 h-16 flex items-center justify-center gap-2 rounded-2xl bg-[#1B1B1B] border border-white/40 disabled:opacity-40'
+              className='flex-1 h-16 flex items-center justify-center gap-2 rounded-2xl bg-surface text-ink-2 border border-hairline-2 hover:bg-paper transition-colors disabled:opacity-40'
             >
               <ChevronLeft size={28} />
             </button>
@@ -97,7 +97,7 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
               onClick={() => speak(index)}
               data-scan-item
               data-scan-order={-1}
-              className='flex-[2] h-16 flex items-center justify-center gap-3 rounded-2xl bg-green text-black font-bold text-lg'
+              className='flex-[2] h-16 flex items-center justify-center gap-3 rounded-2xl bg-sage text-white font-bold text-lg'
             >
               <Volume2 size={28} />
               {t('appointments.speak')}
@@ -107,13 +107,13 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
               data-scan-item
               disabled={index >= phrases.length - 1}
               aria-label={t('appointments.next')}
-              className='flex-1 h-16 flex items-center justify-center gap-2 rounded-2xl bg-[#1B1B1B] border border-white/40 disabled:opacity-40'
+              className='flex-1 h-16 flex items-center justify-center gap-2 rounded-2xl bg-surface text-ink-2 border border-hairline-2 hover:bg-paper transition-colors disabled:opacity-40'
             >
               <ChevronRight size={28} />
             </button>
           </div>
 
-          <p className='text-sm text-gray-400 tabular-nums'>
+          <p className='text-sm text-muted tabular-nums'>
             {index + 1} / {phrases.length}
           </p>
         </Fragment>

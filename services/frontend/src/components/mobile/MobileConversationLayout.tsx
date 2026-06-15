@@ -160,7 +160,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
 
   return (
     <div
-      className='w-full flex flex-col bg-[#121212] text-white overflow-hidden'
+      className='w-full flex flex-col bg-paper text-ink overflow-hidden'
       style={{
         height: `${vh}px`,
         paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined,
@@ -177,34 +177,30 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
         {isConnected ? (
           <button
             aria-label='Stop conversation'
-            className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+            className='shrink-0 h-11 px-5 cursor-pointer bg-terra-tint border border-terra text-terra rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onConnectButtonPress}
             title={t('conversation.stopConversation')}
           >
-            <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-5'>
-              {t('conversation.stopConversation')}
-              <Pause
-                width={24}
-                height={24}
-                className='shrink-0 text-white'
-              />
-            </div>
+            {t('conversation.stopConversation')}
+            <Pause
+              width={24}
+              height={24}
+              className='shrink-0'
+            />
           </button>
         ) : (
           <button
             aria-label='Back'
-            className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+            className='shrink-0 h-11 px-5 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onBack}
             title={t('common.back')}
           >
-            <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-5'>
-              <ArrowLeft
-                width={20}
-                height={20}
-                className='shrink-0 text-white'
-              />
-              {t('common.back')}
-            </div>
+            <ArrowLeft
+              width={20}
+              height={20}
+              className='shrink-0'
+            />
+            {t('common.back')}
           </button>
         )}
         <div className='flex flex-row items-center gap-2'>
@@ -215,8 +211,8 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
               title={t('conversation.takeFloorHint')}
               className={`shrink-0 h-11 px-3 rounded-2xl text-xs font-medium border transition-colors ${
                 isInitiating
-                  ? 'bg-green text-black border-green'
-                  : 'bg-[#181818] text-white border-white/40'
+                  ? 'bg-sage text-white border-sage'
+                  : 'bg-surface text-ink-2 border-hairline-2'
               }`}
             >
               {t('conversation.takeFloor')}
@@ -224,13 +220,11 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
           )}
           <EmergencyButton compact />
           <button
-            className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+            className='shrink-0 h-11 px-3 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-2xl flex flex-row items-center justify-center text-ink-2'
             onClick={onSettingsPress}
             title={t('settings.changeSettings')}
           >
-            <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center rounded-2xl px-3'>
-              <Settings size={20} />
-            </div>
+            <Settings size={20} />
           </button>
         </div>
       </div>
@@ -238,12 +232,12 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
       {/* Tab bar — only while browsing history (Chat read-only + History).
           During an active session the split view below replaces the tabs. */}
       {!isSplitView && (
-        <div className='flex border-b border-gray-700 shrink-0'>
+        <div className='flex border-b border-hairline shrink-0'>
           <button
             className={`flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors ${
               activePanel === 'chat'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'text-blue-600 border-b-2 border-blue'
+                : 'text-muted hover:text-ink'
             }`}
             onClick={() => setActivePanel('chat')}
           >
@@ -252,8 +246,8 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
           <button
             className={`flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors ${
               activePanel === 'history'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-200'
+                ? 'text-blue-600 border-b-2 border-blue'
+                : 'text-muted hover:text-ink'
             }`}
             onClick={() => setActivePanel('history')}
           >
@@ -276,7 +270,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
               isViewingPastConversation={isViewingPastConversation}
             />
           </div>
-          <div className='flex flex-col flex-[4] min-h-0 border-t border-gray-700 md:flex-1 md:border-t-0 landscape:flex-1 landscape:border-t-0'>
+          <div className='flex flex-col flex-[4] min-h-0 border-t border-hairline md:flex-1 md:border-t-0 landscape:flex-1 landscape:border-t-0'>
             <ResponsePanel
               frozenResponses={frozenResponses}
               onFreezeToggle={onFreezeToggle}
@@ -323,7 +317,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
       )}
 
       {/* Always-visible text input footer */}
-      <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-gray-700 shrink-0'>
+      <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-hairline shrink-0'>
         {/* Quick phrases: instant speech, no LLM round-trip. Hidden when viewing history. */}
         {!isHistoryMode && quickPhrases.length > 0 && onQuickPhraseSelect && (
           <div className='mb-2 landscape:hidden'>
@@ -337,7 +331,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
         <div className='flex gap-2 pb-1'>
           <textarea
             ref={textareaRef}
-            className='flex-1 p-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm max-h-[96px] overflow-y-auto'
+            className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue text-sm max-h-[96px] overflow-y-auto'
             placeholder={t('conversation.typeMessagePlaceholder')}
             rows={1}
             value={textInput}
@@ -345,7 +339,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
             onKeyDown={onMessageKeyDown}
           />
           <button
-            className='px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 text-sm min-w-[56px] min-h-[44px]'
+            className='px-3 py-2 bg-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 text-sm min-w-[56px] min-h-[44px]'
             onClick={onSendMessage}
             disabled={!textInput.trim()}
           >

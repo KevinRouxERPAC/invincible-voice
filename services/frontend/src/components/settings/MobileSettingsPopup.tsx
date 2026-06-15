@@ -46,7 +46,7 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
   }, [signOut, onCancel]);
 
   return (
-    <div className='flex flex-col w-full h-full text-white p-4'>
+    <div className='flex flex-col w-full h-full text-ink p-4'>
       <SettingsHeader
         title={t('settings.changeSettings')}
         onCancel={onCancel}
@@ -59,13 +59,13 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
           onChange={setName}
           placeholder={t('settings.yourNamePlaceholder')}
         />
-        <div className='w-full px-4 py-4 bg-[#101010] rounded-3xl'>
+        <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl'>
           <SpeechRateSlider />
         </div>
-        <div className='w-full px-4 py-4 bg-[#101010] rounded-3xl'>
+        <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl'>
           <AccessibilitySettings />
         </div>
-        <p className='text-xs text-gray-500 text-center mt-1'>
+        <p className='text-xs text-muted text-center mt-1'>
           {t('settings.moreSettingsAvailable')}
         </p>
       </div>
@@ -76,19 +76,19 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
             href='https://kyutai.org/privacy-policy'
             target='_blank'
             rel='noopener noreferrer'
-            className='text-sm underline text-gray-400 hover:text-white transition-colors'
+            className='text-sm underline text-blue hover:text-blue-600 transition-colors'
           >
             {t('common.termsOfService')}
           </a>
         </div>
         <button
-          className='w-full px-6 py-3 text-[#FF6459] bg-[#1B1B1B] border border-[#FF6459] rounded-2xl font-medium'
+          className='w-full px-6 py-3 text-red bg-red-tint border border-red rounded-2xl font-medium'
           onClick={handleSignOut}
         >
           {t('settings.signOut')}
         </button>
         <button
-          className='w-full px-6 py-3 text-black bg-[#39F2AE] rounded-2xl font-medium'
+          className='w-full px-6 py-3 text-white bg-sage rounded-2xl font-medium'
           onClick={handleSave}
         >
           {t('common.save')}
