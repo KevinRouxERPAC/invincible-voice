@@ -131,21 +131,19 @@ const ConversationRow: FC<ConversationRowProps> = ({
         className={cn(
           'w-full min-h-[44px] text-left px-4 py-3 rounded-xl border transition-colors',
           isSelected
-            ? 'bg-gray-800 border-blue-500'
-            : 'bg-[#101010] border-transparent hover:bg-gray-900',
+            ? 'bg-blue-tint border-blue'
+            : 'bg-surface border-hairline hover:bg-surface-2',
         )}
         onClick={handleSelect}
       >
         <div className='flex items-center justify-between gap-2 pr-8'>
-          <p className='line-clamp-1 text-sm text-white'>{preview}</p>
-          {date && (
-            <span className='shrink-0 text-xs text-gray-400'>{date}</span>
-          )}
+          <p className='line-clamp-1 text-sm text-ink'>{preview}</p>
+          {date && <span className='shrink-0 text-xs text-muted'>{date}</span>}
         </div>
       </button>
       {isSelected && (
         <button
-          className='absolute right-2 top-2 w-11 h-11 flex items-center justify-center text-gray-400 hover:text-white transition-colors'
+          className='absolute right-2 top-2 w-11 h-11 flex items-center justify-center text-muted hover:text-ink transition-colors'
           onClick={handleDelete}
           title={t('conversation.deleteConversation')}
         >
@@ -178,7 +176,7 @@ const HistoryPanel: FC<HistoryPanelProps> = ({
       {/* "New conversation" button — always shown at top, 44px minimum height */}
       <div className='px-4 pt-3 pb-2 shrink-0'>
         <button
-          className='w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 border border-gray-600 rounded-xl text-sm text-gray-200 hover:bg-gray-700 transition-colors'
+          className='w-full min-h-[44px] flex items-center justify-center gap-2 px-4 py-2 bg-blue text-white rounded-xl text-sm hover:bg-blue-600 transition-colors'
           onClick={onNewConversation}
         >
           <Plus size={16} />
@@ -190,7 +188,7 @@ const HistoryPanel: FC<HistoryPanelProps> = ({
       <div className='flex-1 min-h-0 overflow-y-auto px-4 pb-4 flex flex-col gap-2'>
         {/* Empty state */}
         {sortedConversations.length === 0 && (
-          <div className='flex flex-col items-center justify-center flex-1 text-gray-500 py-12'>
+          <div className='flex flex-col items-center justify-center flex-1 text-muted py-12'>
             <MessageSquare
               size={40}
               className='mb-3 opacity-50'

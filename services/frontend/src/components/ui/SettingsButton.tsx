@@ -17,15 +17,10 @@ const SettingsButton = ({
     return (
       <button
         onClick={onClick}
-        className={`shrink-0 h-10 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl ${className}`}
-        style={{
-          filter: 'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-        }}
+        className={`shrink-0 h-10 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-2xl flex flex-row items-center justify-center p-2 text-ink-2 ${className}`}
         type='button'
       >
-        <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center rounded-2xl p-2'>
-          <Settings size={20} />
-        </div>
+        <Settings size={20} />
       </button>
     );
   }
@@ -33,16 +28,11 @@ const SettingsButton = ({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 h-10 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl ${className}`}
-      style={{
-        filter: 'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-      }}
+      className={`shrink-0 h-10 px-5 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-2xl flex flex-row items-center justify-center gap-2 text-sm text-ink-2 ${className}`}
       type='button'
     >
-      <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-5'>
-        {label}
-        <Settings size={20} />
-      </div>
+      {label}
+      <Settings size={20} />
     </button>
   );
 };

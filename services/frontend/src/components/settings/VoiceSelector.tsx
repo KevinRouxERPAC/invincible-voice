@@ -31,7 +31,7 @@ const VoiceSelector: FC<VoiceSelectorProps> = ({
         value={selectedVoice || ''}
         onChange={(e) => onVoiceChange(e.target.value)}
         disabled={isLoadingVoices}
-        className='flex-1 px-4 py-3 text-base text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green disabled:opacity-50'
+        className='flex-1 px-4 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue disabled:opacity-50'
       >
         <option value=''>{t('common.default')}</option>
 
@@ -55,7 +55,7 @@ const VoiceSelector: FC<VoiceSelectorProps> = ({
         type='button'
         onClick={onTestVoice}
         disabled={!selectedVoice || isPlayingVoice}
-        className='px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green hover:bg-[#2B2B2B] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
+        className='px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
       >
         {isPlayingVoice ? (
           <LoaderCircleIcon
@@ -72,12 +72,12 @@ const VoiceSelector: FC<VoiceSelectorProps> = ({
         <button
           type='button'
           onClick={onDeleteVoice}
-          className='px-3 py-2 text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-red-500 hover:bg-[#2B2B2B] hover:border-[#FF6459]'
+          className='px-3 py-2 text-ink-2 bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-red hover:bg-paper hover:border-red'
           title={t('common.delete')}
         >
           <XCircle
             size={16}
-            className='text-[#FF6459]'
+            className='text-red'
           />
         </button>
       )}

@@ -147,7 +147,7 @@ const VoiceSettings: FC<VoiceSettingsProps> = ({
 
   return (
     <div className='flex flex-col gap-2'>
-      <label className='text-sm font-medium text-white'>
+      <label className='text-sm font-medium text-ink'>
         {t('common.voice')}
       </label>
       <VoiceSelector
@@ -173,7 +173,7 @@ const VoiceSettings: FC<VoiceSettingsProps> = ({
         <button
           type='button'
           onClick={() => setShowVoiceUpload(true)}
-          className='mt-2 px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green hover:bg-[#2B2B2B]'
+          className='mt-2 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper'
         >
           {t('settings.cloneYourVoice')}
         </button>
@@ -200,19 +200,19 @@ const VoiceSettings: FC<VoiceSettingsProps> = ({
       )}
 
       {showDeleteConfirm && (
-        <div className='mt-4 p-4 bg-[#181818] border border-red-500 rounded-2xl'>
-          <p className='text-white mb-4'>{t('settings.deleteVoiceConfirm')}</p>
+        <div className='mt-4 p-4 bg-red-tint border border-red rounded-2xl'>
+          <p className='text-ink mb-4'>{t('settings.deleteVoiceConfirm')}</p>
           <div className='flex gap-2'>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className='flex-1 px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green hover:bg-[#2B2B2B]'
+              className='flex-1 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue hover:bg-paper'
               disabled={isDeletingVoice}
             >
               {t('common.cancel')}
             </button>
             <button
               onClick={handleDeleteVoice}
-              className='flex-1 px-4 py-2 text-sm text-white bg-[#FF6459] rounded-xl focus:outline-none hover:bg-[#E5554B] disabled:opacity-50 disabled:cursor-not-allowed'
+              className='flex-1 px-4 py-2 text-sm text-white bg-red rounded-xl focus:outline-none hover:bg-[#a73d2f] disabled:opacity-50 disabled:cursor-not-allowed'
               disabled={isDeletingVoice}
             >
               {isDeletingVoice ? '...' : t('common.delete')}

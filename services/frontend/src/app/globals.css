@@ -1,18 +1,61 @@
 @import 'tailwindcss';
 
 :root {
-  --green: #39f2ae;
-  --offwhite: #efefef;
-  --lightgray: #9d9d9d;
-  /* #B5BCC5; */
-  --gray: #343434;
-  /* #8D949E; */
-  --darkgray: #191919;
-  /* #1e293b; */
-  --background: #121212;
+  /* ===== Calm Cards design system (light) =====
+     Migration sombre -> clair. Les variables historiques (--green,
+     --offwhite, --background, ...) sont conservées plus bas en tant
+     qu'alias le temps que tous les composants soient migrés. */
 
-  /* for errors */
-  --red: #f55142;
+  /* surfaces */
+  --paper: #f4f2ec;
+  --surface: #ffffff;
+  --surface-2: #fbfaf6;
+  --ink: #221f1b;
+  --ink-2: #534f48;
+  --muted: #8a867c;
+  --hairline: #e9e4da;
+  --hairline-2: #dad4c7;
+
+  /* primary — calm blue */
+  --blue: #356ba3;
+  --blue-600: #2c5c8e;
+  --blue-tint: #eaf1f8;
+  --blue-tint-2: #d9e7f3;
+
+  /* speak / affirmative — sage */
+  --sage: #4e8a6b;
+  --sage-600: #427859;
+  --sage-tint: #e6f1ea;
+
+  /* warm — favourites */
+  --terra: #b0703d;
+  --terra-tint: #f4ebe0;
+
+  /* status */
+  --red: #be4a3a;
+  --red-tint: #f7e7e3;
+  --scan: #e8b500;
+
+  /* radii + elevation */
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+  --sh-sm: 0 1px 2px rgba(34, 31, 27, 0.05), 0 2px 6px rgba(34, 31, 27, 0.04);
+  --sh-md: 0 2px 6px rgba(34, 31, 27, 0.05), 0 12px 30px rgba(34, 31, 27, 0.07);
+  --sh-lg: 0 10px 50px rgba(34, 31, 27, 0.16);
+
+  /* accessibility: global text-size multiplier */
+  --fz: 1;
+
+  /* ===== legacy aliases (en cours de migration) ===== */
+  --green: var(--sage); /* ancien accent -> sauge */
+  --offwhite: var(--ink); /* ancien texte clair -> encre */
+  --lightgray: var(--muted);
+  --gray: var(--ink-2);
+  --darkgray: var(--hairline);
+  --background: var(--paper);
 
   font-family:
     var(--font-satoshi), system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -20,9 +63,9 @@
   font-weight: 500;
   font-size: 16px;
 
-  color-scheme: dark;
-  color: var(--offwhite);
-  background-color: var(--background);
+  color-scheme: light;
+  color: var(--ink);
+  background-color: var(--paper);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -30,8 +73,50 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* High-contrast mode (mirrors the mockup's body.contrast) */
+body.contrast {
+  --paper: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #ffffff;
+  --ink: #000000;
+  --ink-2: #1c1c1c;
+  --muted: #3a3a3a;
+  --hairline: #000000;
+  --hairline-2: #000000;
+  --blue: #10457e;
+  --blue-600: #0a3a6e;
+  --sage: #1f6b45;
+  --terra: #8a4d1c;
+}
+
 @theme {
-  /* TODO: deduplicate */
+  /* ===== Calm Cards tokens exposed as Tailwind colours ===== */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-hairline-2: var(--hairline-2);
+  --color-blue: var(--blue);
+  --color-blue-600: var(--blue-600);
+  --color-blue-tint: var(--blue-tint);
+  --color-blue-tint-2: var(--blue-tint-2);
+  --color-sage: var(--sage);
+  --color-sage-600: var(--sage-600);
+  --color-sage-tint: var(--sage-tint);
+  --color-terra: var(--terra);
+  --color-terra-tint: var(--terra-tint);
+  --color-red-tint: var(--red-tint);
+  --color-scan: var(--scan);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+
+  /* ===== legacy aliases (en cours de migration) ===== */
   --color-green: var(--green);
   --color-offwhite: var(--offwhite);
   --color-lightgray: var(--lightgray);
@@ -39,7 +124,6 @@
   --color-darkgray: var(--darkgray);
   --color-red: var(--red);
   --color-background: var(--background);
-  /* sometimes it's useful to have these as variables too */
   --color-white: #ffffff;
 
   --font-family-satoshi: var(--font-satoshi);
@@ -63,7 +147,7 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #f4f5f5;
+  background-color: var(--hairline-2);
   background-clip: padding-box;
   border: 4px solid transparent;
   border-radius: 8px;
@@ -71,7 +155,7 @@
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background-color: #f4f5f5;
+  background-color: var(--hairline-2);
 }
 
 /* Touch devices (phones/tablets): the thick light desktop scrollbar looks
@@ -141,6 +225,23 @@
   background-image: linear-gradient(89.73deg, #2ee76f 57.13%, #39f2ae 99.86%);
 }
 
+/* Soft background halos (Calm Cards) — replace the neon orbs on the light
+   paper canvas. Used by the app background in page.tsx. */
+.orb-soft-blue {
+  background: radial-gradient(
+    circle at center,
+    rgba(53, 107, 163, 0.16) 0%,
+    rgba(53, 107, 163, 0) 70%
+  );
+}
+.orb-soft-sage {
+  background: radial-gradient(
+    circle at center,
+    rgba(78, 138, 107, 0.14) 0%,
+    rgba(78, 138, 107, 0) 70%
+  );
+}
+
 .green-bubble-gradient {
   background: linear-gradient(
     180deg,
@@ -158,7 +259,8 @@
 }
 
 @keyframes orb-breathe {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0, 0);
     opacity: 0.8;
   }
@@ -173,7 +275,8 @@
 }
 
 @keyframes orb-breathe-reverse {
-  0%, 100% {
+  0%,
+  100% {
     transform: scale(1) translate(0, 0);
     opacity: 0.6;
   }
@@ -187,20 +290,21 @@
   animation: orb-breathe-reverse 18s ease-in-out infinite;
 }
 
+/* Calm Cards surface (formerly a dark glass card). Used by ResponseOptions. */
 .glass-card {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--surface);
+  border: 1.5px solid var(--hairline);
+  box-shadow: var(--sh-sm);
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s,
+    border-color 0.12s;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(57, 242, 174, 0.4);
+  border-color: var(--hairline-2);
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px 0 rgba(57, 242, 174, 0.1);
+  box-shadow: var(--sh-md);
 }
 
 .glass-card:active {

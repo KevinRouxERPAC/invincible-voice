@@ -15,8 +15,8 @@ const TermsOfServiceModal: FC<TermsOfServiceModalProps> = ({
   const t = useTranslations();
 
   return (
-    <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/80'>
-      <div className='flex flex-col gap-4 max-w-3xl w-[90%] max-h-[90vh] bg-[#101010] px-6 py-6 rounded-4xl overflow-hidden'>
+    <div className='fixed inset-0 z-50 flex items-center justify-center bg-ink/50 backdrop-blur-sm'>
+      <div className='flex flex-col gap-4 max-w-3xl w-[90%] max-h-[90vh] bg-surface border border-hairline shadow-[var(--sh-lg)] text-ink px-6 py-6 rounded-4xl overflow-hidden'>
         <h2 className='text-xl font-bold text-center pt-2'>
           {t('common.termsOfService')}
         </h2>
@@ -26,7 +26,7 @@ const TermsOfServiceModal: FC<TermsOfServiceModalProps> = ({
             href='https://kyutai.org/privacy-policy'
             target='_blank'
             rel='noopener noreferrer'
-            className='underline hover:text-gray-300'
+            className='underline text-blue hover:text-blue-600'
           >
             {t('common.termsOfService')}
           </a>
@@ -34,19 +34,15 @@ const TermsOfServiceModal: FC<TermsOfServiceModalProps> = ({
         <div className='flex gap-4 pt-2'>
           <button
             onClick={onRefuse}
-            className='flex-1 shrink-0 p-px font-bold cursor-pointer pointer-events-auto rounded-2xl h-14'
+            className='flex-1 shrink-0 font-bold cursor-pointer pointer-events-auto rounded-2xl h-14 flex flex-row items-center justify-center gap-2 text-sm px-4 bg-red-tint border border-red text-red hover:brightness-95 transition'
           >
-            <span className='h-full w-full flex flex-row bg-[#181818] border border-red text-red items-center justify-center gap-2 rounded-2xl text-sm px-4'>
-              {t('common.refuse')}
-            </span>
+            {t('common.refuse')}
           </button>
           <button
             onClick={onAccept}
-            className='flex-1 shrink-0 p-px font-bold cursor-pointer pointer-events-auto green-to-purple-via-blue-gradient rounded-2xl h-14'
+            className='flex-1 shrink-0 font-bold cursor-pointer pointer-events-auto rounded-2xl h-14 flex flex-row items-center justify-center gap-2 text-sm px-4 bg-blue hover:bg-blue-600 transition-colors text-white'
           >
-            <span className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-4'>
-              {t('common.accept')}
-            </span>
+            {t('common.accept')}
           </button>
         </div>
       </div>

@@ -1295,8 +1295,8 @@ const InvincibleVoice = () => {
           />
         )}
         {isSettingsOpen && userData && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50'>
-            <div className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-[#1B1B1B] border-green rounded-3xl'>
+          <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm'>
+            <div className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl'>
               <MobileSettingsPopup
                 userSettings={userData.user_settings}
                 email={userData.email}
@@ -1320,7 +1320,7 @@ const InvincibleVoice = () => {
   }
 
   return (
-    <div className='relative flex flex-col w-full h-screen overflow-hidden text-white'>
+    <div className='relative flex flex-col w-full h-screen overflow-hidden text-ink'>
       <ErrorMessages
         errors={errors}
         setErrors={setErrors}
@@ -1350,7 +1350,7 @@ const InvincibleVoice = () => {
           {!shouldConnect && !isViewingPastConversation && (
             <div className='absolute bottom-0 right-0 z-20 p-6 pointer-events-none'>
               <div className='flex flex-col items-end pointer-events-auto'>
-                <p className='text-xs text-gray-500'>
+                <p className='text-xs text-muted'>
                   {t('common.textToSpeechProvider')}
                 </p>
                 <img
@@ -1372,8 +1372,8 @@ const InvincibleVoice = () => {
                     className={cn(
                       'shrink-0 h-10 px-5 flex flex-row items-center justify-center gap-2 rounded-2xl text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
                       isInitiating
-                        ? 'bg-green text-black border-green'
-                        : 'bg-[#181818] text-white border-white/40 hover:bg-[#222]',
+                        ? 'bg-sage text-white border-sage'
+                        : 'bg-surface text-ink-2 border-hairline-2 hover:bg-paper',
                     )}
                   >
                     {t('conversation.takeFloor')}
@@ -1384,17 +1384,15 @@ const InvincibleVoice = () => {
                 {shouldConnect && !isViewingPastConversation && (
                   <button
                     onClick={onConnectButtonPress}
-                    className='shrink-0 h-10 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+                    className='shrink-0 h-10 px-5 cursor-pointer flex flex-row items-center justify-center gap-2 rounded-2xl text-sm text-terra bg-terra-tint border border-terra hover:brightness-95 transition'
                     title={t('conversation.stopConversation')}
                   >
-                    <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-5'>
-                      {t('conversation.stopConversation')}
-                      <Pause
-                        width={24}
-                        height={24}
-                        className='shrink-0 text-white'
-                      />
-                    </div>
+                    {t('conversation.stopConversation')}
+                    <Pause
+                      width={24}
+                      height={24}
+                      className='shrink-0'
+                    />
                   </button>
                 )}
               </div>
@@ -1446,8 +1444,8 @@ const InvincibleVoice = () => {
             )}
             {shouldConnect && !isViewingPastConversation && (
               <Fragment>
-                <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-                  <div className='mb-1 text-sm font-medium text-white'>
+                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                  <div className='mb-1 text-sm font-medium text-ink'>
                     {t('conversation.keywords')}
                   </div>
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
@@ -1455,24 +1453,24 @@ const InvincibleVoice = () => {
                       (word) => (
                         <div
                           key={word}
-                          className='flex flex-row items-center p-px green-to-light-green-gradient rounded-2xl group transition-all'
+                          className='flex flex-row items-center p-px bg-sage rounded-2xl group transition-all'
                         >
                           <button
                             data-scan-item
                             className='h-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 rounded-l-2xl'
                             onClick={() => handleWordBubbleClick(word)}
                           >
-                            <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-l-2xl group-hover:rounded-r-none rounded-r-2xl'>
+                            <div className='flex flex-col justify-center px-3 h-full text-sm text-sage-600 font-medium bg-sage-tint rounded-l-2xl group-hover:rounded-r-none rounded-r-2xl'>
                               {word}
                             </div>
                           </button>
-                          <div className='hidden group-hover:flex flex-row items-center h-10 bg-[#181818] rounded-r-2xl pr-2 pl-1'>
+                          <div className='hidden group-hover:flex flex-row items-center h-10 bg-sage-tint rounded-r-2xl pr-2 pl-1'>
                             <button
                               onClick={() =>
                                 handleIntentClick(word, 'poser une question')
                               }
                               title='Poser une question'
-                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
                             >
                               ?
                             </button>
@@ -1481,7 +1479,7 @@ const InvincibleVoice = () => {
                                 handleIntentClick(word, 'donner mon avis')
                               }
                               title='Donner un avis'
-                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
                             >
                               +
                             </button>
@@ -1490,7 +1488,7 @@ const InvincibleVoice = () => {
                                 handleIntentClick(word, 'changer de sujet')
                               }
                               title='Changer de sujet'
-                              className='text-gray-400 hover:text-white text-sm font-bold px-1.5 h-full'
+                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
                             >
                               ➔
                             </button>
@@ -1501,14 +1499,14 @@ const InvincibleVoice = () => {
                     {(!userData?.user_settings?.additional_keywords ||
                       userData.user_settings.additional_keywords.length ===
                         0) && (
-                      <p className='text-xs italic text-gray-500'>
+                      <p className='text-xs italic text-muted'>
                         No keywords added yet. Add them in settings.
                       </p>
                     )}
                   </div>
                 </div>
                 {userDataError && (
-                  <div className='p-2 border-b border-gray-700'>
+                  <div className='p-2 border-b border-hairline'>
                     <div className='text-right'>
                       <span className='text-xs text-red-400'>
                         Failed to load user data
@@ -1517,14 +1515,14 @@ const InvincibleVoice = () => {
                   </div>
                 )}
                 {settingsBlockedMessage && (
-                  <div className='p-2 border-b border-gray-700'>
+                  <div className='p-2 border-b border-hairline'>
                     <div className='px-2 py-1 text-xs text-yellow-200 border border-yellow-500 rounded bg-yellow-900/20'>
                       {settingsBlockedMessage}
                     </div>
                   </div>
                 )}
-                <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-                  <div className='mb-1 text-sm font-medium text-white'>
+                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                  <div className='mb-1 text-sm font-medium text-ink'>
                     {t('common.friends')}
                   </div>
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
@@ -1537,9 +1535,9 @@ const InvincibleVoice = () => {
                           key={friend}
                           data-scan-item
                           onClick={() => handleWordBubbleClick(friend)}
-                          className='h-10 p-px transition-colors cursor-pointer blue-to-light-blue-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+                          className='h-10 p-px transition-colors cursor-pointer bg-blue rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
                         >
-                          <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+                          <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium bg-blue-tint rounded-2xl'>
                             {friend}
                           </div>
                         </button>
@@ -1547,7 +1545,7 @@ const InvincibleVoice = () => {
                     ))}
                     {(!userData?.user_settings?.friends ||
                       userData.user_settings.friends.length === 0) && (
-                      <p className='text-xs italic text-gray-500'>
+                      <p className='text-xs italic text-muted'>
                         {t('settings.noFriendsAdded')}
                       </p>
                     )}
@@ -1562,23 +1560,23 @@ const InvincibleVoice = () => {
                   onSelect={handleKeywordSelect}
                   alwaysShow
                 />
-                <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px] grow flex flex-col gap-2'>
+                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] grow flex flex-col gap-2'>
                   <div className='grid grid-cols-2 gap-2 pb-2'>
                     <button
                       data-scan-item
                       onClick={() =>
                         handleResponseSelection(staticContextOption.id)
                       }
-                      className='w-full h-full p-px text-left transition-all duration-200 rounded-2xl light-orange-to-orange-gradient group focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50'
+                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50'
                     >
-                      <div className='px-3 py-4 overflow-hidden bg-[#1B1B1B] group-hover:bg-[#181818] flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
+                      <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
-                          <span className='flex flex-col items-center justify-center font-light text-white border border-white rounded-sm size-10 font-base bg-[#101010]'>
+                          <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
                             W
                           </span>
                         </div>
                         <div className='flex-1 pr-2'>
-                          <p className='overflow-hidden text-xs leading-tight text-gray-100'>
+                          <p className='overflow-hidden text-xs leading-tight italic text-ink-2'>
                             {staticContextOption.text}
                           </p>
                         </div>
@@ -1589,16 +1587,16 @@ const InvincibleVoice = () => {
                       onClick={() =>
                         handleResponseSelection(staticRepeatOption.id)
                       }
-                      className='w-full h-full p-px text-left transition-all duration-200 rounded-2xl light-orange-to-orange-gradient group focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-opacity-50'
+                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50'
                     >
-                      <div className='px-3 py-4 overflow-hidden bg-[#1B1B1B] group-hover:bg-[#181818] flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
+                      <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
-                          <span className='flex flex-col items-center justify-center font-light text-white border border-white rounded-sm size-10 font-base bg-[#101010]'>
+                          <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
                             X
                           </span>
                         </div>
                         <div className='flex-1 pr-2'>
-                          <p className='overflow-hidden text-xs leading-tight text-gray-100'>
+                          <p className='overflow-hidden text-xs leading-tight italic text-ink-2'>
                             {staticRepeatOption.text}
                           </p>
                         </div>
@@ -1607,7 +1605,7 @@ const InvincibleVoice = () => {
                   </div>
                   <div className='flex flex-row gap-2'>
                     <input
-                      className='grow px-6 py-4 text-sm text-white bg-[#1B1B1B] border border-white rounded-3xl focus:outline-none focus:border-green'
+                      className='grow px-6 py-4 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-3xl focus:outline-none focus:border-blue'
                       placeholder="Guider l'IA (ex: je veux parler de...)"
                       value={directiveInput}
                       onChange={(e) => setDirectiveInput(e.target.value)}
@@ -1620,14 +1618,14 @@ const InvincibleVoice = () => {
                     />
                     <button
                       onClick={handleDirectiveSubmit}
-                      className='px-6 py-4 text-sm font-bold text-white bg-[#1B1B1B] border border-white rounded-3xl hover:bg-green-700/30 disabled:opacity-50 transition-colors focus:outline-none focus:border-green'
+                      className='px-6 py-4 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-3xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue'
                       disabled={!directiveInput.trim()}
                     >
                       Piloter l&apos;IA
                     </button>
                   </div>
                   <textarea
-                    className='grow w-full min-h-0 px-6 py-4 text-base text-white bg-[#1B1B1B] border border-white rounded-3xl resize-none focus:outline-none focus:border-green scrollbar-hidden scrollable'
+                    className='grow w-full min-h-0 px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
                     placeholder={t('conversation.typeMessagePlaceholder')}
                     rows={2}
                     value={textInput}
@@ -1636,16 +1634,14 @@ const InvincibleVoice = () => {
                   />
                   <button
                     onClick={handleSendMessage}
-                    className='self-end p-px h-14 green-to-purple-via-blue-gradient rounded-2xl w-fit'
+                    className='self-end h-14 bg-blue hover:bg-blue-600 disabled:opacity-50 transition-colors rounded-2xl w-fit flex flex-row items-center justify-center gap-4 px-8 text-white'
                     disabled={!textInput.trim()}
                   >
-                    <div className='flex flex-row bg-[#181818] size-full items-center justify-center gap-4 px-8 rounded-2xl'>
-                      {t('conversation.sendMessage')}
-                      <Reply
-                        width={24}
-                        height={24}
-                      />
-                    </div>
+                    {t('conversation.sendMessage')}
+                    <Reply
+                      width={24}
+                      height={24}
+                    />
                   </button>
                 </div>
               </Fragment>
@@ -1654,7 +1650,7 @@ const InvincibleVoice = () => {
         </div>
       </div>
       {isDevMode && (
-        <div className='p-4 overflow-auto border-t border-gray-700 max-h-64'>
+        <div className='p-4 overflow-auto border-t border-hairline max-h-64'>
           <div className='text-xs'>
             <pre
               className='wrap-break-word whitespace-pre-wrap'
@@ -1664,14 +1660,14 @@ const InvincibleVoice = () => {
               }}
             />
           </div>
-          <div className='mt-2 text-xs text-gray-400'>
+          <div className='mt-2 text-xs text-muted'>
             Dev mode: press D to toggle
           </div>
         </div>
       )}
       {isSettingsOpen && userData && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center px-14 py-8 bg-[#121212CC] backdrop-blur-2xl p-2'>
-          <div className='w-full h-full max-w-7xl max-h-full px-12 pt-6 pb-8 overflow-y-auto border bg-[#121212] border-black rounded-[40px] shadow-custom'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center px-14 py-8 bg-ink/40 backdrop-blur-2xl p-2'>
+          <div className='w-full h-full max-w-7xl max-h-full px-12 pt-6 pb-8 overflow-y-auto border bg-surface border-hairline rounded-[40px] shadow-custom'>
             <SettingsPopup
               userSettings={userData.user_settings}
               email={userData.email}

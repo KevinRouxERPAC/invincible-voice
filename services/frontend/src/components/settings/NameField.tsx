@@ -25,7 +25,7 @@ const NameField: FC<NameFieldProps> = ({
     <div className='flex flex-col gap-2'>
       <label
         htmlFor='settings-name-input'
-        className='text-sm font-medium text-white'
+        className='text-sm font-medium text-ink'
       >
         {t('settings.yourName')}
       </label>
@@ -34,7 +34,7 @@ const NameField: FC<NameFieldProps> = ({
         type='text'
         value={value}
         onChange={handleChange}
-        className='w-full px-6 py-2 text-base text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+        className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
         placeholder={placeholder}
       />
     </div>

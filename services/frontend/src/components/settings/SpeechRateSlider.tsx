@@ -31,11 +31,11 @@ const SpeechRateSlider: FC = () => {
       <div className='flex items-center justify-between'>
         <label
           htmlFor='speech-rate'
-          className='text-sm font-medium text-white'
+          className='text-sm font-medium text-ink'
         >
           {t('settings.speechRate')}
         </label>
-        <span className='text-sm text-white tabular-nums'>
+        <span className='text-sm text-ink tabular-nums'>
           {Math.round(speechRate * 100)}%
         </span>
       </div>
@@ -49,7 +49,7 @@ const SpeechRateSlider: FC = () => {
         onChange={(e) => handleSpeechRateChange(parseFloat(e.target.value))}
         className='w-full accent-green'
       />
-      <p className='text-xs text-white/60'>{t('settings.speechRateHint')}</p>
+      <p className='text-xs text-muted'>{t('settings.speechRateHint')}</p>
     </div>
   );
 };

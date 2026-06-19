@@ -18,35 +18,35 @@ const SettingsHeader: FC<SettingsHeaderProps> = ({
 }) => {
   return (
     <div className={`flex flex-row justify-between w-full ${className}`}>
-      <h2 className='text-base font-medium text-white'>{title}</h2>
+      <h2 className='text-base font-medium text-ink'>{title}</h2>
 
       {onSignOut ? (
         <div className='flex flex-row items-center gap-2 -mr-5 -mt-2'>
           <button
-            className='text-[#FF6459] underline text-xs'
+            className='text-red underline text-xs'
             onClick={onSignOut}
           >
             {signOutLabel}
           </button>
 
           <button
-            className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-[#101010]'
+            className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-surface-2 border border-hairline hover:bg-paper transition-colors'
             onClick={onCancel}
           >
             <X
               size={24}
-              className='text-white'
+              className='text-ink-2'
             />
           </button>
         </div>
       ) : (
         <button
-          className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-[#101010]'
+          className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-surface-2 border border-hairline hover:bg-paper transition-colors'
           onClick={onCancel}
         >
           <X
             size={24}
-            className='text-white'
+            className='text-ink-2'
           />
         </button>
       )}

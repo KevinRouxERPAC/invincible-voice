@@ -453,23 +453,23 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   return (
     <div className='flex flex-col w-full h-full gap-y-2'>
       <div className='flex flex-row justify-between w-full'>
-        <h2 className='text-base font-medium text-white'>Paramètres</h2>
+        <h2 className='text-base font-medium text-ink'>Paramètres</h2>
 
         <div className='flex flex-row items-center gap-2 -mr-5 -mt-2'>
           <button
-            className='text-[#FF6459] underline text-xs'
+            className='text-red underline text-xs'
             onClick={signOut}
           >
             {t('settings.signOut')}
           </button>
 
           <button
-            className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-[#101010]'
+            className='size-10 cursor-pointer flex items-center justify-center rounded-2xl bg-surface-2 border border-hairline hover:bg-paper transition-colors'
             onClick={onCancel}
           >
             <X
               size={24}
-              className='text-white'
+              className='text-ink-2'
             />
           </button>
         </div>
@@ -482,7 +482,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
             <div className='flex flex-col grow gap-2'>
               <label
                 htmlFor='settings-name-input'
-                className='text-sm font-medium text-white'
+                className='text-sm font-medium text-ink'
               >
                 {t('settings.yourName')}
               </label>
@@ -492,7 +492,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 type='text'
                 value={formData.name}
                 onChange={onChangeName}
-                className='w-full px-6 py-2 text-base text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+                className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
                 placeholder={t('settings.yourNamePlaceholder')}
               />
             </div>
@@ -501,7 +501,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
           <div className='flex flex-col gap-2'>
             <label
               htmlFor='settings-voice-select'
-              className='text-sm font-medium text-white'
+              className='text-sm font-medium text-ink'
             >
               {t('common.voice')}
             </label>
@@ -512,7 +512,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 value={formData.voice || ''}
                 onChange={handleVoiceChange}
                 disabled={isLoadingVoices}
-                className='flex-1 px-6 py-2 text-base text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green disabled:opacity-50'
+                className='flex-1 px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue disabled:opacity-50'
               >
                 <option value=''>{t('common.default')}</option>
 
@@ -536,7 +536,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 type='button'
                 onClick={handleTestVoice}
                 disabled={!formData.voice || isPlayingVoice}
-                className='px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green hover:bg-[#2B2B2B] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
+                className='px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
               >
                 {isPlayingVoice ? (
                   <LoaderCircleIcon
@@ -558,12 +558,12 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                       setVoiceToDelete(formData.voice || null);
                       setShowDeleteVoiceConfirm(true);
                     }}
-                    className='px-3 py-2 text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-red-500 hover:bg-[#2B2B2B] hover:border-[#FF6459]'
+                    className='px-3 py-2 text-ink-2 bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-red hover:bg-paper hover:border-red'
                     title={t('common.delete')}
                   >
                     <XCircle
                       size={16}
-                      className='text-[#FF6459]'
+                      className='text-red'
                     />
                   </button>
                 )}
@@ -573,19 +573,19 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               <button
                 type='button'
                 onClick={() => setShowVoiceUpload(true)}
-                className='mt-2 px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green hover:bg-[#2B2B2B]'
+                className='mt-2 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper'
               >
                 {t('settings.cloneYourVoice')}
               </button>
             )}
 
             {showVoiceUpload && (
-              <div className='mt-2 px-4 py-3 bg-[#181818] border border-white rounded-2xl'>
+              <div className='mt-2 px-4 py-3 bg-surface-2 border border-hairline rounded-2xl'>
                 <div className='flex flex-col gap-3'>
                   <div className='flex flex-col gap-1'>
                     <label
                       htmlFor='voice-upload-name-input'
-                      className='text-xs font-medium text-gray-300'
+                      className='text-xs font-medium text-ink-2'
                     >
                       {t('settings.voiceName')}
                     </label>
@@ -595,7 +595,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                       type='text'
                       value={voiceUploadName}
                       onChange={(e) => setVoiceUploadName(e.target.value)}
-                      className='w-full px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green'
+                      className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
                       placeholder={t('settings.voiceNamePlaceholder')}
                     />
                   </div>
@@ -603,7 +603,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   <div className='flex flex-col gap-1'>
                     <label
                       htmlFor='voice-upload-file-input'
-                      className='text-xs font-medium text-gray-300'
+                      className='text-xs font-medium text-ink-2'
                     >
                       {t('settings.audioFile')}
                     </label>
@@ -613,12 +613,12 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                       type='file'
                       accept='.mp3,.wav'
                       onChange={handleVoiceFileChange}
-                      className='w-full px-3 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-[#39F2AE] file:text-black file:text-sm file:cursor-pointer'
+                      className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-sage file:text-white file:text-sm file:cursor-pointer'
                     />
                   </div>
 
                   {voiceUploadError && (
-                    <p className='text-xs text-red-400'>{voiceUploadError}</p>
+                    <p className='text-xs text-red'>{voiceUploadError}</p>
                   )}
 
                   <div className='flex gap-2'>
@@ -630,7 +630,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                         setVoiceUploadName('');
                         setVoiceUploadError(null);
                       }}
-                      className='flex-1 px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-xl focus:outline-none focus:border-green hover:bg-[#2B2B2B]'
+                      className='flex-1 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue hover:bg-paper'
                     >
                       {t('common.cancel')}
                     </button>
@@ -643,7 +643,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                         !voiceUploadFile ||
                         !voiceUploadName.trim()
                       }
-                      className='flex-1 px-4 py-2 text-sm text-white bg-[#39F2AE] rounded-xl focus:outline-none hover:bg-[#2EDB9B] disabled:opacity-50 disabled:cursor-not-allowed'
+                      className='flex-1 px-4 py-2 text-sm text-white bg-sage rounded-xl focus:outline-none hover:bg-sage-600 disabled:opacity-50 disabled:cursor-not-allowed'
                     >
                       {isCreatingVoice ? (
                         <LoaderCircleIcon
@@ -665,7 +665,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
           <div className='flex flex-col gap-2'>
             <label
               htmlFor='settings-language-select'
-              className='text-sm font-medium text-white'
+              className='text-sm font-medium text-ink'
             >
               {t('settings.expectedTranscriptionLanguage')}
             </label>
@@ -674,7 +674,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               id='settings-language-select'
               value={formData.expected_transcription_language || ''}
               onChange={handleLanguageChange}
-              className='w-full px-6 py-2 text-base text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green'
+              className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
             >
               <option value=''>{t('settings.letSpeechToTextGuess')}</option>
               <option value='en'>English</option>
@@ -686,7 +686,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
           </div>
 
           <label className='flex items-center justify-between gap-2 cursor-pointer px-2'>
-            <span className='text-sm font-medium text-white'>
+            <span className='text-sm font-medium text-ink'>
               {t('settings.learnStyle')}
             </span>
             <input
@@ -698,21 +698,21 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               className='size-5 accent-green'
             />
           </label>
-          <p className='-mt-4 px-2 text-xs text-white/60'>
+          <p className='-mt-4 px-2 text-xs text-muted'>
             {t('settings.learnStyleHint')}
           </p>
 
-          <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+          <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
             <AccessibilitySettings />
           </div>
 
           <div className='flex flex-col flex-1 gap-2'>
             <div className='flex items-center justify-between mb-1'>
-              <div className='text-sm font-medium text-white'>
+              <div className='text-sm font-medium text-ink'>
                 {t('settings.configureAssistant')}
               </div>
 
-              <span className='text-sm text-gray-400'>
+              <span className='text-sm text-muted'>
                 {formatTokenCount(promptTokenCount)}
               </span>
             </div>
@@ -720,7 +720,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
             <textarea
               value={formData.prompt}
               onChange={onChangePrompt}
-              className='flex-1 w-full min-h-0 px-6 py-4 text-base text-white bg-[#1B1B1B] border border-white rounded-3xl resize-none focus:outline-none focus:border-green scrollbar-hidden scrollable'
+              className='flex-1 w-full min-h-0 px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
               placeholder={t('settings.promptPlaceholder')}
             />
           </div>
@@ -728,8 +728,8 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
 
         <div className='flex flex-col h-full gap-2'>
           <div className='flex flex-col grow h-full gap-2'>
-            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-white'>
+            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+              <div className='block mb-1 text-sm font-medium text-ink'>
                 {t('settings.additionalKeywords')}
               </div>
               <div className='flex flex-col w-full gap-0.5'>
@@ -742,7 +742,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     />
                   ))}
                   {formData.additional_keywords.length === 0 && (
-                    <p className='text-sm italic text-gray-500'>
+                    <p className='text-sm italic text-muted'>
                       {t('settings.noKeywordsAdded')}
                     </p>
                   )}
@@ -753,18 +753,18 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     value={newKeywordInput}
                     onChange={onChangeNewKeywordInput}
                     onKeyDown={handleKeywordInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
                     placeholder={t('settings.addKeywordPlaceholder')}
                   />
                   <button
                     onClick={handleAddKeyword}
-                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit green-to-purple-via-blue-gradient rounded-xl'
+                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
                     style={{
                       filter:
                         'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
                     }}
                   >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-xl text-sm'>
+                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
                       {t('common.add')}
                       <Plus
                         width={24}
@@ -776,8 +776,8 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </div>
               </div>
             </div>
-            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-white'>
+            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+              <div className='block mb-1 text-sm font-medium text-ink'>
                 {t('common.friends')}
               </div>
               <div className='flex flex-col w-full gap-0.5'>
@@ -790,7 +790,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     />
                   ))}
                   {formData.friends.length === 0 && (
-                    <p className='text-sm italic text-gray-500'>
+                    <p className='text-sm italic text-muted'>
                       {t('settings.noFriendsAdded')}
                     </p>
                   )}
@@ -801,18 +801,18 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     value={newFriendInput}
                     onChange={onChangeNewFriendInput}
                     onKeyDown={handleFriendInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
                     placeholder={t('settings.addFriendPlaceholder')}
                   />
                   <button
                     onClick={handleAddFriend}
-                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit green-to-purple-via-blue-gradient rounded-xl'
+                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
                     style={{
                       filter:
                         'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
                     }}
                   >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-xl text-sm'>
+                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
                       {t('common.add')}
                       <Plus
                         width={24}
@@ -824,11 +824,11 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </div>
               </div>
             </div>
-            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-white'>
+            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+              <div className='block mb-1 text-sm font-medium text-ink'>
                 {t('settings.quickPhrases')}
               </div>
-              <p className='text-xs text-gray-400'>
+              <p className='text-xs text-muted'>
                 {t('settings.quickPhrasesHelp')}
               </p>
               <div className='flex flex-col w-full gap-0.5'>
@@ -842,7 +842,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   ))}
                   {(!formData.quick_phrases ||
                     formData.quick_phrases.length === 0) && (
-                    <p className='text-sm italic text-gray-500'>
+                    <p className='text-sm italic text-muted'>
                       {t('settings.noPhrasesAdded')}
                     </p>
                   )}
@@ -853,7 +853,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     value={newPhraseInput}
                     onChange={(e) => setNewPhraseInput(e.target.value)}
                     onKeyDown={handlePhraseInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
                     placeholder={t('settings.addPhrasePlaceholder')}
                   />
                   <input
@@ -861,18 +861,18 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     value={newPhraseCategoryInput}
                     onChange={(e) => setNewPhraseCategoryInput(e.target.value)}
                     onKeyDown={handlePhraseInputKeyPress}
-                    className='w-32 px-4 py-1 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl focus:outline-none focus:border-green h-10'
+                    className='w-32 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
                     placeholder={t('settings.phraseCategoryPlaceholder')}
                   />
                   <button
                     onClick={handleAddPhrase}
-                    className='shrink-0 h-10 p-px w-fit green-to-purple-via-blue-gradient rounded-xl'
+                    className='shrink-0 h-10 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
                     style={{
                       filter:
                         'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
                     }}
                   >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-xl text-sm'>
+                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
                       {t('common.add')}
                       <Plus
                         width={24}
@@ -884,7 +884,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </div>
               </div>
             </div>
-            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
               <AppointmentsEditor
                 appointments={formData.appointments || []}
                 onChange={(appointments) =>
@@ -892,19 +892,19 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 }
               />
             </div>
-            <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
+            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
               <div className='flex flex-row items-center justify-between w-full mb-2'>
-                <div className='block mb-1 text-sm font-medium text-white'>
+                <div className='block mb-1 text-sm font-medium text-ink'>
                   {t('common.documents')}
                 </div>
                 <button
                   onClick={handleAddDocument}
-                  className='shrink-0 p-px w-fit green-to-purple-via-blue-gradient rounded-xl h-8 -mt-0.5 mr-1'
+                  className='shrink-0 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl h-8 -mt-0.5 mr-1'
                   style={{
                     filter: 'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
                   }}
                 >
-                  <div className='h-full w-full pl-4 pr-3 flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-xl text-sm'>
+                  <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
                     {t('settings.addDocument')}
                     <Plus
                       width={24}
@@ -928,7 +928,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   ))}
 
                   {(!formData.documents || formData.documents.length === 0) && (
-                    <p className='text-sm italic text-gray-500'>
+                    <p className='text-sm italic text-muted'>
                       {t('settings.noDocumentsAdded')}
                     </p>
                   )}
@@ -941,7 +941,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 href='https://kyutai.org/privacy-policy'
                 target='_blank'
                 rel='noopener noreferrer'
-                className='text-sm underline text-gray-400 hover:text-white transition-colors'
+                className='text-sm underline text-blue hover:text-blue-600 transition-colors'
               >
                 {t('common.termsOfService')}
               </a>
@@ -949,28 +949,28 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
           </div>
           <div className='flex justify-end gap-x-3'>
             <button
-              className='px-8 text-sm h-14 bg-[#101010] rounded-2xl'
+              className='px-8 text-sm h-14 bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl'
               onClick={onCancel}
             >
               {t('common.cancel')}
             </button>
 
             <button
-              className='p-px h-14 light-green-to-green-gradient rounded-2xl'
+              className='h-14 bg-sage hover:bg-sage-600 transition-colors rounded-2xl'
               onClick={handleSave}
             >
-              <div className='flex flex-row bg-[#181818] size-full items-center justify-center gap-4 px-8 rounded-2xl'>
+              <div className='flex flex-row size-full items-center justify-center gap-4 px-8 rounded-2xl text-white'>
                 {t('settings.saveConfiguration')}
                 {!isLoading && (
                   <CheckIcon
                     size={24}
-                    className='text-[#39F2AE]'
+                    className='text-white'
                   />
                 )}
                 {isLoading && (
                   <LoaderCircleIcon
                     size={24}
-                    className='animate-spin text-[#39F2AE]'
+                    className='animate-spin text-white'
                   />
                 )}
               </div>
@@ -987,13 +987,13 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
       />
 
       {showDeleteVoiceConfirm && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70'>
-          <div className='bg-[#1B1B1B] border border-white rounded-2xl p-6 max-w-md w-full mx-4'>
-            <h3 className='text-lg font-medium text-white mb-2'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm'>
+          <div className='bg-surface border border-hairline shadow-[var(--sh-lg)] rounded-2xl p-6 max-w-md w-full mx-4'>
+            <h3 className='text-lg font-medium text-ink mb-2'>
               {t('settings.deleteVoiceTitle')}
             </h3>
 
-            <p className='text-sm text-gray-300 mb-6'>
+            <p className='text-sm text-ink-2 mb-6'>
               {t('settings.deleteVoiceMessage')}
             </p>
             <div className='flex justify-end gap-3'>
@@ -1003,7 +1003,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   setVoiceToDelete(null);
                 }}
                 disabled={isDeletingVoice}
-                className='px-6 py-2 text-sm text-white bg-[#101010] border border-white rounded-2xl focus:outline-none hover:bg-[#2B2B2B] disabled:opacity-50'
+                className='px-6 py-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl focus:outline-none hover:bg-paper disabled:opacity-50'
               >
                 {t('common.cancel')}
               </button>
@@ -1011,7 +1011,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               <button
                 onClick={handleDeleteVoice}
                 disabled={isDeletingVoice}
-                className='px-6 py-2 text-sm text-white bg-[#FF6459] rounded-2xl focus:outline-none hover:bg-[#E0554E] disabled:opacity-50 flex items-center gap-2'
+                className='px-6 py-2 text-sm text-white bg-red rounded-2xl focus:outline-none hover:bg-[#a73d2f] disabled:opacity-50 flex items-center gap-2'
               >
                 {isDeletingVoice ? (
                   <LoaderCircleIcon
@@ -1050,10 +1050,10 @@ const AdditionalKeyword: FC<AdditionalKeywordProps> = ({
   return (
     <div className='relative group'>
       <button
-        className='h-10 p-px transition-colors green-to-light-green-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500'
+        className='h-10 transition-colors bg-sage-tint border border-sage rounded-2xl focus:outline-none focus:ring-2 focus:ring-sage'
         type='button'
       >
-        <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+        <div className='flex flex-col justify-center px-3 h-full text-sm text-sage-600 font-medium rounded-2xl'>
           {keyword}
         </div>
       </button>
@@ -1061,7 +1061,7 @@ const AdditionalKeyword: FC<AdditionalKeywordProps> = ({
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 hover:bg-[#FF6459] group-hover:opacity-100'
+        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
         title={t('common.delete')}
       >
         ×
@@ -1086,12 +1086,12 @@ const PhraseChip: FC<PhraseChipProps> = ({ phrase, removePhrase }) => {
     <div className='relative group'>
       <button
         type='button'
-        className='h-10 p-px transition-colors purple-to-pink-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500'
+        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
       >
-        <div className='flex flex-row items-center gap-2 px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+        <div className='flex flex-row items-center gap-2 px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>
           {phrase.text}
           {phrase.category && (
-            <span className='text-[10px] text-gray-400'>{phrase.category}</span>
+            <span className='text-[10px] text-muted'>{phrase.category}</span>
           )}
         </div>
       </button>
@@ -1099,7 +1099,7 @@ const PhraseChip: FC<PhraseChipProps> = ({ phrase, removePhrase }) => {
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 hover:bg-[#FF6459] group-hover:opacity-100'
+        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
         title={t('common.delete')}
       >
         ×
@@ -1124,9 +1124,9 @@ const Friend: FC<FriendProps> = ({ friend, removeFriend }) => {
     <div className='relative group'>
       <button
         type='button'
-        className='h-10 p-px transition-colors blue-to-light-blue-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
       >
-        <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+        <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>
           {friend}
         </div>
       </button>
@@ -1134,7 +1134,7 @@ const Friend: FC<FriendProps> = ({ friend, removeFriend }) => {
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red-500 rounded-full opacity-0 -top-1 -right-1 hover:bg-[#FF6459] group-hover:opacity-100'
+        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
         title={t('common.delete')}
       >
         ×
@@ -1170,13 +1170,13 @@ const DocumentCard: FC<DocumentProps> = ({
   }, [removeDocument, index]);
 
   return (
-    <div className='flex flex-row items-center gap-x-2 justify-between bg-[#1B1B1B] border border-black rounded-2xl pl-5 pr-2 min-h-14'>
+    <div className='flex flex-row items-center gap-x-2 justify-between bg-surface-2 border border-hairline rounded-2xl pl-5 pr-2 min-h-14'>
       <div className='grow flex flex-col gap-0.5'>
-        <span className='block text-base font-medium text-white truncate'>
+        <span className='block text-base font-medium text-ink truncate'>
           {document.title}
         </span>
 
-        <span className='text-[10px] text-gray-400'>
+        <span className='text-[10px] text-muted'>
           {formatTokenCount(docTokenCount)}
         </span>
       </div>
@@ -1184,25 +1184,25 @@ const DocumentCard: FC<DocumentProps> = ({
       <div className='flex gap-2'>
         <button
           aria-label={t('common.edit')}
-          className='size-10 cursor-pointer flex items-center justify-center rounded-xl bg-[#101010]/25'
+          className='size-10 cursor-pointer flex items-center justify-center rounded-xl bg-paper'
           onClick={handleEditDocument}
         >
           <Edit
             width={24}
             height={24}
-            className='text-white'
+            className='text-ink-2'
           />
         </button>
 
         <button
           aria-label={t('common.delete')}
-          className='size-10 cursor-pointer flex items-center justify-center rounded-xl bg-[#101010]/25'
+          className='size-10 cursor-pointer flex items-center justify-center rounded-xl bg-paper'
           onClick={handleRemoveDocument}
         >
           <Trash
             width={24}
             height={24}
-            className='text-[#FF6459]'
+            className='text-red'
           />
         </button>
       </div>

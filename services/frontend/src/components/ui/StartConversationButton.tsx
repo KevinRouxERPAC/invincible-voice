@@ -14,17 +14,15 @@ const StartConversationButton = ({
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 p-px cursor-pointer pointer-events-auto green-to-purple-via-blue-gradient rounded-2xl h-14 ${className}`}
+      className={`shrink-0 cursor-pointer pointer-events-auto bg-blue hover:bg-blue-600 transition-colors rounded-2xl h-14 flex flex-row items-center justify-center gap-2 text-sm px-8 text-white ${className}`}
       type='button'
     >
-      <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
-        {label}
-        <NewConversation
-          width={24}
-          height={24}
-          className='shrink-0 text-white'
-        />
-      </div>
+      {label}
+      <NewConversation
+        width={24}
+        height={24}
+        className='shrink-0 text-white'
+      />
     </button>
   );
 };

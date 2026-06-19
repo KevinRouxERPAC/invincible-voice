@@ -64,15 +64,13 @@ const AccessibilitySettings: FC = () => {
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='text-sm font-medium text-white'>
+      <div className='text-sm font-medium text-ink'>
         {t('settings.accessibility')}
       </div>
 
       {/* Mode selector */}
       <div className='flex flex-col gap-1'>
-        <span className='text-xs text-white/60'>
-          {t('settings.accessMode')}
-        </span>
+        <span className='text-xs text-muted'>{t('settings.accessMode')}</span>
         <div className='flex flex-wrap gap-2'>
           {MODES.map((mode) => (
             <button
@@ -81,8 +79,8 @@ const AccessibilitySettings: FC = () => {
               onClick={() => update({ mode })}
               className={`px-4 py-2 text-sm rounded-2xl border transition-colors ${
                 settings.mode === mode
-                  ? 'bg-[#101010] border-green text-white'
-                  : 'bg-[#1B1B1B] border-white/40 text-white/70 hover:bg-[#2B2B2B]'
+                  ? 'bg-blue border-blue text-white'
+                  : 'bg-surface border-hairline-2 text-ink-2 hover:bg-paper'
               }`}
             >
               {t(MODE_LABEL_KEY[mode])}
@@ -95,10 +93,10 @@ const AccessibilitySettings: FC = () => {
       {(settings.mode === 'auto' || settings.mode === 'step') && (
         <div className='flex flex-col gap-1'>
           <div className='flex items-center justify-between'>
-            <span className='text-xs text-white/60'>
+            <span className='text-xs text-muted'>
               {t('settings.scanInterval')}
             </span>
-            <span className='text-sm text-white tabular-nums'>
+            <span className='text-sm text-ink tabular-nums'>
               {(settings.scanIntervalMs / 1000).toFixed(2)}s
             </span>
           </div>
@@ -120,10 +118,10 @@ const AccessibilitySettings: FC = () => {
       {settings.mode === 'dwell' && (
         <div className='flex flex-col gap-1'>
           <div className='flex items-center justify-between'>
-            <span className='text-xs text-white/60'>
+            <span className='text-xs text-muted'>
               {t('settings.dwellTime')}
             </span>
-            <span className='text-sm text-white tabular-nums'>
+            <span className='text-sm text-ink tabular-nums'>
               {(settings.dwellMs / 1000).toFixed(2)}s
             </span>
           </div>
@@ -142,27 +140,23 @@ const AccessibilitySettings: FC = () => {
       {/* Switch key (auto/step modes) */}
       {(settings.mode === 'auto' || settings.mode === 'step') && (
         <div className='flex items-center justify-between gap-2'>
-          <span className='text-xs text-white/60'>
-            {t('settings.switchKey')}
-          </span>
+          <span className='text-xs text-muted'>{t('settings.switchKey')}</span>
           <button
             type='button'
             onClick={() => setCapturingKey(true)}
-            className='px-4 py-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl hover:bg-[#2B2B2B] min-w-24'
+            className='px-4 py-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper min-w-24'
           >
             {capturingKey ? '…' : describeKey(settings.switchKey)}
           </button>
         </div>
       )}
       {(settings.mode === 'auto' || settings.mode === 'step') && (
-        <p className='text-xs text-white/60'>{t('settings.switchKeyHint')}</p>
+        <p className='text-xs text-muted'>{t('settings.switchKeyHint')}</p>
       )}
 
       {/* Big targets toggle */}
       <label className='flex items-center justify-between gap-2 cursor-pointer'>
-        <span className='text-xs text-white/60'>
-          {t('settings.bigTargets')}
-        </span>
+        <span className='text-xs text-muted'>{t('settings.bigTargets')}</span>
         <input
           type='checkbox'
           checked={settings.bigTargets}

@@ -278,9 +278,9 @@ describe('Friends Section Tests', () => {
 
     const aliceButton = screen.getByText('Alice').closest('button');
 
-    // Check if the button has the blue gradient styling (different from the
-    // green-tinted response options)
-    expect(aliceButton).toHaveClass('blue-to-light-blue-gradient');
+    // Check the friend button carries the blue accent (distinct from the
+    // sage-tinted keyword/response options) — Calm Cards redesign.
+    expect(aliceButton).toHaveClass('bg-blue');
   });
 
   test('friends section and quick words section are both visible', async () => {

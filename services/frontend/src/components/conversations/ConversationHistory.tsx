@@ -134,13 +134,13 @@ const ConversationHistory = ({
       </div>
       <div className='flex flex-col flex-1 gap-2 px-6 pt-2 pb-10 overflow-y-auto scrollbar-hidden'>
         {sortedConversations.length === 0 ? (
-          <div className='p-4 text-center text-gray-500'>
+          <div className='p-4 text-center text-muted'>
             <MessageSquare
               size={48}
               className='mx-auto mb-2 opacity-50'
             />
             <p className='text-sm'>{t('conversation.noConversationsYet')}</p>
-            <p className='mt-1 text-xs text-gray-600'>
+            <p className='mt-1 text-xs text-muted'>
               {t('conversation.startFirstConversation')}
             </p>
           </div>
@@ -162,16 +162,14 @@ const ConversationHistory = ({
       {selectedConversationIndex !== null && (
         <button
           onClick={onNewConversation}
-          className='sticky shrink-0 p-px bottom-6 w-[calc(100%-3rem)] left-6 green-to-purple-via-blue-gradient rounded-2xl h-14 cursor-pointer'
+          className='sticky shrink-0 bottom-6 w-[calc(100%-3rem)] left-6 bg-blue hover:bg-blue-600 transition-colors rounded-2xl h-14 cursor-pointer flex flex-row items-center justify-center gap-1 text-sm text-white'
         >
-          <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-1 rounded-2xl text-sm'>
-            {t('conversation.newChat')}
-            <NewConversation
-              width={24}
-              height={24}
-              className='shrink-0 text-white'
-            />
-          </div>
+          {t('conversation.newChat')}
+          <NewConversation
+            width={24}
+            height={24}
+            className='shrink-0 text-white'
+          />
         </button>
       )}
     </div>
@@ -216,18 +214,18 @@ const ConversationCard = ({
         className={cn(
           'relative shrink-0 w-full h-28 cursor-pointer p-px group',
           {
-            'white-to-green-gradient rounded-tr-sm rounded-b-2xl rounded-tl-2xl':
-              isSelected,
-            'bg-[#101010] rounded-2xl': !isSelected,
+            'bg-blue rounded-tr-sm rounded-b-2xl rounded-tl-2xl': isSelected,
+            'bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-2xl':
+              !isSelected,
           },
         )}
         onClick={onClickConversationCard}
       >
         <div
           className={cn(
-            'hover:bg-[#181818] bg-[#101010] w-full h-full flex flex-col gap-4 relative rounded-b-2xl rounded-tl-2xl',
+            'hover:bg-surface-2 bg-surface w-full h-full flex flex-col gap-4 relative rounded-b-2xl rounded-tl-2xl',
             {
-              'bg-[#181818] rounded-tr-sm': isSelected,
+              'bg-blue-tint rounded-tr-sm': isSelected,
               'rounded-tr-2xl': !isSelected,
             },
           )}
@@ -237,13 +235,13 @@ const ConversationCard = ({
               <ChatBubble
                 width={24}
                 height={24}
-                className='shrink-0 text-white/55'
+                className='shrink-0 text-muted'
               />
-              <span className='absolute inset-0 text-[10px] flex flex-col items-center justify-center font-semibold pb-0.5'>
+              <span className='absolute inset-0 text-[10px] flex flex-col items-center justify-center font-semibold pb-0.5 text-ink'>
                 {getConversationMessageCount(conversation)}
               </span>
             </div>
-            <div className='text-sm text-white/55'>
+            <div className='text-sm text-muted'>
               {formatConversationDate(conversation, t)}
             </div>
           </div>

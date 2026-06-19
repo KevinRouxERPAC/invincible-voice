@@ -123,7 +123,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({
       ref={chatContainerRef}
     >
       {processedMessages.length === 0 && !isViewingPastConversation && (
-        <div className='py-4 text-center text-gray-400'>
+        <div className='py-4 text-center text-muted'>
           <p className='mb-2 text-base font-medium'>
             {t('conversation.readyToChat')}
           </p>
@@ -131,7 +131,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({
         </div>
       )}
       {processedMessages.length === 0 && isViewingPastConversation && (
-        <div className='py-4 text-center text-gray-400'>
+        <div className='py-4 text-center text-muted'>
           <p className='mb-2 text-base font-medium'>
             {t('conversation.emptyConversation')}
           </p>

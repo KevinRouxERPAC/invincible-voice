@@ -43,7 +43,7 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
         data-scan-item
         aria-label={t('appointments.title')}
         title={t('appointments.title')}
-        className={`shrink-0 flex flex-row items-center justify-center gap-2 font-medium text-white bg-[#1B1B1B] border border-white/40 rounded-2xl hover:bg-[#2B2B2B] focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
+        className={`shrink-0 flex flex-row items-center justify-center gap-2 font-medium text-ink-2 bg-surface border border-hairline-2 shadow-[var(--sh-sm)] rounded-2xl hover:bg-paper focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
           compact ? 'h-11 px-3' : 'h-12 px-5'
         }`}
       >
@@ -56,9 +56,9 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
       </button>
 
       {pickerOpen && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4'>
-          <div className='w-full max-w-md bg-[#1B1B1B] border border-white rounded-3xl p-6 flex flex-col gap-3'>
-            <h2 className='text-lg font-bold text-white'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm px-4'>
+          <div className='w-full max-w-md bg-surface border border-hairline shadow-[var(--sh-lg)] rounded-3xl p-6 flex flex-col gap-3'>
+            <h2 className='text-lg font-bold text-ink'>
               {t('appointments.choose')}
             </h2>
             <div className='flex flex-col gap-2 max-h-80 overflow-y-auto'>
@@ -70,10 +70,10 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
                     setRunning(appointment);
                     setPickerOpen(false);
                   }}
-                  className='w-full text-left px-4 py-3 rounded-2xl bg-[#101010] border border-white/30 text-white hover:bg-[#222] focus:outline-none focus:ring-2 focus:ring-green-500'
+                  className='w-full text-left px-4 py-3 rounded-2xl bg-surface-2 border border-hairline text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-green-500'
                 >
                   <span className='block font-medium'>{appointment.title}</span>
-                  <span className='block text-xs text-gray-400'>
+                  <span className='block text-xs text-muted'>
                     {appointment.phrases.filter((p) => p.trim()).length}{' '}
                     {t('appointments.phrasesCount')}
                   </span>
@@ -82,7 +82,7 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
             </div>
             <button
               onClick={() => setPickerOpen(false)}
-              className='self-end px-6 py-2 text-sm text-white bg-[#101010] border border-white rounded-2xl hover:bg-[#2B2B2B]'
+              className='self-end px-6 py-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper'
             >
               {t('common.cancel')}
             </button>

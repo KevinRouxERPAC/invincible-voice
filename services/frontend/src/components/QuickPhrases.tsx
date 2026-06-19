@@ -38,7 +38,7 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
           <button
             key={`${phrase.category}|${phrase.text}`}
             data-scan-item
-            className='shrink-0 px-3 min-h-[32px] bg-gray-800 border border-purple-400 rounded-full text-xs text-gray-100 hover:bg-gray-700 transition-colors max-w-[64vw] truncate'
+            className='shrink-0 px-3 min-h-[32px] bg-blue-tint border border-blue-tint-2 rounded-full text-xs text-blue-600 hover:bg-blue-tint-2 transition-colors max-w-[64vw] truncate'
             onClick={() => onSelect(phrase.text)}
             title={phrase.text}
           >
@@ -50,15 +50,15 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
   }
 
   return (
-    <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px]'>
-      <div className='mb-1 text-sm font-medium text-white'>
+    <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+      <div className='mb-1 text-sm font-medium text-ink'>
         {t('conversation.quickPhrases')}
       </div>
       <div className='flex flex-col gap-1 max-h-44 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
         {Array.from(groups.entries()).map(([category, groupPhrases]) => (
           <Fragment key={category || 'uncategorized'}>
             {category && (
-              <div className='mt-1 text-xs font-medium text-gray-400'>
+              <div className='mt-1 text-xs font-medium text-muted'>
                 {category}
               </div>
             )}
@@ -67,10 +67,10 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
                 <button
                   key={phrase.text}
                   data-scan-item
-                  className='h-10 p-px transition-colors cursor-pointer purple-to-pink-gradient rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500'
+                  className='h-10 transition-colors cursor-pointer bg-blue-tint border border-blue-tint-2 hover:bg-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
                   onClick={() => onSelect(phrase.text)}
                 >
-                  <div className='flex flex-col justify-center px-3 h-full text-sm text-white font-medium bg-[#181818] rounded-2xl'>
+                  <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>
                     {phrase.text}
                   </div>
                 </button>

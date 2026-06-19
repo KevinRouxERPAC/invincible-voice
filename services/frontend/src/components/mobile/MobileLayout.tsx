@@ -22,7 +22,7 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
   const t = useTranslations();
 
   return (
-    <div className='w-full h-dvh flex flex-col text-white relative'>
+    <div className='w-full h-dvh flex flex-col text-ink relative'>
       {/* Safe area spacer for notch/status bar */}
       <div
         style={{ height: 'var(--safe-area-inset-top)' }}
@@ -40,13 +40,11 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
         style={{ top: 'calc(1rem + var(--safe-area-inset-top))' }}
       >
         <button
-          className='shrink-0 h-11 p-px cursor-pointer orange-to-light-orange-gradient rounded-2xl'
+          className='shrink-0 h-11 px-3 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-2xl flex flex-row items-center justify-center text-ink-2'
           onClick={onSettingsPress}
           title={t('settings.changeSettings')}
         >
-          <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center rounded-2xl px-3'>
-            <Settings size={20} />
-          </div>
+          <Settings size={20} />
         </button>
       </div>
       <div className='flex-1 flex flex-col items-center justify-center gap-4'>
@@ -56,7 +54,7 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
         />
         {hasHistory && onHistoryPress && (
           <button
-            className='flex items-center gap-2 px-6 min-h-[44px] bg-gray-800 border border-gray-600 rounded-2xl text-sm text-gray-200 hover:bg-gray-700 transition-colors'
+            className='flex items-center gap-2 px-6 min-h-[44px] bg-surface border border-hairline-2 rounded-2xl text-sm text-ink-2 hover:bg-paper transition-colors'
             onClick={onHistoryPress}
           >
             <History size={16} />
@@ -69,7 +67,7 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
         style={{ bottom: 'var(--safe-area-inset-bottom)' }}
       >
         <div className='flex flex-col items-end pointer-events-auto'>
-          <p className='w-full text-xs text-gray-500 text-right'>
+          <p className='w-full text-xs text-muted text-right'>
             {t('common.textToSpeechProvider')}
           </p>
           <img

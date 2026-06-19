@@ -46,12 +46,12 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
   }, [speak, textInput]);
 
   return (
-    <div className='w-full min-h-screen flex flex-col items-center gap-6 px-4 py-10 overflow-y-auto text-white'>
+    <div className='w-full min-h-screen flex flex-col items-center gap-6 px-4 py-10 overflow-y-auto text-ink'>
       <div className='w-full max-w-2xl flex flex-col gap-4'>
         <h1 className='text-2xl font-bold text-center'>
           {t('connection.fallbackTitle')}
         </h1>
-        <p className='text-sm text-gray-300 text-center'>
+        <p className='text-sm text-ink-2 text-center'>
           {t('connection.fallbackHelp')}
         </p>
 
@@ -62,9 +62,9 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
           onSelect={speak}
         />
 
-        <div className='w-full px-6 py-4 bg-[#101010] rounded-[40px] flex flex-col gap-2'>
+        <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] flex flex-col gap-2'>
           <textarea
-            className='w-full px-6 py-4 text-base text-white bg-[#1B1B1B] border border-white rounded-3xl resize-none focus:outline-none focus:border-green'
+            className='w-full px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue'
             placeholder={t('connection.fallbackInputPlaceholder')}
             rows={2}
             value={textInput}
@@ -79,21 +79,19 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
           <button
             onClick={speakTextInput}
             disabled={!textInput.trim()}
-            className='self-end p-px h-14 green-to-purple-via-blue-gradient rounded-2xl w-fit disabled:opacity-50'
+            className='self-end h-14 bg-blue hover:bg-blue-600 transition-colors rounded-2xl w-fit disabled:opacity-50 flex flex-row items-center justify-center gap-3 px-8 text-white'
           >
-            <div className='flex flex-row bg-[#181818] size-full items-center justify-center gap-3 px-8 rounded-2xl'>
-              {t('connection.speak')}
-              <Volume2
-                width={24}
-                height={24}
-              />
-            </div>
+            {t('connection.speak')}
+            <Volume2
+              width={24}
+              height={24}
+            />
           </button>
         </div>
 
         <button
           onClick={onRetry}
-          className='self-center mt-2 px-6 py-3 flex flex-row items-center gap-2 text-sm text-white bg-[#1B1B1B] border border-white rounded-2xl hover:bg-[#2B2B2B]'
+          className='self-center mt-2 px-6 py-3 flex flex-row items-center gap-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper'
         >
           <RefreshCw
             width={16}

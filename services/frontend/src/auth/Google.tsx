@@ -7,7 +7,7 @@ import { useAuthContext } from './authContext';
 const GoogleButtonContent = () => {
   const t = useTranslations();
   return (
-    <div className='h-full w-full flex flex-row bg-[#181818] items-center justify-center gap-2 rounded-2xl text-sm px-8'>
+    <div className='h-full w-full flex flex-row bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] text-ink items-center justify-center gap-2 rounded-2xl text-sm px-8'>
       <Image
         src='/google-icon.webp'
         alt='Google Logo'

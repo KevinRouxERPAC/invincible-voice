@@ -39,7 +39,7 @@ const RenderServiceStatus: FC<RenderServiceStatusProps> = ({
       {name}:{' '}
       <span
         className={cn({
-          'text-white': displayedStatus === t('common.up'),
+          'text-sage-600': displayedStatus === t('common.up'),
           'text-red': displayedStatus !== t('common.up'),
         })}
       >
