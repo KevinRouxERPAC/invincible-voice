@@ -50,9 +50,7 @@ def _auth_headers(email: str) -> dict[str, str]:
 def test_delete_out_of_range_returns_404(client: TestClient):
     email = "del-oob@example.com"
     _make_user(email, 2)
-    response = client.delete(
-        "/v1/user/conversations/5", headers=_auth_headers(email)
-    )
+    response = client.delete("/v1/user/conversations/5", headers=_auth_headers(email))
     assert response.status_code == 404
     # Nothing was deleted.
     assert len(get_user_data_from_storage(email).conversations) == 2
@@ -61,9 +59,7 @@ def test_delete_out_of_range_returns_404(client: TestClient):
 def test_delete_valid_index_removes_one(client: TestClient):
     email = "del-ok@example.com"
     _make_user(email, 3)
-    response = client.delete(
-        "/v1/user/conversations/0", headers=_auth_headers(email)
-    )
+    response = client.delete("/v1/user/conversations/0", headers=_auth_headers(email))
     assert response.status_code == 200
     assert len(get_user_data_from_storage(email).conversations) == 2
 
