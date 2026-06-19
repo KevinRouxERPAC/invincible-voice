@@ -72,7 +72,7 @@ const AppointmentRunner: FC<AppointmentRunnerProps> = ({
                 data-scan-item
                 onClick={() => speak(i)}
                 className={cn(
-                  'w-full text-left px-5 py-4 rounded-2xl border text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
+                  'w-full text-left px-5 py-4 rounded-2xl border text-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sage',
                   i === index
                     ? 'bg-sage text-white border-sage font-semibold'
                     : 'bg-surface text-ink border-hairline hover:bg-paper',

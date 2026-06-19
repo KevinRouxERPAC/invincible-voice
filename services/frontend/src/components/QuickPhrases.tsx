@@ -67,7 +67,7 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
                 <button
                   key={phrase.text}
                   data-scan-item
-                  className='h-10 transition-colors cursor-pointer bg-blue-tint border border-blue-tint-2 hover:bg-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  className='h-10 transition-colors cursor-pointer bg-blue-tint border border-blue-tint-2 hover:bg-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue'
                   onClick={() => onSelect(phrase.text)}
                 >
                   <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>

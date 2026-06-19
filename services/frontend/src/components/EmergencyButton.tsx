@@ -41,7 +41,7 @@ const EmergencyButton: FC<EmergencyButtonProps> = ({
       aria-label={t('conversation.emergencyButton')}
       title={t('conversation.emergencyButton')}
       className={cn(
-        'shrink-0 flex flex-row items-center justify-center gap-2 font-bold text-white bg-red hover:bg-[#a73d2f] rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-400 transition-colors',
+        'shrink-0 flex flex-row items-center justify-center gap-2 font-bold text-white bg-red hover:bg-[#a73d2f] rounded-2xl focus:outline-none focus:ring-2 focus:ring-red transition-colors',
         compact ? 'h-11 px-3' : 'h-12 px-5',
         className,
       )}

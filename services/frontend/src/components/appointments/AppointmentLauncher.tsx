@@ -43,7 +43,7 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
         data-scan-item
         aria-label={t('appointments.title')}
         title={t('appointments.title')}
-        className={`shrink-0 flex flex-row items-center justify-center gap-2 font-medium text-ink-2 bg-surface border border-hairline-2 shadow-[var(--sh-sm)] rounded-2xl hover:bg-paper focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors ${
+        className={`shrink-0 flex flex-row items-center justify-center gap-2 font-medium text-ink-2 bg-surface border border-hairline-2 shadow-[var(--sh-sm)] rounded-2xl hover:bg-paper focus:outline-none focus:ring-2 focus:ring-sage transition-colors ${
           compact ? 'h-11 px-3' : 'h-12 px-5'
         }`}
       >
@@ -70,7 +70,7 @@ const AppointmentLauncher: FC<AppointmentLauncherProps> = ({
                     setRunning(appointment);
                     setPickerOpen(false);
                   }}
-                  className='w-full text-left px-4 py-3 rounded-2xl bg-surface-2 border border-hairline text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-green-500'
+                  className='w-full text-left px-4 py-3 rounded-2xl bg-surface-2 border border-hairline text-ink hover:bg-paper focus:outline-none focus:ring-2 focus:ring-sage'
                 >
                   <span className='block font-medium'>{appointment.title}</span>
                   <span className='block text-xs text-muted'>

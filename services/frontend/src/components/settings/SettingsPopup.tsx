@@ -1086,7 +1086,7 @@ const PhraseChip: FC<PhraseChipProps> = ({ phrase, removePhrase }) => {
     <div className='relative group'>
       <button
         type='button'
-        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue'
       >
         <div className='flex flex-row items-center gap-2 px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>
           {phrase.text}
@@ -1124,7 +1124,7 @@ const Friend: FC<FriendProps> = ({ friend, removeFriend }) => {
     <div className='relative group'>
       <button
         type='button'
-        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+        className='h-10 transition-colors bg-blue-tint border border-blue-tint-2 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue'
       >
         <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium rounded-2xl'>
           {friend}

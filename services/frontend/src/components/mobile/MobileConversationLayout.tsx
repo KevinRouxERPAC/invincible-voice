@@ -331,7 +331,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
         <div className='flex gap-2 pb-1'>
           <textarea
             ref={textareaRef}
-            className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue text-sm max-h-[96px] overflow-y-auto'
+            className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
             placeholder={t('conversation.typeMessagePlaceholder')}
             rows={1}
             value={textInput}

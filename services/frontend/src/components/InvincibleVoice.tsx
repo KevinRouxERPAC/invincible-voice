@@ -15,6 +15,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
 import { HealthStatus } from '@/components/CouldNotConnect';
 import EmergencyButton from '@/components/EmergencyButton';
+import KeywordChip from '@/components/KeywordChip';
 import KeywordsSuggestion from '@/components/KeywordsSuggestion';
 import OfflineFallback from '@/components/OfflineFallback';
 import QuickPhrases from '@/components/QuickPhrases';
@@ -1221,7 +1222,7 @@ const InvincibleVoice = () => {
   // Mobile layout
   if (isMobile) {
     return (
-      <div className='flex flex-col w-full h-dvh overflow-hidden text-white'>
+      <div className='flex flex-col w-full h-dvh overflow-hidden text-ink'>
         <ErrorMessages
           errors={errors}
           setErrors={setErrors}
@@ -1370,7 +1371,7 @@ const InvincibleVoice = () => {
                     data-scan-item
                     title={t('conversation.takeFloorHint')}
                     className={cn(
-                      'shrink-0 h-10 px-5 flex flex-row items-center justify-center gap-2 rounded-2xl text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-green-500',
+                      'shrink-0 h-10 px-5 flex flex-row items-center justify-center gap-2 rounded-2xl text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-sage',
                       isInitiating
                         ? 'bg-sage text-white border-sage'
                         : 'bg-surface text-ink-2 border-hairline-2 hover:bg-paper',
@@ -1451,49 +1452,12 @@ const InvincibleVoice = () => {
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
                     {userData?.user_settings?.additional_keywords?.map(
                       (word) => (
-                        <div
+                        <KeywordChip
                           key={word}
-                          className='flex flex-row items-center p-px bg-sage rounded-2xl group transition-all'
-                        >
-                          <button
-                            data-scan-item
-                            className='h-10 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500 rounded-l-2xl'
-                            onClick={() => handleWordBubbleClick(word)}
-                          >
-                            <div className='flex flex-col justify-center px-3 h-full text-sm text-sage-600 font-medium bg-sage-tint rounded-l-2xl group-hover:rounded-r-none rounded-r-2xl'>
-                              {word}
-                            </div>
-                          </button>
-                          <div className='hidden group-hover:flex flex-row items-center h-10 bg-sage-tint rounded-r-2xl pr-2 pl-1'>
-                            <button
-                              onClick={() =>
-                                handleIntentClick(word, 'poser une question')
-                              }
-                              title='Poser une question'
-                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
-                            >
-                              ?
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleIntentClick(word, 'donner mon avis')
-                              }
-                              title='Donner un avis'
-                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
-                            >
-                              +
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleIntentClick(word, 'changer de sujet')
-                              }
-                              title='Changer de sujet'
-                              className='text-sage-600 hover:text-sage text-sm font-bold px-1.5 h-full'
-                            >
-                              ➔
-                            </button>
-                          </div>
-                        </div>
+                          word={word}
+                          onWordClick={handleWordBubbleClick}
+                          onIntentClick={handleIntentClick}
+                        />
                       ),
                     ) || []}
                     {(!userData?.user_settings?.additional_keywords ||
@@ -1535,7 +1499,7 @@ const InvincibleVoice = () => {
                           key={friend}
                           data-scan-item
                           onClick={() => handleWordBubbleClick(friend)}
-                          className='h-10 p-px transition-colors cursor-pointer bg-blue rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500'
+                          className='h-10 p-px transition-colors cursor-pointer bg-blue rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue'
                         >
                           <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium bg-blue-tint rounded-2xl'>
                             {friend}
@@ -1567,7 +1531,7 @@ const InvincibleVoice = () => {
                       onClick={() =>
                         handleResponseSelection(staticContextOption.id)
                       }
-                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50'
+                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
                     >
                       <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
@@ -1587,7 +1551,7 @@ const InvincibleVoice = () => {
                       onClick={() =>
                         handleResponseSelection(staticRepeatOption.id)
                       }
-                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50'
+                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
                     >
                       <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>

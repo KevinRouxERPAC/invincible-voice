@@ -229,7 +229,7 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
             <button
               onClick={onFreezeToggle}
               className={cn(
-                'h-8 px-6 font-medium text-sm flex gap-3 items-center justify-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50',
+                'h-8 px-6 font-medium text-sm flex gap-3 items-center justify-center rounded-xl border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sage focus:ring-opacity-50',
                 {
                   'bg-blue text-white border-blue': isFrozen,
                   'bg-surface text-ink-2 border-hairline-2 hover:bg-paper':
@@ -362,7 +362,7 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
       data-scan-item
       onClick={onClickSelect}
       className={cn(
-        'glass-card p-4 text-left rounded-2xl w-full h-24 group relative focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 flex flex-row items-center gap-4',
+        'glass-card p-4 text-left rounded-2xl w-full h-24 group relative focus:outline-none focus:ring-2 focus:ring-sage focus:ring-opacity-50 flex flex-row items-center gap-4',
         {
           'cursor-pointer': responseText.trim() && isComplete,
           'cursor-wait opacity-70': !responseText.trim() || !isComplete,
