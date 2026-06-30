@@ -68,8 +68,30 @@ export async function playTTSStream(
     audioBuffer.copyToChannel(fullAudio, 0);
     const source = audioContext.createBufferSource();
     source.buffer = audioBuffer;
-    source.playbackRate.value = playbackRate;
+    if (source.playbackRate) {
+      source.playbackRate.value = playbackRate;
+    }
     source.connect(audioContext.destination);
+
+    // Dispatch start event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('tts-playback-state', {
+          detail: { messageId, isPlaying: true },
+        }),
+      );
+    }
+
+    source.onended = () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('tts-playback-state', {
+            detail: { messageId, isPlaying: false },
+          }),
+        );
+      }
+    };
+
     source.start();
 
     return audioContext;
@@ -77,6 +99,7 @@ export async function playTTSStream(
 
   let nextStartTime = 0;
   let isFirstChunk = true;
+  let lastSourceNode: AudioBufferSourceNode | null = null;
 
   const requestBody: {
     text: string;
@@ -126,13 +149,25 @@ export async function playTTSStream(
 
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
-      source.playbackRate.value = playbackRate;
+      if (source.playbackRate) {
+        source.playbackRate.value = playbackRate;
+      }
       source.connect(audioContext.destination);
+      lastSourceNode = source;
 
       if (isFirstChunk) {
         // Start immediately (with a tiny buffer to avoid underrun)
         nextStartTime = audioContext.currentTime + 0.01;
         isFirstChunk = false;
+
+        // Dispatch start event
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('tts-playback-state', {
+              detail: { messageId, isPlaying: true },
+            }),
+          );
+        }
       }
 
       source.start(nextStartTime);
@@ -143,6 +178,25 @@ export async function playTTSStream(
   };
 
   await processChunks();
+
+  // Setup completion trigger on the final scheduled audio chunk
+  if (lastSourceNode) {
+    (lastSourceNode as AudioBufferSourceNode).onended = () => {
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('tts-playback-state', {
+            detail: { messageId, isPlaying: false },
+          }),
+        );
+      }
+    };
+  } else if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('tts-playback-state', {
+        detail: { messageId, isPlaying: false },
+      }),
+    );
+  }
 
   let fullMessageLength = 0;
   for (let i = 0; i < audioChunks.length; i += 1) {

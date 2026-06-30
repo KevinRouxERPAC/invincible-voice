@@ -60,6 +60,7 @@ import { playQuickPhrase, prefetchQuickPhrases } from '@/utils/phraseAudio';
 import { calculateTotalTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { ttsCache } from '@/utils/ttsCache';
 import { playTTSStream } from '@/utils/ttsUtil';
+import { getUiSettings } from '@/utils/uiSettings';
 import {
   deleteConversation,
   getUserData,
@@ -75,6 +76,21 @@ interface PendingKeyword {
 
 const InvincibleVoice = () => {
   const t = useTranslations();
+  const [uiSettings, setUiSettingsState] = useState(() => getUiSettings());
+
+  useEffect(() => {
+    const handleUiSettingsChanged = () => {
+      setUiSettingsState(getUiSettings());
+    };
+    window.addEventListener('ui-settings-changed', handleUiSettingsChanged);
+    return () => {
+      window.removeEventListener(
+        'ui-settings-changed',
+        handleUiSettingsChanged,
+      );
+    };
+  }, []);
+
   const { isDevMode } = useKeyboardShortcuts();
   const isMobile = useMobileDetection();
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
@@ -102,6 +118,9 @@ const InvincibleVoice = () => {
     useState<number | null>(null);
   const [textInput, setTextInput] = useState<string>('');
   const [directiveInput, setDirectiveInput] = useState<string>('');
+  const [activeInputTab, setActiveInputTab] = useState<'directive' | 'manual'>(
+    'directive',
+  );
   const [lastSentKeywords, setLastSentKeywords] = useState<string | null>(null);
   const [lastSentText, setLastSentText] = useState<string>('');
   const textInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1054,10 +1073,14 @@ const InvincibleVoice = () => {
         return;
       }
 
-      const validShortcuts = ['a', 'z', 'q', 's', 'w', 'x'];
+      const isAzerty = uiSettings.keyboardLayout === 'azerty';
+      const validShortcuts = isAzerty
+        ? ['a', 'z', 'q', 's', 'w', 'x']
+        : ['a', 's', 'd', 'f', 'z', 'x'];
+
       const responseIndex = validShortcuts.indexOf(event.key.toLowerCase());
 
-      // Handle Shift+A/Z/Q/S for editing responses
+      // Handle Shift+Shortcuts for editing responses
       if (event.shiftKey && responseIndex !== -1 && responseIndex < 4) {
         event.preventDefault();
         const responsesToUse = frozenResponses || pendingResponses;
@@ -1141,6 +1164,7 @@ const InvincibleVoice = () => {
     handleResponseSelection,
     isViewingPastConversation,
     shouldConnect,
+    uiSettings.keyboardLayout,
   ]);
 
   // Handle websocket disconnection
@@ -1524,8 +1548,8 @@ const InvincibleVoice = () => {
                   onSelect={handleKeywordSelect}
                   alwaysShow
                 />
-                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] grow flex flex-col gap-2'>
-                  <div className='grid grid-cols-2 gap-2 pb-2'>
+                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] grow flex flex-col gap-3'>
+                  <div className='grid grid-cols-2 gap-2 pb-1'>
                     <button
                       data-scan-item
                       onClick={() =>
@@ -1533,10 +1557,10 @@ const InvincibleVoice = () => {
                       }
                       className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
                     >
-                      <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
+                      <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
                           <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
-                            W
+                            {uiSettings.keyboardLayout === 'qwerty' ? 'Z' : 'W'}
                           </span>
                         </div>
                         <div className='flex-1 pr-2'>
@@ -1553,7 +1577,7 @@ const InvincibleVoice = () => {
                       }
                       className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
                     >
-                      <div className='px-3 py-4 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
+                      <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
                           <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
                             X
@@ -1567,7 +1591,42 @@ const InvincibleVoice = () => {
                       </div>
                     </button>
                   </div>
-                  <div className='flex flex-row gap-2'>
+
+                  {/* Tabs header */}
+                  <div className='flex flex-row border-b border-hairline mb-1'>
+                    <button
+                      type='button'
+                      onClick={() => setActiveInputTab('directive')}
+                      className={cn(
+                        'flex-1 py-2 text-center text-sm font-semibold border-b-2 transition-all cursor-pointer',
+                        activeInputTab === 'directive'
+                          ? 'border-blue text-blue font-bold'
+                          : 'border-transparent text-muted hover:text-ink-2',
+                      )}
+                    >
+                      🤖 Piloter l&apos;IA
+                    </button>
+                    <button
+                      type='button'
+                      onClick={() => setActiveInputTab('manual')}
+                      className={cn(
+                        'flex-1 py-2 text-center text-sm font-semibold border-b-2 transition-all cursor-pointer',
+                        activeInputTab === 'manual'
+                          ? 'border-blue text-blue font-bold'
+                          : 'border-transparent text-muted hover:text-ink-2',
+                      )}
+                    >
+                      💬 Saisie directe
+                    </button>
+                  </div>
+
+                  {/* Tab contents */}
+                  <div
+                    className={cn(
+                      'flex flex-row gap-2 transition-all duration-200',
+                      activeInputTab !== 'directive' && 'hidden',
+                    )}
+                  >
                     <input
                       className='grow px-6 py-4 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-3xl focus:outline-none focus:border-blue'
                       placeholder="Guider l'IA (ex: je veux parler de...)"
@@ -1582,31 +1641,39 @@ const InvincibleVoice = () => {
                     />
                     <button
                       onClick={handleDirectiveSubmit}
-                      className='px-6 py-4 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-3xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue'
+                      className='px-6 py-4 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-3xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue cursor-pointer'
                       disabled={!directiveInput.trim()}
                     >
                       Piloter l&apos;IA
                     </button>
                   </div>
-                  <textarea
-                    className='grow w-full min-h-0 px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
-                    placeholder={t('conversation.typeMessagePlaceholder')}
-                    rows={2}
-                    value={textInput}
-                    onChange={onChangeTextInput}
-                    onKeyDown={onTextInputKeyDown}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    className='self-end h-14 bg-blue hover:bg-blue-600 disabled:opacity-50 transition-colors rounded-2xl w-fit flex flex-row items-center justify-center gap-4 px-8 text-white'
-                    disabled={!textInput.trim()}
+
+                  <div
+                    className={cn(
+                      'flex flex-col gap-3 grow transition-all duration-200',
+                      activeInputTab !== 'manual' && 'hidden',
+                    )}
                   >
-                    {t('conversation.sendMessage')}
-                    <Reply
-                      width={24}
-                      height={24}
+                    <textarea
+                      className='grow w-full min-h-[80px] px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
+                      placeholder={t('conversation.typeMessagePlaceholder')}
+                      rows={2}
+                      value={textInput}
+                      onChange={onChangeTextInput}
+                      onKeyDown={onTextInputKeyDown}
                     />
-                  </button>
+                    <button
+                      onClick={handleSendMessage}
+                      className='self-end h-14 bg-blue hover:bg-blue-600 disabled:opacity-50 transition-colors rounded-2xl w-fit flex flex-row items-center justify-center gap-4 px-8 text-white cursor-pointer'
+                      disabled={!textInput.trim()}
+                    >
+                      {t('conversation.sendMessage')}
+                      <Reply
+                        width={24}
+                        height={24}
+                      />
+                    </button>
+                  </div>
                 </div>
               </Fragment>
             )}

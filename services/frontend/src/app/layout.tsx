@@ -56,6 +56,25 @@ export default function RootLayout({
       lang='en'
       className={satoshi.className}
     >
+      <head>
+        {/* eslint-disable react/no-danger */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                var settings = JSON.parse(localStorage.getItem('invincible-voice-ui-settings') || '{}');
+                if (settings.theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+                if (settings.contrast === 'high') {
+                  document.documentElement.classList.add('contrast');
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+        {/* eslint-enable react/no-danger */}
+      </head>
       <body className='font-satoshi'>
         <ServiceWorkerRegister />
         <ContextProvider>{children}</ContextProvider>

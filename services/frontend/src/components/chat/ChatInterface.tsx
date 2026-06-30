@@ -186,6 +186,7 @@ const ProcessedMessage = ({
           content={message.content}
           onClick={onClickMessage}
           isClickable={!!message.content}
+          messageId={message.messageId}
         />
       )}
     </Fragment>

@@ -73,7 +73,8 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* High-contrast mode (mirrors the mockup's body.contrast) */
+/* High-contrast mode (supports both body and html selectors) */
+html.contrast,
 body.contrast {
   --paper: #ffffff;
   --surface: #ffffff;
@@ -88,6 +89,58 @@ body.contrast {
   --sage: #1f6b45;
   --terra: #8a4d1c;
 }
+
+/* Calm Dark Mode variables */
+html.dark,
+body.dark {
+  --paper: #0b0d11;
+  --surface: #14171c;
+  --surface-2: #1c2028;
+  --ink: #f3f4f6;
+  --ink-2: #cbd5e1;
+  --muted: #64748b;
+  --hairline: #2d333f;
+  --hairline-2: #3e4758;
+
+  --blue: #5b92d6;
+  --blue-600: #4278bc;
+  --blue-tint: #1c2738;
+  --blue-tint-2: #24354c;
+
+  --sage: #5fa880;
+  --sage-600: #468e67;
+  --sage-tint: #182a20;
+
+  --terra: #d48e55;
+  --terra-tint: #38271a;
+
+  --red: #e06050;
+  --red-tint: #3b1d19;
+
+  color-scheme: dark;
+  color: var(--ink);
+  background-color: var(--paper);
+}
+
+/* High-contrast Dark Mode variables */
+html.dark.contrast,
+body.dark.contrast {
+  --paper: #000000;
+  --surface: #000000;
+  --surface-2: #000000;
+  --ink: #ffffff;
+  --ink-2: #f3f4f6;
+  --muted: #cbd5e1;
+  --hairline: #ffffff;
+  --hairline-2: #ffffff;
+  --blue: #8ab4f8;
+  --blue-600: #adc6ff;
+  --sage: #66bb6a;
+  --terra: #ffb74d;
+
+  color-scheme: dark;
+}
+
 
 @theme {
   /* ===== Calm Cards tokens exposed as Tailwind colours ===== */
@@ -457,4 +510,18 @@ select {
 .scan-big-targets [data-scan-item] {
   min-height: 56px;
   min-width: 56px;
+}
+
+/* Wave bounce animation for playing TTS messages */
+@keyframes wave-bounce {
+  0% {
+    transform: scaleY(0.2);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+.animate-wave-bar {
+  animation: wave-bounce 0.5s ease-in-out infinite alternate;
+  transform-origin: bottom;
 }

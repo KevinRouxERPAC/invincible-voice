@@ -24,6 +24,7 @@ import {
 } from '@/constants';
 import { useTranslations } from '@/i18n';
 import { cn } from '@/utils/cn';
+import { getUiSettings } from '@/utils/uiSettings';
 
 interface ResponseOptionsProps {
   alwaysShow?: boolean;
@@ -146,6 +147,27 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
     return displayResponses.some((r) => r.text.trim() && !r.isComplete);
   }, [displayResponses]);
 
+  const [uiSettings, setUiSettings] = useState(() => getUiSettings());
+
+  useEffect(() => {
+    const handleUiSettingsChanged = () => {
+      setUiSettings(getUiSettings());
+    };
+    window.addEventListener('ui-settings-changed', handleUiSettingsChanged);
+    return () => {
+      window.removeEventListener(
+        'ui-settings-changed',
+        handleUiSettingsChanged,
+      );
+    };
+  }, []);
+
+  const shortcuts = useMemo(() => {
+    return uiSettings.keyboardLayout === 'qwerty'
+      ? ['A', 'S', 'D', 'F']
+      : ['A', 'Z', 'Q', 'S'];
+  }, [uiSettings.keyboardLayout]);
+
   useEffect(() => {
     insertTextAtCursorPositionRef.current = insertTextAtCursorPosition;
   }, [insertTextAtCursorPosition]);
@@ -198,7 +220,7 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
                 responseText={response.text}
                 setEditingIndex={setEditingIndex}
                 setEditingText={setEditingText}
-                shortcut={['A', 'Z', 'Q', 'S'][index]}
+                shortcut={shortcuts[index]}
               />
             )}
           </Fragment>
