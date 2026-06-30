@@ -193,8 +193,11 @@ class SpeechToText:
                 chunk_base64 = self.audio_to_base64_pcm(chunk)
                 audio_msg = GradiumAudioMessage(audio=chunk_base64)
                 await self._send(audio_msg)
-                # Small delay to avoid overwhelming the service
-                await asyncio.sleep(0.005)
+                # Small delay to avoid overwhelming the service.
+                # Reduced from 0.005s to 0.002s: still throttles sends enough to
+                # protect the WebSocket, but cuts cumulative latency by ~60% on
+                # large audio buffers.
+                await asyncio.sleep(0.002)
         else:
             # Kyutai protocol - send full audio array as MessagePack
             await self._send({"type": "Audio", "pcm": audio.tolist()})

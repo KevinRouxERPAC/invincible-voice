@@ -38,7 +38,7 @@ import ErrorMessages, {
 } from '@/components/ui/ErrorMessages';
 import SettingsButton from '@/components/ui/SettingsButton';
 import StartConversationButton from '@/components/ui/StartConversationButton';
-import { ResponseSize, RESPONSES_SIZES } from '@/constants';
+import { NB_KEYWORDS, NB_RESPONSES, ResponseSize, RESPONSES_SIZES } from '@/constants';
 import { useAudioProcessor } from '@/hooks/useAudioProcessor';
 import { useBackendServerUrl } from '@/hooks/useBackendServerUrl';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
@@ -101,13 +101,13 @@ const InvincibleVoice = () => {
   const [pendingResponses, setPendingResponses] = useState<PendingResponse[]>(
     [],
   );
-  const [responseTimelines, setResponseTimelines] = useState<number[]>([
-    0, 0, 0, 0,
-  ]);
+  const [responseTimelines, setResponseTimelines] = useState<number[]>(
+    Array(NB_RESPONSES).fill(0),
+  );
   const hidePanes = false;
   const [pendingKeywords, setPendingKeywords] = useState<PendingKeyword[]>([]);
   const [keywordTimelines, setKeywordTimelines] = useState<number[]>(
-    Array(10).fill(0),
+    Array(NB_KEYWORDS).fill(0),
   );
   const [lastProcessedMessageId, setLastProcessedMessageId] = useState<
     string | null
@@ -313,9 +313,9 @@ const InvincibleVoice = () => {
   );
   const clearResponses = useCallback(() => {
     setPendingResponses([]);
-    setResponseTimelines([0, 0, 0, 0]);
+    setResponseTimelines(Array(NB_RESPONSES).fill(0));
     setPendingKeywords([]);
-    setKeywordTimelines(Array(10).fill(0));
+    setKeywordTimelines(Array(NB_KEYWORDS).fill(0));
     setCurrentSpeakerMessageStartTime(null);
   }, []);
   const handleFreezeToggle = useCallback(() => {
@@ -1081,11 +1081,11 @@ const InvincibleVoice = () => {
       const responseIndex = validShortcuts.indexOf(event.key.toLowerCase());
 
       // Handle Shift+Shortcuts for editing responses
-      if (event.shiftKey && responseIndex !== -1 && responseIndex < 4) {
+      if (event.shiftKey && responseIndex !== -1 && responseIndex < NB_RESPONSES) {
         event.preventDefault();
         const responsesToUse = frozenResponses || pendingResponses;
         const allResponses = [
-          ...Array.from({ length: 4 }, (_, index) => {
+          ...Array.from({ length: NB_RESPONSES }, (_, index) => {
             const existingResponse = responsesToUse[index];
             return (
               existingResponse || {
@@ -1130,7 +1130,7 @@ const InvincibleVoice = () => {
         } else {
           const responsesToUse = frozenResponses || pendingResponses;
           const allResponses = [
-            ...Array.from({ length: 4 }, (_, index) => {
+            ...Array.from({ length: NB_RESPONSES }, (_, index) => {
               const existingResponse = responsesToUse[index];
               return (
                 existingResponse || {

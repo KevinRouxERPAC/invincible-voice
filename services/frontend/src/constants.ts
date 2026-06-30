@@ -58,5 +58,10 @@ export const ORDERED_RESPONSE_SIZES = [
   RESPONSES_SIZES.L,
   RESPONSES_SIZES.XL,
 ] as const;
+
+// Number of LLM-generated responses and keywords shown per turn.
+// Must match the backend constants NB_RESPONSES / NB_KEYWORDS in kyutai_constants.py.
+export const NB_RESPONSES = 3;
+export const NB_KEYWORDS = 6;
 type ResponseSizeKeys = keyof typeof RESPONSES_SIZES;
 export type ResponseSize = (typeof RESPONSES_SIZES)[ResponseSizeKeys];

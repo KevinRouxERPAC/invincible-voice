@@ -17,6 +17,7 @@ import { PendingResponse } from '@/components/chat/ChatInterface';
 import Lock from '@/components/icons/Lock';
 import Unlock from '@/components/icons/Unlock';
 import {
+  NB_RESPONSES,
   ORDERED_RESPONSE_SIZES,
   RESPONSES_SIZES,
   ResponseSize,
@@ -118,9 +119,9 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
   );
   const displayResponses = useMemo(() => {
     if (alwaysShow) {
-      // When alwaysShow is true, create 4 slots for dynamic responses + 2 static
+      // When alwaysShow is true, create NB_RESPONSES slots for dynamic responses + 2 static
       const responsesToShow = frozenResponses || responses;
-      const dynamicResponses = Array.from({ length: 4 }, (_, index) => {
+      const dynamicResponses = Array.from({ length: NB_RESPONSES }, (_, index) => {
         return (
           responsesToShow[index] || {
             id: `empty-${index}`,

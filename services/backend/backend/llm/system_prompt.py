@@ -1,4 +1,16 @@
-BASE_SYSTEM_PROMPT = """
+from backend.kyutai_constants import NB_KEYWORDS, NB_RESPONSES
+
+
+def build_system_prompt(
+    nb_responses: int = NB_RESPONSES,
+    nb_keywords: int = NB_KEYWORDS,
+) -> str:
+    """Build the system prompt with the given number of responses and keywords.
+
+    Centralised here so the numbers stay in sync with the structured output
+    schema declared in llm_utils.py (which uses the same constants).
+    """
+    return f"""
 # System prompt
 You are the assistant of a user suffering from ALS (Amyotrophic Lateral Sclerosis).
 
@@ -23,14 +35,13 @@ Here are the following information that will be given to you:
 Based on a conversation history between someone speaking
 aloud and the user, you must suggest:
 
-4 plausible responses for the user,
+{nb_responses} plausible responses for the user,
 which should cover a wide range of possibilities.
-You can think of them as "long replies".
 These correspond to the JSON key "suggested_answers".
 Always produce these first, as they are the most important: they are what
 the user reads and speaks to intervene quickly in the conversation.
 
-10 keywords that could help the user refine their responses on the topic.
+{nb_keywords} keywords that could help the user refine their responses on the topic.
 These should be varied.
 These keywords should be useful for guiding the user's response, so
 they must be related to the most recent phrases.
@@ -78,3 +89,7 @@ For example, "je rentre en classe de CO2" might actually mean "je rentre en clas
 Also note that when the user chose a response that you suggested, it then goes through
 a text-to-speech system, mimicking the user's voice.
 """
+
+
+# Backward-compatible constant: the prompt built with default constants.
+BASE_SYSTEM_PROMPT = build_system_prompt()

@@ -10,6 +10,7 @@ from cloudpathlib import AnyPath
 
 from backend import kyutai_constants
 from backend import openai_realtime_api_events as ora
+from backend.kyutai_constants import NB_RESPONSES
 from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
 from backend.typing import (
     Conversation,
@@ -137,25 +138,25 @@ class UserData(pydantic.BaseModel):
         prompt += f"Each response should be between {min_nb_words} and {max_nb_words} words long.\n\n"
         prompt += "## User's keywords and directives to guide your answers\n\n"
         if user_intent == "directive":
-            prompt += f'The user has given you a direct instruction for the next responses: "{user_text_hint}". Follow this instruction closely to generate 4 suggested responses.\n\n'
+            prompt += f'The user has given you a direct instruction for the next responses: "{user_text_hint}". Follow this instruction closely to generate {NB_RESPONSES} suggested responses.\n\n'
         elif user_text_hint is not None or user_intent is not None:
             prompt += "The user chose the following keywords and intents to guide the answers:\n"
             if user_text_hint:
                 prompt += f"- Keywords: {user_text_hint}\n"
             if user_intent:
                 prompt += f"- Intent/Action: {user_intent} (You MUST formulate your responses to match this specific intent based on the keywords).\n"
-            prompt += "Use these concepts in **all** of your 4 suggested responses.\n\n"
+            prompt += f"Use these concepts in **all** of your {NB_RESPONSES} suggested responses.\n\n"
 
         if initiating:
             prompt += "\n\n## Initiating mode\n"
             prompt += (
                 "The user wants to TAKE THE FLOOR rather than reply. Ignore the idea "
-                "of answering a speaker: instead, suggest 4 things the user could SAY "
+                f"of answering a speaker: instead, suggest {NB_RESPONSES} things the user could SAY "
                 "to start or steer the conversation — greetings, questions, requests, "
                 "or statements that open a topic. "
             )
             if initiating_topic:
-                prompt += f"The user SPECIFICALLY wants to start a topic about: {initiating_topic}. Make sure your 4 suggestions are openers related to this topic. "
+                prompt += f"The user SPECIFICALLY wants to start a topic about: {initiating_topic}. Make sure your {NB_RESPONSES} suggestions are openers related to this topic. "
             prompt += (
                 "Follow the user's keywords, persona, "
                 "and documents when they indicate a direction. Keep the keyword "

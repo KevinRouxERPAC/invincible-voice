@@ -1,6 +1,7 @@
 'use client';
 
 import { FC, Fragment, useCallback, useMemo } from 'react';
+import { NB_KEYWORDS } from '@/constants';
 import { useTranslations } from '@/i18n';
 import { cn } from '@/utils/cn';
 
@@ -31,7 +32,7 @@ const KeywordsSuggestion: FC<KeywordsSuggestionProps> = ({
   const displayKeywords = useMemo(() => {
     return alwaysShow
       ? [
-          ...Array.from({ length: 10 }, (_, index) => {
+          ...Array.from({ length: NB_KEYWORDS }, (_, index) => {
             const existingKeyword = keywords[index];
             return (
               existingKeyword || {

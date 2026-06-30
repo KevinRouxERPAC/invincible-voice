@@ -376,7 +376,12 @@ class UnmuteHandler(AsyncStreamHandler):
         ) - self.stt_last_message_time
         self.debug_dict["time_since_last_message"] = time_since_last_message
 
-        if time_since_last_message > 1.7:
+        # Pause detection threshold: how many seconds of silence after the last
+        # STT message before we consider the speaker has finished and trigger the LLM.
+        # Lower = faster response but risk of false triggers; higher = more natural
+        # conversation rhythm but slower suggestions.
+        PAUSE_DETECTION_SEC = 1.2
+        if time_since_last_message > PAUSE_DETECTION_SEC:
             return True
 
         return False

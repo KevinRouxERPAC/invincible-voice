@@ -3,6 +3,7 @@
 import { Edit2 } from 'lucide-react';
 import { useMemo, useCallback, FC, MouseEvent, Fragment } from 'react';
 import { PendingResponse } from '@/components/chat/ChatInterface';
+import { NB_RESPONSES } from '@/constants';
 import { useTranslations } from '@/i18n';
 import { cn } from '@/utils/cn';
 
@@ -34,7 +35,7 @@ const ResponsePanel: FC<ResponsePanelProps> = ({
 
   const allResponses = useMemo(
     () =>
-      Array.from({ length: 4 }, (_, index) => {
+      Array.from({ length: NB_RESPONSES }, (_, index) => {
         const existingResponse = responsesToShow[index];
         return (
           existingResponse || {
