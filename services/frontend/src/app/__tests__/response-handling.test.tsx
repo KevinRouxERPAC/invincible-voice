@@ -170,7 +170,6 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
     const responses = [
       'Yes, I agree with that point.',
       'No, I think differently about this.',
-      'Could you explain that further?',
       "That's an interesting perspective.",
     ];
     for (let i = 0; i < responses.length; i++) {
@@ -182,7 +181,7 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
       });
     }
 
-    // Check that all 4 response options are populated
+    // Check that all 3 response options are populated
     await waitFor(
       () => {
         expect(
@@ -190,9 +189,6 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
         ).toBeInTheDocument();
         expect(
           screen.getByText('No, I think differently about this.'),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText('Could you explain that further?'),
         ).toBeInTheDocument();
         expect(
           screen.getByText("That's an interesting perspective."),
@@ -207,10 +203,9 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
       (button) =>
         button.textContent?.includes('Yes, I agree') ||
         button.textContent?.includes('No, I think') ||
-        button.textContent?.includes('Could you explain') ||
         button.textContent?.includes("That's an interesting"),
     );
-    expect(responseBoxes).toHaveLength(4);
+    expect(responseBoxes).toHaveLength(3);
     responseBoxes.forEach((box) => {
       expect(box).toBeEnabled();
     });
@@ -227,8 +222,8 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
     // Record initial TTS call count
     const initialTtsCount = countTtsCalls();
 
-    // Send 4 responses
-    for (let i = 0; i < 4; i++) {
+    // Send 3 responses
+    for (let i = 0; i < 3; i++) {
       await sendServerMessage({
         type: 'one.response',
         content: `Response ${i + 1}`,

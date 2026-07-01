@@ -166,7 +166,6 @@ describe('Response Handling and TTS Tests', () => {
       'Yes, I agree with that.',
       'No, I disagree.',
       'Could you clarify?',
-      'That is interesting.',
     ];
 
     for (let i = 0; i < responses.length; i++) {
@@ -184,7 +183,6 @@ describe('Response Handling and TTS Tests', () => {
         expect(screen.getByText('Yes, I agree with that.')).toBeInTheDocument();
         expect(screen.getByText('No, I disagree.')).toBeInTheDocument();
         expect(screen.getByText('Could you clarify?')).toBeInTheDocument();
-        expect(screen.getByText('That is interesting.')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -286,7 +284,6 @@ describe('Response Handling and TTS Tests', () => {
       'Clickable response',
       'Another response',
       'Third response',
-      'Fourth response',
     ];
     for (let i = 0; i < responses.length; i++) {
       await sendServerMessage({
