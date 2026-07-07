@@ -45,6 +45,10 @@
   },
   "settings": {
     "title": "Definições",
+    "tabProfile": "Perfil",
+    "tabAccessibility": "Acessibilidade",
+    "tabAssistant": "Assistente",
+    "tabContent": "Conteúdo",
     "lockedDuringConversation": "Não pode alterar as definições durante uma conversa. Termine primeiro a conversa.",
     "additionalKeywords": "Palavras-chave adicionais",
     "addKeywordPlaceholder": "Adicionar sua palavra-chave",

@@ -45,6 +45,10 @@
   },
   "settings": {
     "title": "Settings",
+    "tabProfile": "Profile",
+    "tabAccessibility": "Accessibility",
+    "tabAssistant": "Assistant",
+    "tabContent": "Content",
     "lockedDuringConversation": "You can't change settings during a conversation. End the conversation first.",
     "additionalKeywords": "Additional keywords",
     "addKeywordPlaceholder": "Add your keyword",

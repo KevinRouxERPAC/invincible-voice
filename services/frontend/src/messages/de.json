@@ -45,6 +45,10 @@
   },
   "settings": {
     "title": "Einstellungen",
+    "tabProfile": "Profil",
+    "tabAccessibility": "Barrierefreiheit",
+    "tabAssistant": "Assistent",
+    "tabContent": "Inhalt",
     "lockedDuringConversation": "Während eines Gesprächs können die Einstellungen nicht geändert werden. Beenden Sie zuerst das Gespräch.",
     "additionalKeywords": "Zusätzliche Schlüsselwörter",
     "addKeywordPlaceholder": "Schlüsselwort hinzufügen",

@@ -45,6 +45,10 @@
   },
   "settings": {
     "title": "Ajustes",
+    "tabProfile": "Perfil",
+    "tabAccessibility": "Accesibilidad",
+    "tabAssistant": "Asistente",
+    "tabContent": "Contenido",
     "lockedDuringConversation": "No puedes cambiar los ajustes durante una conversación. Finaliza primero la conversación.",
     "additionalKeywords": "Palabras clave adicionales",
     "addKeywordPlaceholder": "Añade tu palabra clave",

@@ -45,6 +45,10 @@
   },
   "settings": {
     "title": "Paramètres",
+    "tabProfile": "Profil",
+    "tabAccessibility": "Accessibilité",
+    "tabAssistant": "Assistant",
+    "tabContent": "Contenu",
     "lockedDuringConversation": "Vous ne pouvez pas modifier les paramètres pendant une conversation. Terminez d'abord la conversation.",
     "additionalKeywords": "Mots-clés supplémentaires",
     "addKeywordPlaceholder": "Ajoutez votre mot-clé",

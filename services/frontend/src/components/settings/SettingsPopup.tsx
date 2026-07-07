@@ -39,6 +39,13 @@ interface SettingsPopupProps {
   onCancel: () => void;
 }
 
+type SettingsTab =
+  | 'profile'
+  | 'voice'
+  | 'accessibility'
+  | 'assistant'
+  | 'content';
+
 const SettingsPopup: FC<SettingsPopupProps> = ({
   userSettings,
   email,
@@ -73,6 +80,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   const [showDeleteVoiceConfirm, setShowDeleteVoiceConfirm] = useState(false);
   const [voiceToDelete, setVoiceToDelete] = useState<string | null>(null);
   const [isDeletingVoice, setIsDeletingVoice] = useState(false);
+  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const promptTokenCount = useMemo(
     () => estimateTokens(formData.prompt),
     [formData.prompt],
@@ -450,6 +458,21 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
     });
   }, [userSettings]);
 
+  const TABS: { id: SettingsTab; label: string }[] = [
+    { id: 'profile', label: t('settings.tabProfile') },
+    { id: 'voice', label: t('common.voice') },
+    { id: 'accessibility', label: t('settings.tabAccessibility') },
+    { id: 'assistant', label: t('settings.tabAssistant') },
+    { id: 'content', label: t('settings.tabContent') },
+  ];
+
+  const tabButtonClass = (tab: SettingsTab) =>
+    `px-4 py-2 -mb-px text-sm font-medium whitespace-nowrap border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue rounded-t-lg ${
+      activeTab === tab
+        ? 'border-blue text-blue'
+        : 'border-transparent text-muted hover:text-ink'
+    }`;
+
   return (
     <div className='flex flex-col w-full h-full gap-y-2'>
       <div className='flex flex-row justify-between w-full'>
@@ -477,507 +500,580 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
         </div>
       </div>
 
-      <div className='grid grow w-full grid-cols-2 gap-8'>
-        <div className='flex flex-col h-full gap-6 pb-4'>
-          <EmailField email={email} />
-          <div className='flex flex-row gap-8'>
-            <div className='flex flex-col grow gap-2'>
-              <label
-                htmlFor='settings-name-input'
-                className='text-sm font-medium text-ink'
-              >
-                {t('settings.yourName')}
-              </label>
+      {/* Barre d'onglets pour réduire la charge cognitive : une famille de
+          réglages à la fois. */}
+      <div
+        role='tablist'
+        aria-label={t('settings.title')}
+        className='flex flex-row gap-1 border-b border-hairline shrink-0 overflow-x-auto no-scrollbar'
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            id={`settings-tab-${tab.id}`}
+            role='tab'
+            type='button'
+            aria-selected={activeTab === tab.id}
+            aria-controls={`settings-panel-${tab.id}`}
+            onClick={() => setActiveTab(tab.id)}
+            className={tabButtonClass(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-              <input
-                id='settings-name-input'
-                type='text'
-                value={formData.name}
-                onChange={onChangeName}
-                className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder={t('settings.yourNamePlaceholder')}
-              />
-            </div>
-          </div>
-
-          <div className='flex flex-col gap-2'>
-            <label
-              htmlFor='settings-voice-select'
-              className='text-sm font-medium text-ink'
+      {/* Contenu de l'onglet actif (zone défilante) */}
+      <div className='grow w-full min-h-0 overflow-y-auto py-4'>
+        <div className='flex flex-col gap-6 w-full max-w-3xl mx-auto'>
+          {activeTab === 'profile' && (
+            <div
+              id='settings-panel-profile'
+              role='tabpanel'
+              aria-labelledby='settings-tab-profile'
+              className='flex flex-col gap-6'
             >
-              {t('common.voice')}
-            </label>
+              <EmailField email={email} />
+              <div className='flex flex-col gap-2'>
+                <label
+                  htmlFor='settings-name-input'
+                  className='text-sm font-medium text-ink'
+                >
+                  {t('settings.yourName')}
+                </label>
+                <input
+                  id='settings-name-input'
+                  type='text'
+                  value={formData.name}
+                  onChange={onChangeName}
+                  className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+                  placeholder={t('settings.yourNamePlaceholder')}
+                />
+              </div>
+              <div className='flex flex-col gap-2'>
+                <label
+                  htmlFor='settings-language-select'
+                  className='text-sm font-medium text-ink'
+                >
+                  {t('settings.expectedTranscriptionLanguage')}
+                </label>
+                <select
+                  id='settings-language-select'
+                  value={formData.expected_transcription_language || ''}
+                  onChange={handleLanguageChange}
+                  className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+                >
+                  <option value=''>{t('settings.letSpeechToTextGuess')}</option>
+                  <option value='en'>English</option>
+                  <option value='fr'>Français</option>
+                  <option value='de'>Deutsch</option>
+                  <option value='es'>Español</option>
+                  <option value='pt'>Português</option>
+                </select>
+              </div>
+            </div>
+          )}
 
-            <div className='flex gap-2'>
-              <select
-                id='settings-voice-select'
-                value={formData.voice || ''}
-                onChange={handleVoiceChange}
-                disabled={isLoadingVoices}
-                className='flex-1 px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue disabled:opacity-50'
-              >
-                <option value=''>{t('common.default')}</option>
+          {activeTab === 'voice' && (
+            <div
+              id='settings-panel-voice'
+              role='tabpanel'
+              aria-labelledby='settings-tab-voice'
+              className='flex flex-col gap-6'
+            >
+              <div className='flex flex-col gap-2'>
+                <label
+                  htmlFor='settings-voice-select'
+                  className='text-sm font-medium text-ink'
+                >
+                  {t('common.voice')}
+                </label>
 
-                {availableVoices &&
-                  Object.entries(availableVoices)
-                    .sort(([, langA], [, langB]) => langA.localeCompare(langB))
-                    .map(([voiceName, language]) => (
-                      <option
-                        key={voiceName}
-                        value={voiceName}
-                      >
-                        {voiceName.includes('/')
-                          ? voiceName.substring(voiceName.indexOf('/') + 1)
-                          : voiceName}
-                        ({language})
-                      </option>
-                    ))}
-              </select>
+                <div className='flex gap-2'>
+                  <select
+                    id='settings-voice-select'
+                    value={formData.voice || ''}
+                    onChange={handleVoiceChange}
+                    disabled={isLoadingVoices}
+                    className='flex-1 px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue disabled:opacity-50'
+                  >
+                    <option value=''>{t('common.default')}</option>
 
-              <button
-                type='button'
-                onClick={handleTestVoice}
-                disabled={!formData.voice || isPlayingVoice}
-                className='px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
-              >
-                {isPlayingVoice ? (
-                  <LoaderCircleIcon
-                    size={16}
-                    className='animate-spin'
-                  />
-                ) : (
-                  <Play size={16} />
-                )}
-                {t('settings.testYourVoice')}
-              </button>
+                    {availableVoices &&
+                      Object.entries(availableVoices)
+                        .sort(([, langA], [, langB]) =>
+                          langA.localeCompare(langB),
+                        )
+                        .map(([voiceName, language]) => (
+                          <option
+                            key={voiceName}
+                            value={voiceName}
+                          >
+                            {voiceName.includes('/')
+                              ? voiceName.substring(voiceName.indexOf('/') + 1)
+                              : voiceName}
+                            ({language})
+                          </option>
+                        ))}
+                  </select>
 
-              {formData.voice &&
-                availableVoices &&
-                availableVoices[formData.voice] === 'Custom voice' && (
                   <button
                     type='button'
-                    onClick={() => {
-                      setVoiceToDelete(formData.voice || null);
-                      setShowDeleteVoiceConfirm(true);
-                    }}
-                    className='px-3 py-2 text-ink-2 bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-red hover:bg-paper hover:border-red'
-                    title={t('common.delete')}
+                    onClick={handleTestVoice}
+                    disabled={!formData.voice || isPlayingVoice}
+                    className='px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 whitespace-nowrap'
                   >
-                    <XCircle
-                      size={16}
-                      className='text-red'
-                    />
+                    {isPlayingVoice ? (
+                      <LoaderCircleIcon
+                        size={16}
+                        className='animate-spin'
+                      />
+                    ) : (
+                      <Play size={16} />
+                    )}
+                    {t('settings.testYourVoice')}
                   </button>
-                )}
-            </div>
 
-            {!showVoiceUpload && (
-              <button
-                type='button'
-                onClick={() => setShowVoiceUpload(true)}
-                className='mt-2 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper'
-              >
-                {t('settings.cloneYourVoice')}
-              </button>
-            )}
-
-            {showVoiceUpload && (
-              <div className='mt-2 px-4 py-3 bg-surface-2 border border-hairline rounded-2xl'>
-                <div className='flex flex-col gap-3'>
-                  <div className='flex flex-col gap-1'>
-                    <label
-                      htmlFor='voice-upload-name-input'
-                      className='text-xs font-medium text-ink-2'
-                    >
-                      {t('settings.voiceName')}
-                    </label>
-
-                    <input
-                      id='voice-upload-name-input'
-                      type='text'
-                      value={voiceUploadName}
-                      onChange={(e) => setVoiceUploadName(e.target.value)}
-                      className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
-                      placeholder={t('settings.voiceNamePlaceholder')}
-                    />
-                  </div>
-
-                  <div className='flex flex-col gap-1'>
-                    <label
-                      htmlFor='voice-upload-file-input'
-                      className='text-xs font-medium text-ink-2'
-                    >
-                      {t('settings.audioFile')}
-                    </label>
-
-                    <input
-                      id='voice-upload-file-input'
-                      type='file'
-                      accept='.mp3,.wav'
-                      onChange={handleVoiceFileChange}
-                      className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-sage file:text-white file:text-sm file:cursor-pointer'
-                    />
-                  </div>
-
-                  {voiceUploadError && (
-                    <p className='text-xs text-red'>{voiceUploadError}</p>
-                  )}
-
-                  <div className='flex gap-2'>
-                    <button
-                      type='button'
-                      onClick={() => {
-                        setShowVoiceUpload(false);
-                        setVoiceUploadFile(null);
-                        setVoiceUploadName('');
-                        setVoiceUploadError(null);
-                      }}
-                      className='flex-1 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue hover:bg-paper'
-                    >
-                      {t('common.cancel')}
-                    </button>
-
-                    <button
-                      type='button'
-                      onClick={handleCreateVoice}
-                      disabled={
-                        isCreatingVoice ||
-                        !voiceUploadFile ||
-                        !voiceUploadName.trim()
-                      }
-                      className='flex-1 px-4 py-2 text-sm text-white bg-sage rounded-xl focus:outline-none hover:bg-sage-600 disabled:opacity-50 disabled:cursor-not-allowed'
-                    >
-                      {isCreatingVoice ? (
-                        <LoaderCircleIcon
+                  {formData.voice &&
+                    availableVoices &&
+                    availableVoices[formData.voice] === 'Custom voice' && (
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setVoiceToDelete(formData.voice || null);
+                          setShowDeleteVoiceConfirm(true);
+                        }}
+                        className='px-3 py-2 text-ink-2 bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-red hover:bg-paper hover:border-red'
+                        title={t('common.delete')}
+                      >
+                        <XCircle
                           size={16}
-                          className='animate-spin mx-auto'
+                          className='text-red'
                         />
-                      ) : (
-                        t('settings.createVoice')
+                      </button>
+                    )}
+                </div>
+
+                {!showVoiceUpload && (
+                  <button
+                    type='button'
+                    onClick={() => setShowVoiceUpload(true)}
+                    className='mt-2 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue hover:bg-paper'
+                  >
+                    {t('settings.cloneYourVoice')}
+                  </button>
+                )}
+
+                {showVoiceUpload && (
+                  <div className='mt-2 px-4 py-3 bg-surface-2 border border-hairline rounded-2xl'>
+                    <div className='flex flex-col gap-3'>
+                      <div className='flex flex-col gap-1'>
+                        <label
+                          htmlFor='voice-upload-name-input'
+                          className='text-xs font-medium text-ink-2'
+                        >
+                          {t('settings.voiceName')}
+                        </label>
+
+                        <input
+                          id='voice-upload-name-input'
+                          type='text'
+                          value={voiceUploadName}
+                          onChange={(e) => setVoiceUploadName(e.target.value)}
+                          className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue'
+                          placeholder={t('settings.voiceNamePlaceholder')}
+                        />
+                      </div>
+
+                      <div className='flex flex-col gap-1'>
+                        <label
+                          htmlFor='voice-upload-file-input'
+                          className='text-xs font-medium text-ink-2'
+                        >
+                          {t('settings.audioFile')}
+                        </label>
+
+                        <input
+                          id='voice-upload-file-input'
+                          type='file'
+                          accept='.mp3,.wav'
+                          onChange={handleVoiceFileChange}
+                          className='w-full px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue file:mr-4 file:py-1 file:px-4 file:rounded-lg file:border-0 file:bg-sage file:text-white file:text-sm file:cursor-pointer'
+                        />
+                      </div>
+
+                      {voiceUploadError && (
+                        <p className='text-xs text-red'>{voiceUploadError}</p>
                       )}
+
+                      <div className='flex gap-2'>
+                        <button
+                          type='button'
+                          onClick={() => {
+                            setShowVoiceUpload(false);
+                            setVoiceUploadFile(null);
+                            setVoiceUploadName('');
+                            setVoiceUploadError(null);
+                          }}
+                          className='flex-1 px-4 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-xl focus:outline-none focus:border-blue hover:bg-paper'
+                        >
+                          {t('common.cancel')}
+                        </button>
+
+                        <button
+                          type='button'
+                          onClick={handleCreateVoice}
+                          disabled={
+                            isCreatingVoice ||
+                            !voiceUploadFile ||
+                            !voiceUploadName.trim()
+                          }
+                          className='flex-1 px-4 py-2 text-sm text-white bg-sage rounded-xl focus:outline-none hover:bg-sage-600 disabled:opacity-50 disabled:cursor-not-allowed'
+                        >
+                          {isCreatingVoice ? (
+                            <LoaderCircleIcon
+                              size={16}
+                              className='animate-spin mx-auto'
+                            />
+                          ) : (
+                            t('settings.createVoice')
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <SpeechRateSlider />
+            </div>
+          )}
+
+          {activeTab === 'accessibility' && (
+            <div
+              id='settings-panel-accessibility'
+              role='tabpanel'
+              aria-labelledby='settings-tab-accessibility'
+              className='flex flex-col gap-6'
+            >
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                <AccessibilitySettings />
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'assistant' && (
+            <div
+              id='settings-panel-assistant'
+              role='tabpanel'
+              aria-labelledby='settings-tab-assistant'
+              className='flex flex-col gap-6'
+            >
+              <div>
+                <label className='flex items-center justify-between gap-2 cursor-pointer px-2'>
+                  <span className='text-sm font-medium text-ink'>
+                    {t('settings.learnStyle')}
+                  </span>
+                  <input
+                    type='checkbox'
+                    checked={formData.learn_style ?? true}
+                    onChange={(e) =>
+                      handleInputChange('learn_style', e.target.checked)
+                    }
+                    className='size-5 accent-green'
+                  />
+                </label>
+                <p className='mt-1 px-2 text-xs text-muted'>
+                  {t('settings.learnStyleHint')}
+                </p>
+              </div>
+
+              <div className='flex flex-col gap-2'>
+                <div className='flex items-center justify-between mb-1'>
+                  <div className='text-sm font-medium text-ink'>
+                    {t('settings.configureAssistant')}
+                  </div>
+
+                  <span className='text-sm text-muted'>
+                    {formatTokenCount(promptTokenCount)}
+                  </span>
+                </div>
+
+                <textarea
+                  value={formData.prompt}
+                  onChange={onChangePrompt}
+                  className='w-full min-h-[180px] px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
+                  placeholder={t('settings.promptPlaceholder')}
+                />
+              </div>
+
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                <div className='block mb-1 text-sm font-medium text-ink'>
+                  {t('settings.additionalKeywords')}
+                </div>
+                <div className='flex flex-col w-full gap-0.5'>
+                  <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
+                    {formData.additional_keywords.map((keyword) => (
+                      <AdditionalKeyword
+                        key={keyword}
+                        keyword={keyword}
+                        removeKeyword={handleRemoveKeyword}
+                      />
+                    ))}
+                    {formData.additional_keywords.length === 0 && (
+                      <p className='text-sm italic text-muted'>
+                        {t('settings.noKeywordsAdded')}
+                      </p>
+                    )}
+                  </div>
+                  <div className='relative flex gap-2'>
+                    <input
+                      type='text'
+                      value={newKeywordInput}
+                      onChange={onChangeNewKeywordInput}
+                      onKeyDown={handleKeywordInputKeyPress}
+                      className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
+                      placeholder={t('settings.addKeywordPlaceholder')}
+                    />
+                    <button
+                      onClick={handleAddKeyword}
+                      className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
+                      style={{
+                        filter:
+                          'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
+                      }}
+                    >
+                      <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
+                        {t('common.add')}
+                        <Plus
+                          width={24}
+                          height={24}
+                          className='shrink-0 text-white'
+                        />
+                      </div>
                     </button>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
 
-          <SpeechRateSlider />
-
-          <div className='flex flex-col gap-2'>
-            <label
-              htmlFor='settings-language-select'
-              className='text-sm font-medium text-ink'
-            >
-              {t('settings.expectedTranscriptionLanguage')}
-            </label>
-
-            <select
-              id='settings-language-select'
-              value={formData.expected_transcription_language || ''}
-              onChange={handleLanguageChange}
-              className='w-full px-6 py-2 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-            >
-              <option value=''>{t('settings.letSpeechToTextGuess')}</option>
-              <option value='en'>English</option>
-              <option value='fr'>Français</option>
-              <option value='de'>Deutsch</option>
-              <option value='es'>Español</option>
-              <option value='pt'>Português</option>
-            </select>
-          </div>
-
-          <label className='flex items-center justify-between gap-2 cursor-pointer px-2'>
-            <span className='text-sm font-medium text-ink'>
-              {t('settings.learnStyle')}
-            </span>
-            <input
-              type='checkbox'
-              checked={formData.learn_style ?? true}
-              onChange={(e) =>
-                handleInputChange('learn_style', e.target.checked)
-              }
-              className='size-5 accent-green'
-            />
-          </label>
-          <p className='-mt-4 px-2 text-xs text-muted'>
-            {t('settings.learnStyleHint')}
-          </p>
-
-          <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-            <AccessibilitySettings />
-          </div>
-
-          <div className='flex flex-col flex-1 gap-2'>
-            <div className='flex items-center justify-between mb-1'>
-              <div className='text-sm font-medium text-ink'>
-                {t('settings.configureAssistant')}
-              </div>
-
-              <span className='text-sm text-muted'>
-                {formatTokenCount(promptTokenCount)}
-              </span>
-            </div>
-
-            <textarea
-              value={formData.prompt}
-              onChange={onChangePrompt}
-              className='flex-1 w-full min-h-0 px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
-              placeholder={t('settings.promptPlaceholder')}
-            />
-          </div>
-        </div>
-
-        <div className='flex flex-col h-full gap-2'>
-          <div className='flex flex-col grow h-full gap-2'>
-            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-ink'>
-                {t('settings.additionalKeywords')}
-              </div>
-              <div className='flex flex-col w-full gap-0.5'>
-                <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
-                  {formData.additional_keywords.map((keyword) => (
-                    <AdditionalKeyword
-                      key={keyword}
-                      keyword={keyword}
-                      removeKeyword={handleRemoveKeyword}
-                    />
-                  ))}
-                  {formData.additional_keywords.length === 0 && (
-                    <p className='text-sm italic text-muted'>
-                      {t('settings.noKeywordsAdded')}
-                    </p>
-                  )}
-                </div>
-                <div className='relative flex gap-2'>
-                  <input
-                    type='text'
-                    value={newKeywordInput}
-                    onChange={onChangeNewKeywordInput}
-                    onKeyDown={handleKeywordInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
-                    placeholder={t('settings.addKeywordPlaceholder')}
-                  />
-                  <button
-                    onClick={handleAddKeyword}
-                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
-                    style={{
-                      filter:
-                        'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-                    }}
-                  >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
-                      {t('common.add')}
-                      <Plus
-                        width={24}
-                        height={24}
-                        className='shrink-0 text-white'
-                      />
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-ink'>
-                {t('common.friends')}
-              </div>
-              <div className='flex flex-col w-full gap-0.5'>
-                <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
-                  {formData.friends.map((friend) => (
-                    <Friend
-                      key={friend}
-                      friend={friend}
-                      removeFriend={handleRemoveFriend}
-                    />
-                  ))}
-                  {formData.friends.length === 0 && (
-                    <p className='text-sm italic text-muted'>
-                      {t('settings.noFriendsAdded')}
-                    </p>
-                  )}
-                </div>
-                <div className='relative flex gap-2'>
-                  <input
-                    type='text'
-                    value={newFriendInput}
-                    onChange={onChangeNewFriendInput}
-                    onKeyDown={handleFriendInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
-                    placeholder={t('settings.addFriendPlaceholder')}
-                  />
-                  <button
-                    onClick={handleAddFriend}
-                    className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
-                    style={{
-                      filter:
-                        'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-                    }}
-                  >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
-                      {t('common.add')}
-                      <Plus
-                        width={24}
-                        height={24}
-                        className='shrink-0 text-white'
-                      />
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-              <div className='block mb-1 text-sm font-medium text-ink'>
-                {t('settings.quickPhrases')}
-              </div>
-              <p className='text-xs text-muted'>
-                {t('settings.quickPhrasesHelp')}
-              </p>
-              <div className='flex flex-col w-full gap-0.5'>
-                <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
-                  {(formData.quick_phrases || []).map((phrase) => (
-                    <PhraseChip
-                      key={phrase.text}
-                      phrase={phrase}
-                      removePhrase={handleRemovePhrase}
-                    />
-                  ))}
-                  {(!formData.quick_phrases ||
-                    formData.quick_phrases.length === 0) && (
-                    <p className='text-sm italic text-muted'>
-                      {t('settings.noPhrasesAdded')}
-                    </p>
-                  )}
-                </div>
-                <div className='flex gap-2'>
-                  <input
-                    type='text'
-                    value={newPhraseInput}
-                    onChange={(e) => setNewPhraseInput(e.target.value)}
-                    onKeyDown={handlePhraseInputKeyPress}
-                    className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
-                    placeholder={t('settings.addPhrasePlaceholder')}
-                  />
-                  <input
-                    type='text'
-                    value={newPhraseCategoryInput}
-                    onChange={(e) => setNewPhraseCategoryInput(e.target.value)}
-                    onKeyDown={handlePhraseInputKeyPress}
-                    className='w-32 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
-                    placeholder={t('settings.phraseCategoryPlaceholder')}
-                  />
-                  <button
-                    onClick={handleAddPhrase}
-                    className='shrink-0 h-10 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
-                    style={{
-                      filter:
-                        'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-                    }}
-                  >
-                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
-                      {t('common.add')}
-                      <Plus
-                        width={24}
-                        height={24}
-                        className='shrink-0 text-white'
-                      />
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-              <AppointmentsEditor
-                appointments={formData.appointments || []}
-                onChange={(appointments) =>
-                  handleInputChange('appointments', appointments)
-                }
-              />
-            </div>
-            <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-              <div className='flex flex-row items-center justify-between w-full mb-2'>
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
                 <div className='block mb-1 text-sm font-medium text-ink'>
-                  {t('common.documents')}
+                  {t('common.friends')}
                 </div>
-                <button
-                  onClick={handleAddDocument}
-                  className='shrink-0 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl h-8 -mt-0.5 mr-1'
-                  style={{
-                    filter: 'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
-                  }}
-                >
-                  <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
-                    {t('settings.addDocument')}
-                    <Plus
-                      width={24}
-                      height={24}
-                      className='shrink-0 text-white'
-                    />
+                <div className='flex flex-col w-full gap-0.5'>
+                  <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
+                    {formData.friends.map((friend) => (
+                      <Friend
+                        key={friend}
+                        friend={friend}
+                        removeFriend={handleRemoveFriend}
+                      />
+                    ))}
+                    {formData.friends.length === 0 && (
+                      <p className='text-sm italic text-muted'>
+                        {t('settings.noFriendsAdded')}
+                      </p>
+                    )}
                   </div>
-                </button>
-              </div>
-
-              <div className='flex flex-col w-full gap-0.5'>
-                <div className='flex flex-col gap-2 py-2 overflow-x-hidden overflow-y-auto max-h-40'>
-                  {(formData.documents || []).map((doc, index) => (
-                    <DocumentCard
-                      key={index}
-                      document={doc}
-                      editDocument={handleEditDocument}
-                      index={index}
-                      removeDocument={handleRemoveDocument}
+                  <div className='relative flex gap-2'>
+                    <input
+                      type='text'
+                      value={newFriendInput}
+                      onChange={onChangeNewFriendInput}
+                      onKeyDown={handleFriendInputKeyPress}
+                      className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
+                      placeholder={t('settings.addFriendPlaceholder')}
                     />
-                  ))}
-
-                  {(!formData.documents || formData.documents.length === 0) && (
-                    <p className='text-sm italic text-muted'>
-                      {t('settings.noDocumentsAdded')}
-                    </p>
-                  )}
+                    <button
+                      onClick={handleAddFriend}
+                      className='absolute shrink-0 h-8 p-px right-1 inset-y-1 w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
+                      style={{
+                        filter:
+                          'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
+                      }}
+                    >
+                      <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
+                        {t('common.add')}
+                        <Plus
+                          width={24}
+                          height={24}
+                          className='shrink-0 text-white'
+                        />
+                      </div>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
 
-            <div className='w-full px-6 py-2 flex justify-center'>
-              <a
-                href='https://kyutai.org/privacy-policy'
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-sm underline text-blue hover:text-blue-600 transition-colors'
-              >
-                {t('common.termsOfService')}
-              </a>
-            </div>
-          </div>
-          <div className='flex justify-end gap-x-3'>
-            <button
-              className='px-8 text-sm h-14 bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl'
-              onClick={onCancel}
+          {activeTab === 'content' && (
+            <div
+              id='settings-panel-content'
+              role='tabpanel'
+              aria-labelledby='settings-tab-content'
+              className='flex flex-col gap-6'
             >
-              {t('common.cancel')}
-            </button>
-
-            <button
-              className='h-14 bg-sage hover:bg-sage-600 transition-colors rounded-2xl'
-              onClick={handleSave}
-            >
-              <div className='flex flex-row size-full items-center justify-center gap-4 px-8 rounded-2xl text-white'>
-                {t('settings.saveConfiguration')}
-                {!isLoading && (
-                  <CheckIcon
-                    size={24}
-                    className='text-white'
-                  />
-                )}
-                {isLoading && (
-                  <LoaderCircleIcon
-                    size={24}
-                    className='animate-spin text-white'
-                  />
-                )}
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                <div className='block mb-1 text-sm font-medium text-ink'>
+                  {t('settings.quickPhrases')}
+                </div>
+                <p className='text-xs text-muted'>
+                  {t('settings.quickPhrasesHelp')}
+                </p>
+                <div className='flex flex-col w-full gap-0.5'>
+                  <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
+                    {(formData.quick_phrases || []).map((phrase) => (
+                      <PhraseChip
+                        key={phrase.text}
+                        phrase={phrase}
+                        removePhrase={handleRemovePhrase}
+                      />
+                    ))}
+                    {(!formData.quick_phrases ||
+                      formData.quick_phrases.length === 0) && (
+                      <p className='text-sm italic text-muted'>
+                        {t('settings.noPhrasesAdded')}
+                      </p>
+                    )}
+                  </div>
+                  <div className='flex gap-2'>
+                    <input
+                      type='text'
+                      value={newPhraseInput}
+                      onChange={(e) => setNewPhraseInput(e.target.value)}
+                      onKeyDown={handlePhraseInputKeyPress}
+                      className='flex-1 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
+                      placeholder={t('settings.addPhrasePlaceholder')}
+                    />
+                    <input
+                      type='text'
+                      value={newPhraseCategoryInput}
+                      onChange={(e) =>
+                        setNewPhraseCategoryInput(e.target.value)
+                      }
+                      onKeyDown={handlePhraseInputKeyPress}
+                      className='w-32 px-4 py-1 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue h-10'
+                      placeholder={t('settings.phraseCategoryPlaceholder')}
+                    />
+                    <button
+                      onClick={handleAddPhrase}
+                      className='shrink-0 h-10 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl'
+                      style={{
+                        filter:
+                          'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
+                      }}
+                    >
+                      <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
+                        {t('common.add')}
+                        <Plus
+                          width={24}
+                          height={24}
+                          className='shrink-0 text-white'
+                        />
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </button>
-          </div>
+
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                <AppointmentsEditor
+                  appointments={formData.appointments || []}
+                  onChange={(appointments) =>
+                    handleInputChange('appointments', appointments)
+                  }
+                />
+              </div>
+
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
+                <div className='flex flex-row items-center justify-between w-full mb-2'>
+                  <div className='block mb-1 text-sm font-medium text-ink'>
+                    {t('common.documents')}
+                  </div>
+                  <button
+                    onClick={handleAddDocument}
+                    className='shrink-0 p-px w-fit bg-blue hover:bg-blue-600 transition-colors rounded-xl h-8 -mt-0.5 mr-1'
+                    style={{
+                      filter:
+                        'drop-shadow(0rem 0.2rem 0.15rem var(--darkgray))',
+                    }}
+                  >
+                    <div className='h-full w-full pl-4 pr-3 flex flex-row items-center justify-center gap-1 rounded-xl text-sm text-white'>
+                      {t('settings.addDocument')}
+                      <Plus
+                        width={24}
+                        height={24}
+                        className='shrink-0 text-white'
+                      />
+                    </div>
+                  </button>
+                </div>
+
+                <div className='flex flex-col w-full gap-0.5'>
+                  <div className='flex flex-col gap-2 py-2 overflow-x-hidden overflow-y-auto max-h-40'>
+                    {(formData.documents || []).map((doc, index) => (
+                      <DocumentCard
+                        key={index}
+                        document={doc}
+                        editDocument={handleEditDocument}
+                        index={index}
+                        removeDocument={handleRemoveDocument}
+                      />
+                    ))}
+
+                    {(!formData.documents ||
+                      formData.documents.length === 0) && (
+                      <p className='text-sm italic text-muted'>
+                        {t('settings.noDocumentsAdded')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Pied de page toujours visible : mentions + actions principales. */}
+      <div className='shrink-0 flex flex-row items-center justify-between gap-3 pt-3 border-t border-hairline'>
+        <a
+          href='https://kyutai.org/privacy-policy'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='text-sm underline text-blue hover:text-blue-600 transition-colors'
+        >
+          {t('common.termsOfService')}
+        </a>
+        <div className='flex justify-end gap-x-3'>
+          <button
+            className='px-8 text-sm h-14 bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl'
+            onClick={onCancel}
+          >
+            {t('common.cancel')}
+          </button>
+
+          <button
+            className='h-14 bg-sage hover:bg-sage-600 transition-colors rounded-2xl'
+            onClick={handleSave}
+          >
+            <div className='flex flex-row size-full items-center justify-center gap-4 px-8 rounded-2xl text-white'>
+              {t('settings.saveConfiguration')}
+              {!isLoading && (
+                <CheckIcon
+                  size={24}
+                  className='text-white'
+                />
+              )}
+              {isLoading && (
+                <LoaderCircleIcon
+                  size={24}
+                  className='animate-spin text-white'
+                />
+              )}
+            </div>
+          </button>
         </div>
       </div>
 
