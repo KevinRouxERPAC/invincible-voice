@@ -38,7 +38,12 @@ import ErrorMessages, {
 } from '@/components/ui/ErrorMessages';
 import SettingsButton from '@/components/ui/SettingsButton';
 import StartConversationButton from '@/components/ui/StartConversationButton';
-import { NB_KEYWORDS, NB_RESPONSES, ResponseSize, RESPONSES_SIZES } from '@/constants';
+import {
+  NB_KEYWORDS,
+  NB_RESPONSES,
+  ResponseSize,
+  RESPONSES_SIZES,
+} from '@/constants';
 import { useAudioProcessor } from '@/hooks/useAudioProcessor';
 import { useBackendServerUrl } from '@/hooks/useBackendServerUrl';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
@@ -660,14 +665,12 @@ const InvincibleVoice = () => {
   );
   const handleSettingsOpen = useCallback(() => {
     if (shouldConnect) {
-      setSettingsBlockedMessage(
-        'You cannot modify the settings while a conversation is happening, please end the conversation first.',
-      );
+      setSettingsBlockedMessage(t('settings.lockedDuringConversation'));
       setTimeout(() => setSettingsBlockedMessage(null), 5000);
     } else {
       setIsSettingsOpen(true);
     }
-  }, [shouldConnect]);
+  }, [shouldConnect, t]);
   const handleSettingsSave = useCallback((newSettings: UserSettings) => {
     setUserData((prev) =>
       prev
@@ -748,7 +751,9 @@ const InvincibleVoice = () => {
       if (result.error) {
         setErrors((prev) => [
           ...prev,
-          makeErrorItem(`Failed to delete conversation: ${result.error}`),
+          makeErrorItem(
+            `${t('errors.failedToDeleteConversation')}: ${result.error}`,
+          ),
         ]);
         return;
       }
@@ -791,7 +796,7 @@ const InvincibleVoice = () => {
     } catch (error) {
       setErrors((prev) => [
         ...prev,
-        makeErrorItem(`Failed to delete conversation: ${error}`),
+        makeErrorItem(`${t('errors.failedToDeleteConversation')}: ${error}`),
       ]);
     } finally {
       setConversationToDelete(null);
@@ -802,6 +807,7 @@ const InvincibleVoice = () => {
     userData,
     selectedConversationIndex,
     clearResponses,
+    t,
   ]);
   const handleSendMessage = useCallback(() => {
     if (!textInput.trim()) {
@@ -1045,15 +1051,15 @@ const InvincibleVoice = () => {
             ...prev,
             makeErrorItem(
               isInsecure
-                ? 'Microphone access requires HTTPS. Please access this app via a secure connection.'
-                : 'Please allow microphone access to use InvincibleVoice.',
+                ? t('errors.microphoneRequiresHttps')
+                : t('errors.microphoneAccessNeeded'),
             ),
           ];
         }
         return prev;
       });
     }
-  }, [microphoneAccess]);
+  }, [microphoneAccess, t]);
 
   // Keyboard shortcuts for response selection
   useEffect(() => {
@@ -1081,7 +1087,11 @@ const InvincibleVoice = () => {
       const responseIndex = validShortcuts.indexOf(event.key.toLowerCase());
 
       // Handle Shift+Shortcuts for editing responses
-      if (event.shiftKey && responseIndex !== -1 && responseIndex < NB_RESPONSES) {
+      if (
+        event.shiftKey &&
+        responseIndex !== -1 &&
+        responseIndex < NB_RESPONSES
+      ) {
         event.preventDefault();
         const responsesToUse = frozenResponses || pendingResponses;
         const allResponses = [
@@ -1110,8 +1120,8 @@ const InvincibleVoice = () => {
           const targetElement = responseElements[responseIndex];
           if (targetElement) {
             const editButton = targetElement.querySelector(
-              'div[title*="Edit"]',
-            ) as HTMLDivElement;
+              '[data-edit-response]',
+            ) as HTMLButtonElement | null;
             if (editButton) {
               editButton.click();
             }
@@ -1229,7 +1239,7 @@ const InvincibleVoice = () => {
   if (!healthStatus || !backendServerUrl) {
     return (
       <div className='flex flex-col items-center justify-center min-h-screen gap-4'>
-        <h1 className='mb-4 text-xl'>Loading InvincibleVoice…</h1>
+        <h1 className='mb-4 text-xl'>{t('common.loading')}</h1>
       </div>
     );
   }
@@ -1321,7 +1331,12 @@ const InvincibleVoice = () => {
         )}
         {isSettingsOpen && userData && (
           <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm'>
-            <div className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl'>
+            <div
+              role='dialog'
+              aria-modal='true'
+              aria-label={t('settings.title')}
+              className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl'
+            >
               <MobileSettingsPopup
                 userSettings={userData.user_settings}
                 email={userData.email}
@@ -1488,7 +1503,7 @@ const InvincibleVoice = () => {
                       userData.user_settings.additional_keywords.length ===
                         0) && (
                       <p className='text-xs italic text-muted'>
-                        No keywords added yet. Add them in settings.
+                        {t('conversation.noKeywordsYet')}
                       </p>
                     )}
                   </div>
@@ -1497,7 +1512,7 @@ const InvincibleVoice = () => {
                   <div className='p-2 border-b border-hairline'>
                     <div className='text-right'>
                       <span className='text-xs text-red-400'>
-                        Failed to load user data
+                        {t('errors.failedToLoadUserData')}
                       </span>
                     </div>
                   </div>
@@ -1559,7 +1574,7 @@ const InvincibleVoice = () => {
                     >
                       <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
-                          <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
+                          <span className='hide-on-touch flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
                             {uiSettings.keyboardLayout === 'qwerty' ? 'Z' : 'W'}
                           </span>
                         </div>
@@ -1579,7 +1594,7 @@ const InvincibleVoice = () => {
                     >
                       <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
                         <div className='flex items-center'>
-                          <span className='flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
+                          <span className='hide-on-touch flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
                             X
                           </span>
                         </div>
@@ -1604,7 +1619,8 @@ const InvincibleVoice = () => {
                           : 'border-transparent text-muted hover:text-ink-2',
                       )}
                     >
-                      🤖 Piloter l&apos;IA
+                      {t('conversation.aiPilotHint')}{' '}
+                      {t('conversation.aiPilotTab')}
                     </button>
                     <button
                       type='button'
@@ -1616,7 +1632,8 @@ const InvincibleVoice = () => {
                           : 'border-transparent text-muted hover:text-ink-2',
                       )}
                     >
-                      💬 Saisie directe
+                      {t('conversation.directInputHint')}{' '}
+                      {t('conversation.directInputTab')}
                     </button>
                   </div>
 
@@ -1629,7 +1646,7 @@ const InvincibleVoice = () => {
                   >
                     <input
                       className='grow px-6 py-4 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-3xl focus:outline-none focus:border-blue'
-                      placeholder="Guider l'IA (ex: je veux parler de...)"
+                      placeholder={t('conversation.aiPilotPlaceholder')}
                       value={directiveInput}
                       onChange={(e) => setDirectiveInput(e.target.value)}
                       onKeyDown={(e) => {
@@ -1644,7 +1661,7 @@ const InvincibleVoice = () => {
                       className='px-6 py-4 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-3xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue cursor-pointer'
                       disabled={!directiveInput.trim()}
                     >
-                      Piloter l&apos;IA
+                      {t('conversation.aiPilotButton')}
                     </button>
                   </div>
 
@@ -1698,7 +1715,12 @@ const InvincibleVoice = () => {
       )}
       {isSettingsOpen && userData && (
         <div className='fixed inset-0 z-50 flex items-center justify-center px-14 py-8 bg-ink/40 backdrop-blur-2xl p-2'>
-          <div className='w-full h-full max-w-7xl max-h-full px-12 pt-6 pb-8 overflow-y-auto border bg-surface border-hairline rounded-[40px] shadow-custom'>
+          <div
+            role='dialog'
+            aria-modal='true'
+            aria-label={t('settings.title')}
+            className='w-full h-full max-w-7xl max-h-full px-12 pt-6 pb-8 overflow-y-auto border bg-surface border-hairline rounded-[40px] shadow-custom'
+          >
             <SettingsPopup
               userSettings={userData.user_settings}
               email={userData.email}

@@ -34,9 +34,18 @@
     "termsOfService": "Términos de servicio",
     "termsOfServiceMessage": "Para usar Invincible Voice, primero debes consentir los",
     "accept": "Aceptar los términos de servicio",
-    "refuse": "Rechazar los términos de servicio"
+    "refuse": "Rechazar los términos de servicio",
+    "loading": "Cargando InvincibleVoice…"
+  },
+  "errors": {
+    "microphoneRequiresHttps": "El acceso al micrófono requiere HTTPS. Accede a la aplicación mediante una conexión segura.",
+    "microphoneAccessNeeded": "Permite el acceso al micrófono para usar InvincibleVoice.",
+    "failedToLoadUserData": "No se pudieron cargar los datos del usuario",
+    "failedToDeleteConversation": "No se pudo eliminar la conversación"
   },
   "settings": {
+    "title": "Ajustes",
+    "lockedDuringConversation": "No puedes cambiar los ajustes durante una conversación. Finaliza primero la conversación.",
     "additionalKeywords": "Palabras clave adicionales",
     "addKeywordPlaceholder": "Añade tu palabra clave",
     "addFriendPlaceholder": "Introduce el nombre de un amigo",
@@ -138,6 +147,7 @@
     "sendMessage": "Enviar",
     "typeMessagePlaceholder": "Escribe tu mensaje aquí…",
     "waitingForResponse": "Esperando respuesta…",
+    "responseSizeAriaLabel": "Tamaño de las respuestas: {size}",
     "quickResponses": {
       "yes": "Sí",
       "no": "No",
@@ -148,7 +158,20 @@
     "emergencyButton": "Ayuda",
     "emergencyPhrase": "¡Necesito ayuda, ven por favor!",
     "takeFloor": "Tomo la palabra",
-    "takeFloorHint": "Tomar la palabra: recibe sugerencias para iniciar o dirigir la conversación en lugar de responder."
+    "takeFloorHint": "Tomar la palabra: recibe sugerencias para iniciar o dirigir la conversación en lugar de responder.",
+    "noKeywordsYet": "No hay palabras clave añadidas todavía. Añádelas en configuración.",
+    "directInputTab": "Entrada directa",
+    "directInputHint": "💬",
+    "aiPilotTab": "Pilotar la IA",
+    "aiPilotHint": "🤖",
+    "aiPilotPlaceholder": "Guiar la IA (ej: quiero hablar de…)",
+    "aiPilotButton": "Pilotar la IA",
+    "editResponseAriaLabel": "Editar la respuesta. El atajo es Shift + {shortcut}",
+    "stopConversationAriaLabel": "Detener la conversación",
+    "backAriaLabel": "Volver",
+    "closeAriaLabel": "Cerrar",
+    "cancelAriaLabel": "Cancelar",
+    "editResponsePlaceholder": "Escribe tu mensaje…"
   },
   "documentEditor": {
     "editDocument": "Editar documento",

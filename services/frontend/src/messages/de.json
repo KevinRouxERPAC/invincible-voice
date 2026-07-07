@@ -34,9 +34,18 @@
     "termsOfService": "Nutzungsbedingungen",
     "termsOfServiceMessage": "Um Invincible Voice zu nutzen, müssen Sie den",
     "accept": "Nutzungsbedingungen akzeptieren",
-    "refuse": "Nutzungsbedingungen ablehnen"
+    "refuse": "Nutzungsbedingungen ablehnen",
+    "loading": "InvincibleVoice wird geladen…"
+  },
+  "errors": {
+    "microphoneRequiresHttps": "Der Mikrofonzugriff erfordert HTTPS. Bitte greifen Sie über eine sichere Verbindung auf die App zu.",
+    "microphoneAccessNeeded": "Bitte erlauben Sie den Mikrofonzugriff, um InvincibleVoice zu verwenden.",
+    "failedToLoadUserData": "Benutzerdaten konnten nicht geladen werden",
+    "failedToDeleteConversation": "Konversation konnte nicht gelöscht werden"
   },
   "settings": {
+    "title": "Einstellungen",
+    "lockedDuringConversation": "Während eines Gesprächs können die Einstellungen nicht geändert werden. Beenden Sie zuerst das Gespräch.",
     "additionalKeywords": "Zusätzliche Schlüsselwörter",
     "addKeywordPlaceholder": "Schlüsselwort hinzufügen",
     "addFriendPlaceholder": "Namen eines Freundes eingeben",
@@ -138,6 +147,7 @@
     "sendMessage": "Senden",
     "typeMessagePlaceholder": "Geben Sie Ihre Nachricht hier ein…",
     "waitingForResponse": "Warten auf Antwort…",
+    "responseSizeAriaLabel": "Antwortlänge: {size}",
     "quickResponses": {
       "yes": "Ja",
       "no": "Nein",
@@ -148,7 +158,20 @@
     "emergencyButton": "Hilfe",
     "emergencyPhrase": "Ich brauche Hilfe, bitte kommen Sie!",
     "takeFloor": "Ich ergreife das Wort",
-    "takeFloorHint": "Das Wort ergreifen: Vorschläge erhalten, um das Gespräch zu beginnen oder zu lenken, statt zu antworten."
+    "takeFloorHint": "Das Wort ergreifen: Vorschläge erhalten, um das Gespräch zu beginnen oder zu lenken, statt zu antworten.",
+    "noKeywordsYet": "Noch keine Schlüsselwörter hinzugefügt. Fügen Sie sie in den Einstellungen hinzu.",
+    "directInputTab": "Direkteingabe",
+    "directInputHint": "💬",
+    "aiPilotTab": "KI steuern",
+    "aiPilotHint": "🤖",
+    "aiPilotPlaceholder": "KI leiten (z. B. ich möchte über…)",
+    "aiPilotButton": "KI steuern",
+    "editResponseAriaLabel": "Antwort bearbeiten. Shortcut ist Shift + {shortcut}",
+    "stopConversationAriaLabel": "Unterhaltung beenden",
+    "backAriaLabel": "Zurück",
+    "closeAriaLabel": "Schließen",
+    "cancelAriaLabel": "Abbrechen",
+    "editResponsePlaceholder": "Geben Sie Ihre Nachricht ein…"
   },
   "documentEditor": {
     "editDocument": "Dokument bearbeiten",

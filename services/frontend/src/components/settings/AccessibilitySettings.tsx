@@ -10,7 +10,12 @@ import {
   setScanSettings,
   ScanSettings,
 } from '@/utils/scanSettings';
-import { getUiSettings, setUiSettings, UiSettings } from '@/utils/uiSettings';
+import {
+  FONT_SCALE_STEPS,
+  getUiSettings,
+  setUiSettings,
+  UiSettings,
+} from '@/utils/uiSettings';
 
 const MODES: ScanMode[] = ['off', 'auto', 'step', 'dwell'];
 const MODE_LABEL_KEY: Record<ScanMode, string> = {
@@ -23,6 +28,7 @@ const MODE_LABEL_KEY: Record<ScanMode, string> = {
 const UI_TRANSLATIONS = {
   fr: {
     uiSettings: 'Affichage & Disposition',
+    textSize: 'Taille du texte',
     theme: 'Thème visuel',
     themeLight: 'Clair',
     themeDark: 'Sombre',
@@ -35,6 +41,7 @@ const UI_TRANSLATIONS = {
   },
   en: {
     uiSettings: 'Display & Layout',
+    textSize: 'Text size',
     theme: 'Visual Theme',
     themeLight: 'Light',
     themeDark: 'Dark',
@@ -47,6 +54,7 @@ const UI_TRANSLATIONS = {
   },
   de: {
     uiSettings: 'Anzeige & Layout',
+    textSize: 'Textgröße',
     theme: 'Design',
     themeLight: 'Hell',
     themeDark: 'Dunkel',
@@ -59,6 +67,7 @@ const UI_TRANSLATIONS = {
   },
   es: {
     uiSettings: 'Pantalla y Diseño',
+    textSize: 'Tamaño del texto',
     theme: 'Tema visual',
     themeLight: 'Claro',
     themeDark: 'Oscuro',
@@ -71,6 +80,7 @@ const UI_TRANSLATIONS = {
   },
   pt: {
     uiSettings: 'Tela e Layout',
+    textSize: 'Tamanho do texto',
     theme: 'Tema visual',
     themeLight: 'Claro',
     themeDark: 'Escuro',
@@ -81,6 +91,14 @@ const UI_TRANSLATIONS = {
     keyboardLayoutAzerty: 'AZERTY (A-Z-Q-S)',
     keyboardLayoutQwerty: 'QWERTY (A-S-D-F)',
   },
+};
+
+/** Short A-label for each text-size step, sized to preview the effect. */
+const FONT_SCALE_LABELS: Record<number, string> = {
+  1: 'A',
+  1.15: 'A',
+  1.3: 'A',
+  1.5: 'A',
 };
 
 function describeKey(key: string): string {
@@ -245,6 +263,33 @@ const AccessibilitySettings: FC = () => {
       <div className='my-3 border-t border-hairline' />
 
       <div className='text-sm font-medium text-ink'>{uiTrans.uiSettings}</div>
+
+      {/* Text size selector — scales the whole UI via the --fz multiplier. */}
+      <div className='flex flex-col gap-1'>
+        <span className='text-xs text-muted'>{uiTrans.textSize}</span>
+        <div
+          className='flex gap-2'
+          role='group'
+          aria-label={uiTrans.textSize}
+        >
+          {FONT_SCALE_STEPS.map((step, i) => (
+            <button
+              key={step}
+              type='button'
+              onClick={() => updateUi({ fontScale: step })}
+              aria-pressed={uiSettings.fontScale === step}
+              className={`min-h-11 min-w-11 px-3 flex items-center justify-center rounded-2xl border transition-colors ${
+                uiSettings.fontScale === step
+                  ? 'bg-blue border-blue text-white'
+                  : 'bg-surface border-hairline-2 text-ink-2 hover:bg-paper'
+              }`}
+              style={{ fontSize: `${0.85 + i * 0.22}rem` }}
+            >
+              {FONT_SCALE_LABELS[step] ?? 'A'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* Theme selector */}
       <div className='flex flex-col gap-1'>

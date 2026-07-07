@@ -69,6 +69,9 @@ export default function RootLayout({
                 if (settings.contrast === 'high') {
                   document.documentElement.classList.add('contrast');
                 }
+                if (typeof settings.fontScale === 'number' && settings.fontScale >= 1 && settings.fontScale <= 1.5) {
+                  document.documentElement.style.setProperty('--fz', String(settings.fontScale));
+                }
               } catch (e) {}
             `,
           }}

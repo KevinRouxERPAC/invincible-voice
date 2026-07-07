@@ -76,7 +76,7 @@ const DocumentEditorPopup: FC<DocumentEditorPopupProps> = ({
   return (
     <div className='fixed inset-0 z-50 flex items-center justify-center'>
       <button
-        aria-label='cancel'
+        aria-label={t('conversation.cancelAriaLabel')}
         className='absolute inset-0 bg-ink/40 backdrop-blur'
         onClick={onCancel}
       />

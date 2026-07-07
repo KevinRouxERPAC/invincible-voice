@@ -73,9 +73,21 @@ function isSelectable(el: HTMLElement): boolean {
   return true;
 }
 
+// When a modal dialog is open, scanning must stay inside it — otherwise the
+// highlight walks buttons behind the (merely blurred) backdrop, which is
+// disorienting and lets the user trigger hidden actions. Dialogs are mounted
+// only while open, so the last one present is the active one.
+function getScanRoot(): ParentNode {
+  const dialogs = document.querySelectorAll<HTMLElement>(
+    '[role="dialog"], [aria-modal="true"]',
+  );
+  const last = dialogs[dialogs.length - 1];
+  return last ?? document;
+}
+
 function collectScanItems(): HTMLElement[] {
   const els = Array.from(
-    document.querySelectorAll<HTMLElement>(SCAN_ITEM_SELECTOR),
+    getScanRoot().querySelectorAll<HTMLElement>(SCAN_ITEM_SELECTOR),
   ).filter(isSelectable);
   return els.sort((a, b) => {
     const orderA = Number(a.dataset.scanOrder ?? '0') || 0;

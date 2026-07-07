@@ -67,7 +67,7 @@ const CouldNotConnect: FC<CouldNotConnectProps> = ({ healthStatus }) => {
   };
 
   return (
-    <div className='w-full h-full flex flex-col gap-12 items-center justify-center bg-background'>
+    <div className='w-full h-full flex flex-col gap-12 items-center justify-center bg-paper'>
       <div className='text-center text-xl'>
         <h1 className='text-3xl mb-4'>{t('connection.couldNotConnect')}</h1>
         <p>{t('connection.serviceStatus')}</p>

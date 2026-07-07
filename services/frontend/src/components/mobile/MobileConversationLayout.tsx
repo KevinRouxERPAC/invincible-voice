@@ -176,7 +176,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
       <div className='flex items-center justify-between px-4 py-3 landscape:py-1 shrink-0 h-[60px] landscape:h-[44px]'>
         {isConnected ? (
           <button
-            aria-label='Stop conversation'
+            aria-label={t('conversation.stopConversationAriaLabel')}
             className='shrink-0 h-11 px-5 cursor-pointer bg-terra-tint border border-terra text-terra rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onConnectButtonPress}
             title={t('conversation.stopConversation')}
@@ -190,7 +190,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
           </button>
         ) : (
           <button
-            aria-label='Back'
+            aria-label={t('conversation.backAriaLabel')}
             className='shrink-0 h-11 px-5 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onBack}
             title={t('common.back')}

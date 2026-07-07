@@ -13,13 +13,30 @@ export interface UiSettings {
   theme: ThemeMode;
   contrast: ContrastMode;
   keyboardLayout: KeyboardLayout;
+  /** Global text-size multiplier applied to the root font-size (see --fz). */
+  fontScale: number;
 }
+
+/** Discrete text-size steps offered in the accessibility panel. */
+export const FONT_SCALE_STEPS = [1, 1.15, 1.3, 1.5] as const;
+export const FONT_SCALE_BOUNDS = { min: 1, max: 1.5 } as const;
 
 export const DEFAULT_UI_SETTINGS: UiSettings = {
   theme: 'light',
   contrast: 'normal',
   keyboardLayout: 'azerty',
+  fontScale: 1,
 };
+
+function normalizeFontScale(value: unknown): number {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return DEFAULT_UI_SETTINGS.fontScale;
+  }
+  return Math.min(
+    FONT_SCALE_BOUNDS.max,
+    Math.max(FONT_SCALE_BOUNDS.min, value),
+  );
+}
 
 function normalize(raw: Partial<UiSettings> | null): UiSettings {
   if (!raw) {
@@ -29,6 +46,7 @@ function normalize(raw: Partial<UiSettings> | null): UiSettings {
     theme: raw.theme === 'dark' ? 'dark' : 'light',
     contrast: raw.contrast === 'high' ? 'high' : 'normal',
     keyboardLayout: raw.keyboardLayout === 'qwerty' ? 'qwerty' : 'azerty',
+    fontScale: normalizeFontScale(raw.fontScale),
   };
 }
 

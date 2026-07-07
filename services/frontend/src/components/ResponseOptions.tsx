@@ -121,16 +121,19 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
     if (alwaysShow) {
       // When alwaysShow is true, create NB_RESPONSES slots for dynamic responses + 2 static
       const responsesToShow = frozenResponses || responses;
-      const dynamicResponses = Array.from({ length: NB_RESPONSES }, (_, index) => {
-        return (
-          responsesToShow[index] || {
-            id: `empty-${index}`,
-            text: '',
-            isComplete: false,
-            messageId: crypto.randomUUID(),
-          }
-        );
-      });
+      const dynamicResponses = Array.from(
+        { length: NB_RESPONSES },
+        (_, index) => {
+          return (
+            responsesToShow[index] || {
+              id: `empty-${index}`,
+              text: '',
+              isComplete: false,
+              messageId: crypto.randomUUID(),
+            }
+          );
+        },
+      );
 
       return [...dynamicResponses, staticContextOption, staticRepeatOption];
     }
@@ -196,7 +199,11 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
           {t('settings.responsesLoading')} {t('settings.audioWillBeReady')}
         </div>
       )}
-      <div className='flex flex-col gap-2'>
+      <div
+        className='flex flex-col gap-2'
+        aria-live='polite'
+        aria-label={t('conversation.responses')}
+      >
         {displayResponses.slice(0, 4).map((response, index) => (
           <Fragment key={response.id}>
             {editingIndex === index && (
@@ -231,8 +238,13 @@ const ResponseOptions: FC<ResponseOptionsProps> = ({
         <div className='flex flex-row gap-2'>
           {ORDERED_RESPONSE_SIZES.map((size) => (
             <button
+              aria-label={t('conversation.responseSizeAriaLabel').replace(
+                '{size}',
+                size,
+              )}
+              aria-pressed={size === currentResponseSize}
               className={cn(
-                'size-8 font-medium text-sm flex flex-col items-center justify-center rounded-xl transition-all duration-200 border',
+                'size-10 font-medium text-sm flex flex-col items-center justify-center rounded-xl transition-all duration-200 border focus:outline-none focus:ring-2 focus:ring-blue',
                 {
                   'bg-blue text-white border-blue':
                     size === currentResponseSize,
@@ -292,6 +304,7 @@ const EditingResponseOption: FC<EditingResponseOptionProps> = ({
   setEditingIndex,
   setEditingText,
 }) => {
+  const t = useTranslations();
   const ref = useRef<HTMLTextAreaElement | null>(null);
   const onChange = useCallback(
     (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -335,7 +348,7 @@ const EditingResponseOption: FC<EditingResponseOptionProps> = ({
         onChange={onChange}
         onKeyDown={onKeyDown}
         className='flex-1 text-xs text-ink bg-transparent outline-none resize-none'
-        placeholder='Type your message…'
+        placeholder={t('conversation.editResponsePlaceholder')}
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus
       />
@@ -368,7 +381,7 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
 }) => {
   const t = useTranslations();
   const onClickEdit = useCallback(
-    (event: MouseEvent<HTMLDivElement>) => {
+    (event: MouseEvent<HTMLButtonElement>) => {
       event.stopPropagation();
       setEditingIndex(index);
       setEditingText(responseText);
@@ -379,58 +392,69 @@ const BaseResponseOption: FC<BaseResponseOptionProps> = ({
     onSelect(id);
   }, [id, onSelect]);
 
+  const editLabel = t('conversation.editResponseAriaLabel').replace(
+    '{shortcut}',
+    shortcut,
+  );
+
+  // The select card and the edit control are sibling buttons (never nested):
+  // nesting interactive elements is invalid HTML and hides the edit action from
+  // the keyboard and screen readers.
   return (
-    <button
+    <div
       data-response-index={index}
-      data-scan-item
-      onClick={onClickSelect}
-      className={cn(
-        'glass-card p-4 text-left rounded-2xl w-full h-24 group relative focus:outline-none focus:ring-2 focus:ring-sage focus:ring-opacity-50 flex flex-row items-center gap-4',
-        {
-          'cursor-pointer': responseText.trim() && isComplete,
-          'cursor-wait opacity-70': !responseText.trim() || !isComplete,
-        },
-      )}
-      disabled={!responseText.trim() || !isComplete}
+      className='relative w-full group'
     >
-      <div className='flex flex-col items-center gap-2'>
-        <span className='flex flex-col items-center justify-center font-bold text-muted border border-hairline rounded-full size-10 font-base bg-paper'>
-          {shortcut}
-        </span>
-        {responseText.trim() && !isComplete && (
-          <div className='w-4 h-4 border-2 border-blue rounded-full border-t-transparent animate-spin' />
+      <button
+        data-scan-item
+        onClick={onClickSelect}
+        className={cn(
+          'glass-card p-4 text-left rounded-2xl w-full h-24 focus:outline-none focus:ring-2 focus:ring-sage focus:ring-opacity-50 flex flex-row items-center gap-4',
+          isEditable ? 'pr-16' : '',
+          {
+            'cursor-pointer': responseText.trim() && isComplete,
+            'cursor-wait opacity-70': !responseText.trim() || !isComplete,
+          },
         )}
-      </div>
-      <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
-        <p className='text-sm md:text-base leading-snug text-ink font-medium'>
-          {responseText.trim() ? (
-            <Fragment>
-              {responseText}
-              {!isComplete && (
-                <span className='inline-block w-2 h-4 ml-2 bg-blue animate-pulse rounded-sm' />
-              )}
-            </Fragment>
-          ) : (
-            <span className='italic text-muted'>
-              {t('conversation.waitingForResponse')}
-            </span>
+        disabled={!responseText.trim() || !isComplete}
+      >
+        <div className='flex flex-col items-center gap-2'>
+          <span className='hide-on-touch flex flex-col items-center justify-center font-bold text-muted border border-hairline rounded-full size-10 font-base bg-paper'>
+            {shortcut}
+          </span>
+          {responseText.trim() && !isComplete && (
+            <div className='w-4 h-4 border-2 border-blue rounded-full border-t-transparent animate-spin' />
           )}
-        </p>
-      </div>
-      {isEditable && (
-        // eslint-disable-next-line jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events
-        <div
-          aria-label={`Edit the response. Shortcut is Shift + ${shortcut}`}
-          onClick={onClickEdit}
-          className='p-2 transition-colors rounded-full cursor-pointer bg-paper hover:bg-blue-tint ml-auto'
-          title={`Edit the response. Shortcut is Shift + ${shortcut}`}
-        >
-          <Edit2 className='w-4 h-4 text-muted group-hover:text-blue-600' />
-          <div className='absolute px-2 py-1 mb-2 text-xs text-white transition-opacity transform -translate-x-1/2 bg-gray-900 rounded opacity-0 pointer-events-none bottom-full left-1/2 whitespace-nowrap group-hover:opacity-100'>
-            Edit the response. Shortcut is Shift + {shortcut}
-          </div>
         </div>
+        <div className='flex flex-col justify-center grow h-full overflow-y-auto pr-2'>
+          <p className='text-sm md:text-base leading-snug text-ink font-medium'>
+            {responseText.trim() ? (
+              <Fragment>
+                {responseText}
+                {!isComplete && (
+                  <span className='inline-block w-2 h-4 ml-2 bg-blue animate-pulse rounded-sm' />
+                )}
+              </Fragment>
+            ) : (
+              <span className='italic text-muted'>
+                {t('conversation.waitingForResponse')}
+              </span>
+            )}
+          </p>
+        </div>
+      </button>
+      {isEditable && (
+        <button
+          type='button'
+          data-edit-response
+          aria-label={editLabel}
+          title={editLabel}
+          onClick={onClickEdit}
+          className='absolute flex items-center justify-center rounded-full size-11 top-1/2 -translate-y-1/2 right-3 bg-paper hover:bg-blue-tint focus:outline-none focus:ring-2 focus:ring-blue transition-colors'
+        >
+          <Edit2 className='w-4 h-4 text-muted hover:text-blue-600' />
+        </button>
       )}
-    </button>
+    </div>
   );
 };

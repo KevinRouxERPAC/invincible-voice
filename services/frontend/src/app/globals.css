@@ -12,7 +12,8 @@
   --surface-2: #fbfaf6;
   --ink: #221f1b;
   --ink-2: #534f48;
-  --muted: #8a867c;
+  /* Assombri pour atteindre un contraste AA (>=4.5:1) sur les surfaces claires. */
+  --muted: #6b675f;
   --hairline: #e9e4da;
   --hairline-2: #dad4c7;
 
@@ -61,7 +62,10 @@
     var(--font-satoshi), system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 500;
-  font-size: 16px;
+  /* --fz est un multiplicateur global de taille de texte piloté depuis les
+     réglages d'accessibilité. Comme les tailles Tailwind (text-xs/sm/base…)
+     sont en rem, elles suivent cette taille de base. */
+  font-size: calc(16px * var(--fz));
 
   color-scheme: light;
   color: var(--ink);
@@ -512,6 +516,14 @@ select {
   min-width: 56px;
 }
 
+/* Keyboard-shortcut hints (letter badges) are meaningless without a physical
+   keyboard, so hide them on touch-only (coarse pointer) devices. */
+@media (pointer: coarse) {
+  .hide-on-touch {
+    display: none !important;
+  }
+}
+
 /* Wave bounce animation for playing TTS messages */
 @keyframes wave-bounce {
   0% {
@@ -524,4 +536,26 @@ select {
 .animate-wave-bar {
   animation: wave-bounce 0.5s ease-in-out infinite alternate;
   transform-origin: bottom;
+}
+
+/* Respect de la préférence système « mouvement réduit ».
+   On neutralise uniquement les animations décoratives (halos qui respirent,
+   ondes, effets de survol des cartes). Les retours fonctionnels du moteur de
+   balayage (surlignage, remplissage du dwell) et les indicateurs de
+   chargement sont conservés car ils portent de l'information. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-orb-breathe,
+  .animate-orb-breathe-reverse,
+  .animate-wave-bar {
+    animation: none !important;
+  }
+  .glass-card {
+    transition: none !important;
+  }
+  .glass-card:hover {
+    transform: none !important;
+  }
+  .glass-card:active {
+    transform: none !important;
+  }
 }

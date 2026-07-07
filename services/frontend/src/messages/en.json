@@ -34,9 +34,18 @@
     "termsOfService": "Terms of service",
     "termsOfServiceMessage": "To use Invincible Voice, you must first consent to the",
     "accept": "Accept the terms of service",
-    "refuse": "Refuse the terms of service"
+    "refuse": "Refuse the terms of service",
+    "loading": "Loading InvincibleVoice…"
+  },
+  "errors": {
+    "microphoneRequiresHttps": "Microphone access requires HTTPS. Please access this app via a secure connection.",
+    "microphoneAccessNeeded": "Please allow microphone access to use InvincibleVoice.",
+    "failedToLoadUserData": "Failed to load user data",
+    "failedToDeleteConversation": "Failed to delete conversation"
   },
   "settings": {
+    "title": "Settings",
+    "lockedDuringConversation": "You can't change settings during a conversation. End the conversation first.",
     "additionalKeywords": "Additional keywords",
     "addKeywordPlaceholder": "Add your keyword",
     "addFriendPlaceholder": "Enter a friend's name",
@@ -138,6 +147,7 @@
     "sendMessage": "Send",
     "typeMessagePlaceholder": "Type your message here…",
     "waitingForResponse": "Waiting for response…",
+    "responseSizeAriaLabel": "Response size: {size}",
     "quickResponses": {
       "yes": "Yes",
       "no": "No",
@@ -148,7 +158,20 @@
     "emergencyButton": "Help",
     "emergencyPhrase": "I need help, please come!",
     "takeFloor": "I'll speak",
-    "takeFloorHint": "Take the floor: get suggestions to start or steer the conversation instead of replying."
+    "takeFloorHint": "Take the floor: get suggestions to start or steer the conversation instead of replying.",
+    "noKeywordsYet": "No keywords added yet. Add them in settings.",
+    "directInputTab": "Direct input",
+    "directInputHint": "💬",
+    "aiPilotTab": "Pilot the AI",
+    "aiPilotHint": "🤖",
+    "aiPilotPlaceholder": "Guide the AI (e.g. I want to talk about…)",
+    "aiPilotButton": "Pilot the AI",
+    "editResponseAriaLabel": "Edit the response. Shortcut is Shift + {shortcut}",
+    "stopConversationAriaLabel": "Stop conversation",
+    "backAriaLabel": "Back",
+    "closeAriaLabel": "Close",
+    "cancelAriaLabel": "Cancel",
+    "editResponsePlaceholder": "Type your message…"
   },
   "documentEditor": {
     "editDocument": "Edit document",

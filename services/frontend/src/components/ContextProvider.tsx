@@ -23,6 +23,8 @@ const ContextProvider: FC<PropsWithChildren> = ({ children = null }) => {
       } else {
         root.classList.remove('contrast');
       }
+
+      root.style.setProperty('--fz', String(settings.fontScale));
     };
 
     // Apply settings immediately on client-side mount

@@ -453,7 +453,9 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   return (
     <div className='flex flex-col w-full h-full gap-y-2'>
       <div className='flex flex-row justify-between w-full'>
-        <h2 className='text-base font-medium text-ink'>Paramètres</h2>
+        <h2 className='text-base font-medium text-ink'>
+          {t('settings.title')}
+        </h2>
 
         <div className='flex flex-row items-center gap-2 -mr-5 -mt-2'>
           <button
@@ -988,7 +990,11 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
 
       {showDeleteVoiceConfirm && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-ink/40 backdrop-blur-sm'>
-          <div className='bg-surface border border-hairline shadow-[var(--sh-lg)] rounded-2xl p-6 max-w-md w-full mx-4'>
+          <div
+            role='dialog'
+            aria-modal='true'
+            className='bg-surface border border-hairline shadow-[var(--sh-lg)] rounded-2xl p-6 max-w-md w-full mx-4'
+          >
             <h3 className='text-lg font-medium text-ink mb-2'>
               {t('settings.deleteVoiceTitle')}
             </h3>
@@ -1061,7 +1067,7 @@ const AdditionalKeyword: FC<AdditionalKeywordProps> = ({
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
+        className='absolute flex items-center justify-center leading-none size-6 text-base text-white bg-red rounded-full -top-2 -right-2 hover:bg-[#a73d2f] focus:outline-none focus:ring-2 focus:ring-red transition-colors'
         title={t('common.delete')}
       >
         ×
@@ -1099,7 +1105,7 @@ const PhraseChip: FC<PhraseChipProps> = ({ phrase, removePhrase }) => {
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
+        className='absolute flex items-center justify-center leading-none size-6 text-base text-white bg-red rounded-full -top-2 -right-2 hover:bg-[#a73d2f] focus:outline-none focus:ring-2 focus:ring-red transition-colors'
         title={t('common.delete')}
       >
         ×
@@ -1134,7 +1140,7 @@ const Friend: FC<FriendProps> = ({ friend, removeFriend }) => {
       <button
         type='button'
         onClick={onClickRemove}
-        className='absolute flex items-center justify-center w-4 h-4 text-sm text-white transition-opacity bg-red rounded-full opacity-0 -top-1 -right-1 hover:bg-[#a73d2f] group-hover:opacity-100'
+        className='absolute flex items-center justify-center leading-none size-6 text-base text-white bg-red rounded-full -top-2 -right-2 hover:bg-[#a73d2f] focus:outline-none focus:ring-2 focus:ring-red transition-colors'
         title={t('common.delete')}
       >
         ×

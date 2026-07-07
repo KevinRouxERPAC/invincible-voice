@@ -34,9 +34,18 @@
     "termsOfService": "Conditions d'utilisation",
     "termsOfServiceMessage": "Pour utiliser Invincible Voice, vous devez d'abord consentir aux",
     "accept": "Accepter les conditions d'utilisation",
-    "refuse": "Refuser les conditions d'utilisation"
+    "refuse": "Refuser les conditions d'utilisation",
+    "loading": "Chargement d'InvincibleVoice…"
+  },
+  "errors": {
+    "microphoneRequiresHttps": "L'accès au microphone nécessite HTTPS. Veuillez accéder à l'application via une connexion sécurisée.",
+    "microphoneAccessNeeded": "Veuillez autoriser l'accès au microphone pour utiliser InvincibleVoice.",
+    "failedToLoadUserData": "Échec du chargement des données utilisateur",
+    "failedToDeleteConversation": "Échec de la suppression de la conversation"
   },
   "settings": {
+    "title": "Paramètres",
+    "lockedDuringConversation": "Vous ne pouvez pas modifier les paramètres pendant une conversation. Terminez d'abord la conversation.",
     "additionalKeywords": "Mots-clés supplémentaires",
     "addKeywordPlaceholder": "Ajoutez votre mot-clé",
     "addFriendPlaceholder": "Entrez le nom d'un ami",
@@ -138,6 +147,7 @@
     "sendMessage": "Envoyer",
     "typeMessagePlaceholder": "Tapez votre message ici…",
     "waitingForResponse": "En attente de réponse…",
+    "responseSizeAriaLabel": "Taille des réponses : {size}",
     "quickResponses": {
       "yes": "Oui",
       "no": "Non",
@@ -148,7 +158,20 @@
     "emergencyButton": "À l'aide",
     "emergencyPhrase": "J'ai besoin d'aide, venez s'il vous plaît !",
     "takeFloor": "Je prends la parole",
-    "takeFloorHint": "Prendre la parole : obtenir des suggestions pour lancer ou orienter la conversation au lieu de répondre."
+    "takeFloorHint": "Prendre la parole : obtenir des suggestions pour lancer ou orienter la conversation au lieu de répondre.",
+    "noKeywordsYet": "Aucun mot-clé ajouté pour l'instant. Ajoutez-les dans les paramètres.",
+    "directInputTab": "Saisie directe",
+    "directInputHint": "💬",
+    "aiPilotTab": "Piloter l'IA",
+    "aiPilotHint": "🤖",
+    "aiPilotPlaceholder": "Guider l'IA (ex : je veux parler de…)",
+    "aiPilotButton": "Piloter l'IA",
+    "editResponseAriaLabel": "Modifier la réponse. Le raccourci est Maj + {shortcut}",
+    "stopConversationAriaLabel": "Arrêter la conversation",
+    "backAriaLabel": "Retour",
+    "closeAriaLabel": "Fermer",
+    "cancelAriaLabel": "Annuler",
+    "editResponsePlaceholder": "Saisissez votre message…"
   },
   "documentEditor": {
     "editDocument": "Éditer un document",
