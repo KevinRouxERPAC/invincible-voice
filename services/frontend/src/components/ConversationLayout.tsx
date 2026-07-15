@@ -269,6 +269,10 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
       style={{
         height: `${vh}px`,
         paddingBottom: keyboardHeight > 0 ? `${keyboardHeight}px` : undefined,
+        // In landscape the Android navigation bar sits on a side edge and
+        // overlapped the response cards / send button without these.
+        paddingLeft: 'var(--safe-area-inset-left)',
+        paddingRight: 'var(--safe-area-inset-right)',
       }}
     >
       {/* Safe area spacer */}
@@ -386,7 +390,11 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
                     currentSpeakerMessage={currentSpeakerMessage}
                   />
                 </div>
-                <div className='flex flex-col shrink-0 h-[42%] min-h-[190px] border-t border-hairline landscape:h-auto landscape:min-h-0 landscape:flex-1 landscape:border-t-0 landscape:border-l'>
+                {/* landscape:basis-1/2 matters: the chat column keeps flex-1
+                    (grow) + basis-1/2, so without a matching basis here the
+                    responses column started from 0% and ended up at ~25% —
+                    cards wrapped one character per line. */}
+                <div className='flex flex-col shrink-0 h-[42%] min-h-[190px] border-t border-hairline landscape:h-auto landscape:min-h-0 landscape:flex-1 landscape:basis-1/2 landscape:border-t-0 landscape:border-l'>
                   <ResponsePanel
                     frozenResponses={frozenResponses}
                     pendingResponses={pendingResponses}

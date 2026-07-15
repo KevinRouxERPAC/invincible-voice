@@ -13,7 +13,12 @@ from typing_extensions import Annotated
 
 from backend import metrics as mt
 from backend.app_types import UserSettings
-from backend.kyutai_constants import BACKEND_MODE, REDIS_URL, STT_LOCK_TTL_SECONDS
+from backend.kyutai_constants import (
+    ALLOW_ANONYMOUS_USER,
+    BACKEND_MODE,
+    REDIS_URL,
+    STT_LOCK_TTL_SECONDS,
+)
 from backend.libs.redis_lock import RedisLockManager
 from backend.libs.websockets import report_websocket_exception, run_route
 from backend.security import decode_access_token
@@ -129,6 +134,11 @@ async def websocket_route(
             break
 
     if user is None:
+        if not ALLOW_ANONYMOUS_USER:
+            # Public deployment with anonymous access disabled: an
+            # unauthenticated socket must not read/write the shared account.
+            await websocket.close(code=4401, reason="Authentication required")
+            return
         user = get_or_create_anonymous_user()
 
     logger.info("New WebSocket connection")
@@ -188,4 +198,11 @@ async def websocket_route(
 
 @user_router.get("/anonymous")
 def get_anonymous_user() -> UserData:
+    # The anonymous profile carries the user's settings AND conversation
+    # history with no authentication: it must be closable on public servers.
+    if not ALLOW_ANONYMOUS_USER:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Anonymous access is disabled on this server",
+        )
     return get_or_create_anonymous_user()

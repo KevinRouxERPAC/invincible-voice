@@ -33,6 +33,13 @@ LLM_MODEL = os.environ["KYUTAI_LLM_MODEL"]
 # - "audio": default, uses Opus/VAD server-side STT pipeline.
 # - "text_only": backend does not require audio dependencies (no fastrtc).
 BACKEND_MODE = os.environ.get("BACKEND_MODE", "audio").strip().lower()
+
+# The shared anonymous account (used by the native app without login) exposes
+# its full profile AND conversation history over GET /v1/user/anonymous with
+# no authentication. That is fine on a LAN/private deployment, but on a public
+# server it leaks the user's conversations (de facto health-related data) to
+# anyone. Set ALLOW_ANONYMOUS_USER=0 on public deployments to close it.
+ALLOW_ANONYMOUS_USER = os.environ.get("ALLOW_ANONYMOUS_USER", "1").strip() != "0"
 # If None, a dict-based cache will be used instead of Redis
 
 # Redis Configuration for Locking

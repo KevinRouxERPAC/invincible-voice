@@ -183,6 +183,7 @@ d'accueil » → l'application s'installe avec une icône, en plein écran.
 | `ALLOW_PASSWORD` | `true` | Connexion par mot de passe |
 | `METRICS_TOKEN` | *(secret aléatoire)* | Protège `/metrics` (bearer requis) |
 | `AUTH_RATE_LIMIT_PER_MINUTE` | `10` *(optionnel)* | Limite des tentatives d'auth par IP |
+| `ALLOW_ANONYMOUS_USER` | `0` **(recommandé en public)** | `0` ferme `GET /v1/user/anonymous` et le WebSocket sans jeton : le compte anonyme partagé expose sinon profil + historique de conversations sans authentification |
 | `MAX_PAST_CONVERSATIONS_IN_PROMPT` | `10` *(optionnel)* | Conversations passées injectées au LLM |
 | `GOOGLE_CLIENT_ID` | *(vide)* | Masque le login Google |
 | `CORS_ALLOW_ORIGINS` | `https://VOTRE-PROJET.web.app,…` | Autorise la PWA |
