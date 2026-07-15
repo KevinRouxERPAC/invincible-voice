@@ -167,11 +167,32 @@ export async function loadNativeModel(
   return loaded;
 }
 
-function parseSuggestions(text: string): StructuredSuggestions {
+/** Accent- and case-insensitive key, to catch "sélection"/"selection" dupes. */
+function keywordKey(s: string): string {
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+}
+
+/**
+ * Parse the model's JSON and clean it up. The 1.5B on-device model regularly
+ * emits near-duplicate keywords ("peux-tu"/"Peux-tu", "sélection"/"selection")
+ * despite prompt instructions, so deduplication has to happen in code.
+ * Exported for tests.
+ */
+export function parseSuggestions(text: string): StructuredSuggestions {
   const data = JSON.parse(text) as Partial<StructuredSuggestions>;
+  const seen = new Set<string>();
+  const keywords: string[] = [];
+  (data.suggested_keywords ?? []).forEach((raw) => {
+    const keyword = (raw ?? '').trim();
+    const key = keywordKey(keyword);
+    if (keyword && !seen.has(key) && keywords.length < NB_KEYWORDS) {
+      seen.add(key);
+      keywords.push(keyword);
+    }
+  });
   return {
     suggested_answers: (data.suggested_answers ?? []).slice(0, NB_RESPONSES),
-    suggested_keywords: (data.suggested_keywords ?? []).slice(0, NB_KEYWORDS),
+    suggested_keywords: keywords,
   };
 }
 

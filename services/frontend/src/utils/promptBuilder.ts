@@ -59,6 +59,9 @@ system prompt.
 
 The user can guide you with keywords (optional). If they do, do NOT repeat those exact
 keywords in "suggested_keywords", but DO weave their meaning into every suggested answer.
+Example: guiding keyword "eau" → good answers are natural sentences like
+"Je voudrais un verre d'eau." — NEVER echo or number the keyword itself
+("eau", "eau 1", "eau 2" are all wrong).
 
 ## Language and style
 
@@ -228,7 +231,9 @@ export function buildSystemPrompt(
     parts.push('## Initiating mode');
     parts.push(
       `The user wants to TAKE THE FLOOR rather than reply. Suggest ${NB_RESPONSES} things ` +
-        'the user could SAY to start or steer the conversation.',
+        'the user could SAY to start or steer the conversation — NOT replies to earlier ' +
+        'messages. Good openers look like: "Bonjour, comment vas-tu ?", ' +
+        '"J\'ai quelque chose à te raconter.", "On mange quoi ce midi ?".',
     );
     if (params.initiatingTopic) {
       parts.push(

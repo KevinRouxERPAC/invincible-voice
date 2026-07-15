@@ -198,7 +198,18 @@ export async function startNativeListening(
     suspend: async () => {
       suspended = true;
       try {
-        await SpeechRecognition.stop();
+        // stop() can hang forever when the recognizer already died on its own
+        // (e.g. right after a NO_MATCH error): its promise then never settles.
+        // suspend() is awaited by speakNative() BEFORE speaking, so a stuck
+        // stop would silence every TTS output during a conversation — the
+        // app's core purpose. `suspended` is already true, which keeps the
+        // restart loop quiet, so racing a short timeout is always safe.
+        await Promise.race([
+          SpeechRecognition.stop(),
+          new Promise<void>((resolve) => {
+            setTimeout(resolve, 800);
+          }),
+        ]);
       } catch {
         // Already stopped: fine.
       }
@@ -255,7 +266,12 @@ export async function speakNative(options: NativeSpeakOptions): Promise<void> {
 
   const listening = activeListening;
   if (listening) {
-    await listening.suspend();
+    try {
+      await listening.suspend();
+    } catch {
+      // A microphone problem must never silence the user's voice: worst case
+      // the recognizer transcribes our own TTS output for one utterance.
+    }
   }
 
   if (typeof window !== 'undefined') {
