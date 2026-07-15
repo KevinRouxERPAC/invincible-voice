@@ -1,6 +1,14 @@
 // TypeScript types equivalent to the Pydantic models in services/backend/backend/storage.py
 import { addAuthHeaders } from '../auth/authUtils';
+import { isNativeApp } from '@/utils/platform';
 import { apiUrl } from './backend';
+import { isLocalMode, isLocalOnlyMode } from './localMode';
+import { loadSettingsSnapshot } from './localSettingsCache';
+import {
+  loadLocalUserData,
+  saveLocalUserData,
+  saveLocalUserSettings,
+} from './localUserData';
 
 /**
  * Represents a message from a speaker (user input)
@@ -113,14 +121,75 @@ interface ApiResponse<T> {
 }
 
 /**
+ * Self-contained anonymous profile used in 100%-local mode (no backend).
+ * Keeps default quick phrases / appointments empty; the user can still
+ * configure them in Settings — they just won't be persisted server-side.
+ */
+export const LOCAL_USER_DATA: UserData = {
+  email: '',
+  user_id: 'local',
+  user_settings: {
+    name: '',
+    prompt: '',
+    additional_keywords: [],
+    friends: [],
+    documents: [],
+    quick_phrases: [],
+    appointments: [],
+    voice: null,
+    expected_transcription_language: null,
+    accepted_terms_of_services: true,
+    learn_style: false,
+  },
+  conversations: [],
+};
+
+/**
  * Fetches user data from the backend API
  * GET /v1/user/
  *
  * @returns Promise<ApiResponse<UserData>>
  */
+/**
+ * The offline profile, enriched with whatever we cached the last time the
+ * backend answered. Without the snapshot the user would lose their quick
+ * phrases and voice exactly when they need them most — offline.
+ *
+ * Preference order:
+ *   1. The full locally-persisted profile (settings + conversation history),
+ *      so the persona stays intact and the on-device model keeps learning.
+ *   2. The thin settings snapshot (quick phrases / voice / language only), kept
+ *      for backward compatibility with installs that predate the full mirror.
+ *   3. The empty anonymous profile.
+ */
+function buildLocalUserData(): UserData {
+  const stored = loadLocalUserData();
+  if (stored) {
+    return stored;
+  }
+  const snapshot = loadSettingsSnapshot();
+  if (!snapshot) {
+    return LOCAL_USER_DATA;
+  }
+  return {
+    ...LOCAL_USER_DATA,
+    user_settings: {
+      ...LOCAL_USER_DATA.user_settings,
+      quick_phrases: snapshot.quick_phrases,
+      voice: snapshot.voice,
+      expected_transcription_language: snapshot.expected_transcription_language,
+    },
+  };
+}
+
 export async function getUserData(): Promise<ApiResponse<UserData>> {
+  // Backend-less build: never touch the network, not even to fail.
+  if (isLocalOnlyMode()) {
+    return { data: buildLocalUserData(), status: 200 };
+  }
+
   try {
-    const url = apiUrl(`/v1/user/`);
+    const url = apiUrl(isNativeApp() ? `/v1/user/anonymous` : `/v1/user/`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -138,11 +207,27 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
 
     const data: UserData = await response.json();
 
+    // On native, mirror the freshly-fetched profile (settings + history) so the
+    // on-device/offline mode can fall back to the latest server-side state
+    // instead of an empty profile.
+    if (isLocalMode()) {
+      saveLocalUserData(data);
+    }
+
     return {
       data,
       status: response.status,
     };
   } catch (error) {
+    // Unreachable backend (airplane mode, no coverage). On native we can still
+    // run entirely on-device, so hand back a local profile instead of failing.
+    // The web build has nothing to fall back to.
+    if (isLocalMode()) {
+      return {
+        data: buildLocalUserData(),
+        status: 200,
+      };
+    }
     return {
       error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
       status: 0,
@@ -160,6 +245,17 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
 export async function updateUserSettings(
   settings: UserSettings,
 ): Promise<ApiResponse<void>> {
+  // On native, mirror the persona locally first so an offline edit is never
+  // lost, and so the on-device prompt uses the updated profile immediately.
+  if (isLocalMode()) {
+    saveLocalUserSettings(settings);
+  }
+  // Backend-less build: there is no server to POST to, and the network must
+  // never be touched. The local mirror above is the source of truth.
+  if (isLocalOnlyMode()) {
+    return { status: 200 };
+  }
+
   try {
     const url = apiUrl(`/v1/user/settings`);
 
