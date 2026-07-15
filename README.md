@@ -8,8 +8,7 @@ technologies to enable fluid conversations.
 
 Get more context about this project on [our official page](https://www.invincible-voice.com/).
 
-While this page shows the source code, if you're interested in using the system, check out the
-[online demo](https://invincible-voice.kyutai.org/).
+This is a fork of the [Kyutai InvincibleVoice project](https://github.com/kyutai-labs/invincible-voice), adapted for French-speaking users with ALS, featuring on-device STT/TTS via Android, offline LLM fallback via llama.cpp, and a Firebase + Cloud Run deployment.
 
 ## How it works
 
@@ -17,9 +16,33 @@ It is very similar to the [Unmute project](https://github.com/kyutai-labs/unmute
 
 ## 🚀 Getting Started
 
-If you just want to try it out, you can head to the [online demo](https://invincible-voice.kyutai.org/). If you want to run it locally, continue reading!
+If you just want to try it out, you can head to the [deployed app](https://invinciblevoice-81c67.web.app). If you want to run it locally, continue reading!
 
 We provide two ways of doing this (see below); we recommend starting with the Gradium STT/TTS + Cerebras LLM option, as it is easier to set up, and moving to the fully self-hosted option (Kyutai STT/TTS + vLLM) once you are more confortable with the project.
+
+### Démarrage rapide (Windows / PowerShell)
+
+1. **Configurer les variables d'environnement** — copiez le modèle et renseignez vos clés :
+   ```powershell
+   Copy-Item .env.example .env
+   # puis éditez .env (clés Cerebras + Gradium, JWT_SECRET_KEY, etc.)
+   ```
+
+2. **Générer les certificats HTTPS locaux** (requis par Traefik) :
+   ```powershell
+   ./scripts/generate-local-certs.ps1
+   ```
+   Ce script crée `volumes/certs/cert.pem` et `volumes/certs/key.pem` (auto-signés, valides 1 an). Votre navigateur affichera un avertissement — acceptez l'exception pour `localhost`.
+
+3. **Démarrer les services** :
+   ```powershell
+   docker compose up
+   ```
+   - Frontend : https://localhost
+   - Backend API : https://localhost/api
+   - Grafana : http://localhost/grafana (identifiants dans `.env`)
+
+Voir `DEPLOYMENT.md` pour le déploiement gratuit en production (Firebase Hosting + Cloud Run).
 
 ### Using Gradium for STT/TTS and an LLM service compatible with the OpenAI API
 
@@ -42,7 +65,7 @@ Of course anything else works as long as it is OpenAI compatible. Latency and th
 You can use [Gradium](https://gradium.ai/) for STT and TTS by grabbing an API key from them, the free tier should be enough to get you started. Then you need to set the following environment variables:
 ```
 export GRADIUM_API_KEY=<your_gradium_api_key>
-export TTS_VOICE_ID=<desired_voice_id_it_is_optional>
+export TTS_VOICE_ID=vMYQUSzm6GRkJX6d   # Olivier (fr, masculin) — défaut du code
 export TTS_SERVER=https://eu.api.gradium.ai/api/
 export TTS_IS_GRADIUM=true
 export KYUTAI_STT_URL=wss://eu.api.gradium.ai/api/speech/asr

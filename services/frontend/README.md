@@ -6,12 +6,14 @@ This is the main frontend application for InvincibleVoice, built with Next.js 15
 
 - **Real-time WebSocket communication** for voice streaming
 - **Speech-to-text transcription** display
-- **Multiple LLM response options** (4 choices generated per conversation turn)
-- **Text-to-speech audio playback** with voice selection
+- **Multiple LLM response options** (3 choices + 6 keywords generated per conversation turn)
+- **Text-to-speech audio playback** with voice selection (Gradium Olivier by default, or cloned voice)
 - **Conversation history** tracking
 - **Keyboard shortcuts** for quick response selection
-- **Voice configuration** and personalization
+- **Voice configuration** and personalization (including voice cloning via Gradium)
 - **Responsive design** for various screen sizes
+- **Android native app** (Capacitor) with on-device STT/TTS and offline LLM fallback (llama.cpp)
+- **Switch scanning accessibility** (auto/step/dwell modes) for motor-impaired users
 
 ## Development
 
@@ -29,23 +31,23 @@ pnpm env use --global lts
 # Development server
 pnpm dev
 
-# Production build
+# Production build (static export)
 pnpm build
-
-# Start production server
-pnpm start
 
 # Run linting
 pnpm lint
 
 # Run tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm test -- --watch
+pnpm test:watch
 
 # Run tests with coverage
-npm test -- --coverage
+pnpm test:coverage
+
+# Build Android (Next export + cap sync)
+pnpm build:android
 ```
 
 ## Architecture
@@ -65,7 +67,8 @@ The frontend is built with:
 - `ChatInterface.tsx` - Chat interface with conversation display
 - `ResponseOptions.tsx` - Component for displaying and selecting LLM responses
 - `ConversationHistory.tsx` - Conversation history component
-- `VoiceRecorder.tsx` - Audio recording and streaming
+- `EmergencyButton.tsx` - Emergency button with pre-cached audio
+- `QuickPhrases.tsx` - Quick pre-recorded phrases with cached audio
 - `use*.ts` - Custom React hooks for various functionality
 
 ### Custom Hooks
@@ -92,16 +95,16 @@ The project uses Jest for testing:
 
 ```bash
 # Run all tests
-npm test
+pnpm test
 
 # Run tests in watch mode
-npm test -- --watch
+pnpm test:watch
 
 # Run with coverage report
-npm test -- --coverage
+pnpm test:coverage
 ```
 
-Test files are located alongside components with `.test.tsx` or `.test.ts` extensions.
+Test files are located in `src/app/__tests__/` and alongside components with `.test.tsx` or `.test.ts` extensions.
 
 ## Docker Development
 
@@ -119,8 +122,10 @@ docker-compose up --build frontend
 
 The frontend uses these environment variables:
 
-- `NEXT_PUBLIC_BACKEND_URL` - Backend WebSocket URL
-- `NEXT_PUBLIC_API_URL` - Backend API URL
+- `NEXT_PUBLIC_BACKEND_URL` - Backend URL (Cloud Run in production, `/api` same-origin in Docker)
+- `NEXT_PUBLIC_LOCAL_MODE` - Set to `1` for 100% on-device mode (no backend, no auth)
+- `NEXT_PUBLIC_LOCAL_STUB` - Set to `1` to use the stub local LLM (testing)
+- `NEXT_PUBLIC_LOCAL_MODEL_URL` - Override the GGUF model download URL
 
 ## Browser Requirements
 
@@ -132,7 +137,7 @@ The frontend uses these environment variables:
 
 When making changes:
 
-1. Run tests: `npm test`
+1. Run tests: `pnpm test`
 2. Run linting: `pnpm lint`
 3. Test the WebSocket connection manually
 4. Verify audio input/output functionality
@@ -141,6 +146,6 @@ When making changes:
 ## Related
 
 - Main project documentation: `../../README.md`
+- Deployment guide: `../../DEPLOYMENT.md`
 - Backend service: `../backend/`
-- TTS testing app: `../web-tts-frontend-olivier/`
-- Communication protocol: `../../docs/browser_backend_communication.md`
+- Android app: `./android/`

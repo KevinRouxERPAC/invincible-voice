@@ -9,7 +9,9 @@ InvincibleVoice is a real-time voice communication system designed to help peopl
 **Architecture**: Microservices with Traefik reverse proxy, Docker containerization
 - Frontend: Next.js 15 + React 19 + TypeScript + WebSocket communication
 - Backend: FastAPI + Python 3.12 + fastrtc for real-time audio streaming
-- Key data flow: STT → LLM (generates 4 response options) → User selection → TTS
+- Key data flow: STT → LLM (generates 3 response options + 6 keywords) → User selection → TTS
+- Default TTS voice: Olivier (`vMYQUSzm6GRkJX6d`), French masculine, via Gradium
+- Android app: Capacitor + llama.cpp (NDK) for on-device STT/TTS + offline LLM fallback
 
 ## Common Commands
 
@@ -90,8 +92,8 @@ Environment variables control which audio service provider to use:
 - `KYUTAI_LLM_URL`/`KYUTAI_LLM_MODEL`/`KYUTAI_LLM_API_KEY`: LLM configuration (OpenAI-compatible)
 
 ### Testing
-- Frontend: 18 Jest test files in `services/frontend/src/app/__tests__/`
-- Backend: Tests in `services/backend/test_data/`, run with `uv run pytest`
+- Frontend: Jest tests in `services/frontend/src/app/__tests__/` (18 test files)
+- Backend: Tests in `services/backend/tests/`, run with `uv run pytest`
 - Pre-commit runs: Ruff lint/format (Python), Prettier, ESLint, Pyright
 
 ## Contribution Guidelines
