@@ -187,7 +187,7 @@ d'accueil » → l'application s'installe avec une icône, en plein écran.
 | `MAX_PAST_CONVERSATIONS_IN_PROMPT` | `10` *(optionnel)* | Conversations passées injectées au LLM |
 | `GOOGLE_CLIENT_ID` | *(vide)* | Masque le login Google |
 | `CORS_ALLOW_ORIGINS` | `https://VOTRE-PROJET.web.app,…` | Autorise la PWA |
-| `TTS_VOICE_ID` | *(optionnel)* | Voix par défaut |
+| `TTS_VOICE_ID` | `vMYQUSzm6GRkJX6d` *(Olivier, fr masculin)* | Voix par défaut |
 
 ## Mettre à jour l'application plus tard
 
