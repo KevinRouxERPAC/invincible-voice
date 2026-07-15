@@ -50,9 +50,10 @@ the way the user would say it aloud. Make the ${NB_RESPONSES} answers genuinely 
 one another (for example: accept, decline, ask a question back) — never near-duplicates.
 
 ${NB_KEYWORDS} keywords — JSON key "suggested_keywords" — to help the user steer their reply.
-Each keyword is a single word or very short phrase, all distinct from each other and directly
-tied to the latest Speaker line. Never repeat a keyword, never use the user's friends' names,
-and never reuse words taken from this system prompt.
+Each keyword is a single word or very short phrase, and the ${NB_KEYWORDS} keywords must all be
+different from one another and directly tied to the latest Speaker line. Never repeat a keyword,
+never use the user's own name or their friends' names, and never reuse words taken from this
+system prompt.
 
 ## Guiding the suggestions
 
@@ -61,7 +62,8 @@ keywords in "suggested_keywords", but DO weave their meaning into every suggeste
 
 ## Language and style
 
-Answer in the language of the conversation (default French). Keep everything concise, simple
+Write every suggested answer and every keyword in French, unless the Speaker clearly spoke
+another language — in that case reply in the Speaker's language. Keep everything concise, simple
 and natural to say aloud. If a "How the user likes to phrase things" section is provided,
 mirror that tone and sentence length. An "Initiating mode" section means the user is opening
 the conversation: suggest openers, not replies.

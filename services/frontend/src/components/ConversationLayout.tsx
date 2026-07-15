@@ -40,6 +40,7 @@ import {
   getStaticContextOption,
   getStaticRepeatOption,
 } from '@/utils/conversationUtils';
+import { isNativeApp } from '@/utils/platform';
 import type { UserData, UserSettings } from '@/utils/userData';
 
 export interface PendingKeyword {
@@ -359,15 +360,19 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
                 {t('conversation.history')}
               </button>
             )}
-            <p className='text-xs text-muted text-center'>
-              {t('common.textToSpeechProvider')}
-              <br />
-              <img
-                src='/gradium.svg'
-                alt='Gradium'
-                className='h-6 mt-1 inline-block'
-              />
-            </p>
+            {/* Native app uses the phone's own STT/TTS, not Gradium — only
+                credit Gradium on the web build that actually uses it. */}
+            {!isNativeApp() && (
+              <p className='text-xs text-muted text-center'>
+                {t('common.textToSpeechProvider')}
+                <br />
+                <img
+                  src='/gradium.svg'
+                  alt='Gradium'
+                  className='h-6 mt-1 inline-block'
+                />
+              </p>
+            )}
           </div>
         ) : (
           <Fragment>
