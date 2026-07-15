@@ -12,14 +12,18 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from typing_extensions import Annotated
 
 from backend import metrics as mt
-from backend.kyutai_constants import REDIS_URL, STT_LOCK_TTL_SECONDS
+from backend.app_types import UserSettings
+from backend.kyutai_constants import BACKEND_MODE, REDIS_URL, STT_LOCK_TTL_SECONDS
 from backend.libs.redis_lock import RedisLockManager
 from backend.libs.websockets import report_websocket_exception, run_route
 from backend.security import decode_access_token
-from backend.storage import UserData, get_user_data_from_storage
+from backend.storage import (
+    UserData,
+    get_or_create_anonymous_user,
+    get_user_data_from_storage,
+)
+from backend.text_only_handler import TextOnlyHandler
 from backend.timer import Stopwatch
-from backend.typing import UserSettings
-from backend.unmute_handler import UnmuteHandler
 
 _stt_lock_manager = RedisLockManager(REDIS_URL, STT_LOCK_TTL_SECONDS)
 
@@ -115,6 +119,7 @@ def delete_conversation(
 async def websocket_route(
     websocket: WebSocket,
     local_time: dt.datetime,
+    client_stt: bool = False,
 ):
     user = None
     for protocol in websocket.scope["subprotocols"]:
@@ -124,10 +129,7 @@ async def websocket_route(
             break
 
     if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        user = get_or_create_anonymous_user()
 
     logger.info("New WebSocket connection")
     if local_time.tzinfo is None:
@@ -159,7 +161,14 @@ async def websocket_route(
             # will not connect.
             await websocket.accept(subprotocol="realtime")
 
-            handler = UnmuteHandler(str(user.email), local_time)
+            # When the client does its own STT (Android native path) we can run a
+            # lightweight "text-only" backend that doesn't require audio deps.
+            if BACKEND_MODE == "text_only" or client_stt:
+                handler = TextOnlyHandler(str(user.email), local_time)
+            else:
+                from backend.unmute_handler import UnmuteHandler
+
+                handler = UnmuteHandler(str(user.email), local_time, client_stt=client_stt)
             async with handler:
                 await handler.start_up()
                 await run_route(websocket, handler)
@@ -175,3 +184,8 @@ async def websocket_route(
 
             mt.ACTIVE_SESSIONS.dec()
             mt.SESSION_DURATION.observe(session_watch.time())
+
+
+@user_router.get("/anonymous")
+def get_anonymous_user() -> UserData:
+    return get_or_create_anonymous_user()

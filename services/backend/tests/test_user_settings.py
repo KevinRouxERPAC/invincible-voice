@@ -1,5 +1,5 @@
+from backend.app_types import QuickPhrase, UserSettings
 from backend.routes.auth import get_new_user
-from backend.typing import QuickPhrase, UserSettings
 
 
 def test_user_settings_parses_without_quick_phrases():

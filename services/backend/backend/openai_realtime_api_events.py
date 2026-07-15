@@ -119,6 +119,18 @@ class ResponseSelectedByWriter(BaseEvent[Literal["response.selected.by.writer"]]
     id: UUID
 
 
+class SpeakerTextAppend(BaseEvent[Literal["speaker.text.append"]]):
+    """Speaker text transcribed on-device by the client (native STT).
+
+    Sent instead of `input_audio_buffer.append` when the client does its own
+    speech recognition (e.g. the Android app using the phone's built-in
+    recognizer), so no audio ever reaches the backend and no server-side STT
+    is needed.
+    """
+
+    text: str
+
+
 class CurrentKeywords(BaseEvent[Literal["current.keywords"]]):
     keywords: str | None
     intent: str | None = None
@@ -195,6 +207,7 @@ ServerEvent = Union[
 # Client events (from client to OpenAI)
 ClientEvent = Union[
     InputAudioBufferAppend,
+    SpeakerTextAppend,
     ResponseSelectedByWriter,
     CurrentKeywords,
     DesiredResponsesLenght,

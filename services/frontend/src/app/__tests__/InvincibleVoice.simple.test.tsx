@@ -109,10 +109,14 @@ describe('InvincibleVoice Core Functionality Tests', () => {
 
     // Wait for health check to complete
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
     expect(connectButton).toBeEnabled();
   });
 
@@ -121,10 +125,14 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
     await user.click(connectButton);
 
     // Verify microphone access was requested
@@ -144,16 +152,22 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
     await user.click(connectButton);
 
     // Wait for connection to be established (stop button appears in right pane)
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: 'Stop conversation' }),
+        ).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -183,13 +197,13 @@ describe('InvincibleVoice Core Functionality Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // Check that response options are not shown when not connected
-    expect(
-      screen.queryByText('Waiting for response…'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Waiting for response…')).not.toBeInTheDocument();
 
     // Check option keyboard shortcuts are also not shown when not connected
     expect(screen.queryByText('A')).not.toBeInTheDocument();

@@ -62,10 +62,13 @@
     var(--font-satoshi), system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 500;
-  /* --fz est un multiplicateur global de taille de texte piloté depuis les
-     réglages d'accessibilité. Comme les tailles Tailwind (text-xs/sm/base…)
-     sont en rem, elles suivent cette taille de base. */
-  font-size: calc(16px * var(--fz));
+  /* Le font-size racine reste fixe : c'est lui qui définit le `rem`, donc les
+     paddings, hauteurs et largeurs max de Tailwind. Le multiplicateur --fz
+     n'agit que sur les tokens typographiques (--text-*, voir @theme) et sur le
+     texte hérité (voir la règle `body`). Le scaler ici agrandirait la mise en
+     page au même rythme que le texte, sans jamais donner plus de place aux
+     mots — c'est l'inverse de l'effet recherché. */
+  font-size: 16px;
 
   color-scheme: light;
   color: var(--ink);
@@ -75,6 +78,12 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Texte sans classe `text-*` explicite : il hérite d'ici, donc il suit --fz.
+   `1rem` vaut toujours 16px (font-size racine fixe), la mise en page ne bouge pas. */
+body {
+  font-size: calc(1rem * var(--fz));
 }
 
 /* High-contrast mode (supports both body and html selectors) */
@@ -145,7 +154,6 @@ body.dark.contrast {
   color-scheme: dark;
 }
 
-
 @theme {
   /* ===== Calm Cards tokens exposed as Tailwind colours ===== */
   --color-paper: var(--paper);
@@ -184,6 +192,27 @@ body.dark.contrast {
   --color-white: #ffffff;
 
   --font-family-satoshi: var(--font-satoshi);
+
+  /* ===== Échelle typographique pilotée par --fz =====
+     Seules les tailles de police sont multipliées : les paddings, hauteurs et
+     largeurs restent en rem non modifiés, donc agrandir le texte lui donne
+     réellement plus de place. Les line-heights par défaut de Tailwind v4 sont
+     des ratios sans unité, elles suivent la font-size sans être redéfinies. */
+  --text-xs: calc(0.75rem * var(--fz));
+  --text-sm: calc(0.875rem * var(--fz));
+  --text-base: calc(1rem * var(--fz));
+  --text-lg: calc(1.125rem * var(--fz));
+  --text-xl: calc(1.25rem * var(--fz));
+  --text-2xl: calc(1.5rem * var(--fz));
+  --text-3xl: calc(1.875rem * var(--fz));
+}
+
+/* Logo adapts to current theme: white logo is inverted to dark in light mode */
+.logo-themed {
+  filter: invert(1);
+}
+html.dark .logo-themed {
+  filter: invert(0);
 }
 
 /* For FireFox */
@@ -497,7 +526,7 @@ select {
   justify-content: center;
   gap: 0.5rem;
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: calc(1.1rem * var(--fz));
   color: #000;
   background: #ffd400;
   border: none;

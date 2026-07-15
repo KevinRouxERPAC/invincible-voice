@@ -34,7 +34,13 @@ certs/
 volumes/
 .claude/settings.local.json
 image.png
+model.gguf
+iv_screen.png
 .vscode/settings.json
+
+# Local test/debug screenshots at the repo root (throwaway artifacts)
+/screenshot_test_app_*.png
+/ui_*.png
 
 # AI agent files
 CLAUDE.md

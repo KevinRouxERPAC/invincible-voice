@@ -8,7 +8,9 @@ import { QuickPhrase } from '../../utils/userData';
 
 const SAMPLE_RATE = 48000;
 
-const mockFetchForTTS = (options: { ttsOk?: boolean; frames?: number } = {}) => {
+const mockFetchForTTS = (
+  options: { ttsOk?: boolean; frames?: number } = {},
+) => {
   const { ttsOk = true, frames = 4 } = options;
   return jest.fn().mockImplementation((url: string) => {
     if (url.includes('/v1/tts/sample_rate')) {

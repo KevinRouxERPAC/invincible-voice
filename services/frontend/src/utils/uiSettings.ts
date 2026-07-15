@@ -13,7 +13,7 @@ export interface UiSettings {
   theme: ThemeMode;
   contrast: ContrastMode;
   keyboardLayout: KeyboardLayout;
-  /** Global text-size multiplier applied to the root font-size (see --fz). */
+  /** Global text-size multiplier applied to the typography tokens (see --fz). */
   fontScale: number;
 }
 

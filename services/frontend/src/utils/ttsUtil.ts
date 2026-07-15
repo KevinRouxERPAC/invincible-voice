@@ -1,7 +1,17 @@
 import { addAuthHeaders } from '../auth/authUtils';
 import { apiUrl } from './backend';
+import { speakNative, toBcp47 } from './nativeSpeech';
+import { isNativeApp } from './platform';
 import { getSpeechRate } from './speechRate';
 import { ttsCache, CacheType } from './ttsCache';
+
+/** App locale (saved by I18nProvider), used for the native TTS language. */
+function getAppLocale(): string | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  return localStorage.getItem('invincible-voice-locale');
+}
 
 export interface TTSOptions {
   text: string;
@@ -47,13 +57,27 @@ function getSharedAudioContext(sampleRate: number): AudioContext {
  */
 export async function playTTSStream(
   options: TTSOptions,
-): Promise<AudioContext> {
+): Promise<AudioContext | undefined> {
+  const { text, messageId, cacheType = 'temporary', voiceName } = options;
+  const playbackRate = options.playbackRate ?? getSpeechRate();
+
+  // Native app: use the phone's TTS engine — free, offline, no backend call.
+  // The cloned-voice option (voiceName) is a backend/Gradium feature and is
+  // intentionally ignored here.
+  if (isNativeApp()) {
+    await speakNative({
+      text,
+      messageId,
+      rate: playbackRate,
+      lang: toBcp47(getAppLocale()),
+    });
+    return undefined;
+  }
+
   /* Fetch sample rate from backend */
   const SAMPLE_RATE = await fetch(apiUrl('/v1/tts/sample_rate')).then((res) =>
     res.json().then((data) => data.sample_rate),
   );
-  const { text, messageId, cacheType = 'temporary', voiceName } = options;
-  const playbackRate = options.playbackRate ?? getSpeechRate();
   const audioContext = getSharedAudioContext(SAMPLE_RATE);
 
   // Use voiceName as part of cache key so different voices have separate entries

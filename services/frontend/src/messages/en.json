@@ -126,7 +126,7 @@
     "yesterday": "Yesterday",
     "startChatting": "Start chatting",
     "newChat": "New chat",
-    "stopConversation": "Stop the conversation",
+    "stopConversation": "Stop",
     "readyToChat": "Ready to chat",
     "startSpeaking": "Start speaking and your voice will be transcribed. InvincibleVoice will suggest responses to help communicate.",
     "emptyConversation": "Empty conversation",
@@ -175,7 +175,8 @@
     "backAriaLabel": "Back",
     "closeAriaLabel": "Close",
     "cancelAriaLabel": "Cancel",
-    "editResponsePlaceholder": "Type your message…"
+    "editResponsePlaceholder": "Type your message…",
+    "listening": "Écoute..."
   },
   "documentEditor": {
     "editDocument": "Edit document",
@@ -198,5 +199,11 @@
     "fallbackInputPlaceholder": "Type a phrase to say out loud…",
     "speak": "Speak",
     "retry": "Retry connection"
+  },
+  "model": {
+    "downloadTitle": "Preparing offline mode",
+    "downloadExplanation": "The assistant downloads its language model once, so it can keep suggesting answers even without an internet connection.",
+    "offlineFallback": "Offline mode",
+    "offlineFallbackHelp": "Keeps a model on the phone (about 1 GB) so the app keeps working without internet. Suggestions are weaker in this mode."
   }
 }

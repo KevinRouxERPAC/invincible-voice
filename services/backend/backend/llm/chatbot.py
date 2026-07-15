@@ -3,8 +3,8 @@ import uuid
 from logging import getLogger
 from typing import Literal
 
+from backend.app_types import Conversation, SpeakerMessage, WriterMessage
 from backend.storage import UserData
-from backend.typing import Conversation, SpeakerMessage, WriterMessage
 
 ConversationState = Literal["waiting_for_user", "user_speaking", "bot_speaking"]
 

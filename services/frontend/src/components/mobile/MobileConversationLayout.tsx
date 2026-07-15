@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Pause, Settings } from 'lucide-react';
+import { ArrowLeft, Megaphone, Pause, Settings } from 'lucide-react';
 import {
   useState,
   useCallback,
@@ -29,7 +29,6 @@ interface MobileConversationLayoutProps {
   onTextInputChange: (value: string) => void;
   onSendMessage: () => void;
   frozenResponses: PendingResponse[] | null;
-  onFreezeToggle: () => void;
   pendingResponses: PendingResponse[];
   onResponseEdit?: (text: string) => void;
   onResponseSelect: (responseId: string) => void;
@@ -49,7 +48,6 @@ interface MobileConversationLayoutProps {
   initialActivePanel?: ActivePanel;
   onBack?: () => void;
   isHistoryMode?: boolean;
-  additionalKeywords?: string[];
   quickPhrases?: QuickPhrase[];
   onQuickPhraseSelect?: (text: string) => void;
   isInitiating?: boolean;
@@ -71,7 +69,6 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   onTextInputChange,
   onSendMessage,
   frozenResponses,
-  onFreezeToggle,
   pendingResponses,
   onResponseEdit = undefined,
   onResponseSelect,
@@ -91,7 +88,6 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   initialActivePanel = 'chat',
   onBack = undefined,
   isHistoryMode = false,
-  additionalKeywords = [],
   quickPhrases = [],
   onQuickPhraseSelect = undefined,
   isInitiating = false,
@@ -172,26 +168,32 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
         className='shrink-0'
       />
 
-      {/* Header with stop/back button - fixed height, reduced in landscape */}
-      <div className='flex items-center justify-between px-4 py-3 landscape:py-1 shrink-0 h-[60px] landscape:h-[44px]'>
+      {/* Header with stop/back button - fixed height, reduced in landscape.
+          The emergency and settings buttons stay `shrink-0`: they must never be
+          clipped, whatever the label lengths or the --fz text-size multiplier.
+          The two labelled buttons shrink and ellipsize instead, keeping their
+          icon visible so they stay identifiable at any width. */}
+      <div className='flex items-center gap-2 px-4 py-3 landscape:py-1 shrink-0 h-[60px] landscape:h-[44px]'>
         {isConnected ? (
           <button
             aria-label={t('conversation.stopConversationAriaLabel')}
-            className='shrink-0 h-11 px-5 cursor-pointer bg-terra-tint border border-terra text-terra rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
+            className='min-w-0 shrink mr-auto h-11 px-4 cursor-pointer bg-terra-tint border border-terra text-terra rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onConnectButtonPress}
-            title={t('conversation.stopConversation')}
+            title={t('conversation.stopConversationAriaLabel')}
           >
-            {t('conversation.stopConversation')}
             <Pause
               width={24}
               height={24}
               className='shrink-0'
             />
+            <span className='truncate'>
+              {t('conversation.stopConversation')}
+            </span>
           </button>
         ) : (
           <button
             aria-label={t('conversation.backAriaLabel')}
-            className='shrink-0 h-11 px-5 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
+            className='min-w-0 shrink mr-auto h-11 px-4 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
             onClick={onBack}
             title={t('common.back')}
           >
@@ -200,22 +202,28 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
               height={20}
               className='shrink-0'
             />
-            {t('common.back')}
+            <span className='truncate'>{t('common.back')}</span>
           </button>
         )}
-        <div className='flex flex-row items-center gap-2'>
+        <div className='flex flex-row items-center gap-2 min-w-0 shrink'>
           {isConnected && !isHistoryMode && onToggleInitiating && (
             <button
               onClick={onToggleInitiating}
               data-scan-item
+              aria-label={t('conversation.takeFloor')}
               title={t('conversation.takeFloorHint')}
-              className={`shrink-0 h-11 px-3 rounded-2xl text-xs font-medium border transition-colors ${
+              className={`min-w-0 shrink h-11 px-3 rounded-2xl text-xs font-medium border transition-colors flex flex-row items-center justify-center gap-2 ${
                 isInitiating
                   ? 'bg-sage text-white border-sage'
                   : 'bg-surface text-ink-2 border-hairline-2'
               }`}
             >
-              {t('conversation.takeFloor')}
+              <Megaphone
+                width={18}
+                height={18}
+                className='shrink-0'
+              />
+              <span className='truncate'>{t('conversation.takeFloor')}</span>
             </button>
           )}
           <EmergencyButton compact />
@@ -258,27 +266,27 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
 
       {/* Main panel — flex-1 min-h-0 fills the remaining space without overflow. */}
       {isSplitView ? (
-        // Active session: chat on top, the four responses below, both visible.
+        // Active session: chat bubbles on top, the four responses below, both
+        // visible. ChatPanel already renders the live speaker message as a
+        // bubble, so no separate speaker strip is needed.
         // Tablet/landscape: side by side. Chat gets a bit more room than the cards.
-        <div className='flex-1 min-h-0 flex flex-col md:flex-row md:gap-4 md:px-2 landscape:flex-row landscape:gap-2'>
-          <div className='flex flex-col flex-[3] min-h-0 md:flex-1 landscape:flex-1'>
+        <div className='flex-1 min-h-0 flex flex-col landscape:flex-row'>
+          <div className='flex flex-col flex-1 min-h-0 landscape:basis-1/2'>
             <ChatPanel
               chatHistory={chatHistory}
               isConnected={isConnected}
               currentSpeakerMessage={currentSpeakerMessage}
-              pastConversation={pastConversation}
-              isViewingPastConversation={isViewingPastConversation}
             />
           </div>
-          <div className='flex flex-col flex-[4] min-h-0 border-t border-hairline md:flex-1 md:border-t-0 landscape:flex-1 landscape:border-t-0'>
+          {/* min-h keeps the cards readable when the keyboard shrinks the
+              viewport: without it the 42% share collapses and clips the text. */}
+          <div className='flex flex-col shrink-0 h-[42%] min-h-[190px] border-t border-hairline landscape:h-auto landscape:min-h-0 landscape:flex-1 landscape:border-t-0 landscape:border-l'>
             <ResponsePanel
               frozenResponses={frozenResponses}
-              onFreezeToggle={onFreezeToggle}
               pendingResponses={pendingResponses}
               onResponseEdit={onResponseEdit}
               onResponseSelect={onResponseSelect}
               onEditResponseInChat={handleEditResponse}
-              additionalKeywords={additionalKeywords}
             />
           </div>
         </div>

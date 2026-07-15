@@ -67,6 +67,13 @@ export KYUTAI_LLM_URL=http://localhost:8000
 export KYUTAI_LLM_MODEL=qwen-3-235b-a22b-instruct-2507  # or similar
 ```
 
+Optionnel pour les serveurs OpenAI-compatible locaux : vous pouvez laisser
+`KYUTAI_LLM_API_KEY` vide si votre serveur ne requiert pas d’auth.
+Le backend utilise `/v1/health` comme “connectivity check” et tente
+`GET /models` et `GET /v1/models` (si votre `KYUTAI_LLM_URL` se termine par
+`/v1`). Les statuts `401/403/404` sont considérés comme “LLM joignable” pour
+éviter un basculement en mode offline côté UI.
+
 #### The audio services
 
 You'll need to set up both STT and TTS servers from Kyutai. For the moment we only support the server of [Delayed Stream Modelling](https://github.com/kyutai-labs/delayed-streams-modeling).
@@ -107,6 +114,25 @@ Then run:
 docker compose up
 ```
 If you prefer to avoid HTTPS locally, remove/disable the `websecure` routers and TLS settings in `docker-compose.yml` instead of mounting certs.
+
+### Android app: free on-device STT/TTS
+
+The Capacitor Android app (`services/frontend/android`) does not use the
+Gradium (or Kyutai) audio services at all. Instead it uses the phone's
+built-in speech services, which are free and work offline once the language
+packs are installed:
+
+- **STT**: Android's `SpeechRecognizer`, via `@capacitor-community/speech-recognition`.
+  The transcribed text is sent to the backend as `speaker.text.append`
+  WebSocket events, and the client connects with `?client_stt=true` so the
+  backend never opens a server-side STT connection. No audio leaves the phone.
+- **TTS**: Android's text-to-speech engine, via `@capacitor-community/text-to-speech`.
+  The backend `/v1/tts/` route is never called from the app (cloned voices are
+  a web-only feature).
+
+Only the LLM suggestions still go through the backend, so a daily-use setup
+with e.g. the Cerebras free tier runs at no API cost. The web frontend keeps
+using the configured STT/TTS services as before.
 
 
 ### Getting involved with the project

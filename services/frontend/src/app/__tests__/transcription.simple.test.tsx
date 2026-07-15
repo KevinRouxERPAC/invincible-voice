@@ -95,7 +95,9 @@ describe('Transcription Component Structure Tests', () => {
 
     // Wait for component to load
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // Verify the disconnected state: the chat interface is hidden until the
@@ -111,20 +113,22 @@ describe('Transcription Component Structure Tests', () => {
     // - Real-time transcription updates via WebSocket messages
     // - Chat history display for both user and assistant messages
     // - Current speaker message display during transcription
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
   });
 
   test('component shows simplified interface when not connected', async () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // Verify response options are NOT shown when not connected
-    expect(
-      screen.queryByText('Waiting for response…'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Waiting for response…')).not.toBeInTheDocument();
 
     // Verify keyboard shortcuts are NOT shown when not connected
     expect(screen.queryByText('A')).not.toBeInTheDocument();
@@ -133,7 +137,9 @@ describe('Transcription Component Structure Tests', () => {
     expect(screen.queryByText('S')).not.toBeInTheDocument();
 
     // Verify only settings button and start conversation button are shown
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
 
     // This test verifies the new simplified UI when not connected
   });
@@ -142,7 +148,9 @@ describe('Transcription Component Structure Tests', () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // The component has the necessary structure for the transcription flow:
@@ -168,7 +176,9 @@ describe('Transcription Component Structure Tests', () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // The component integrates with WebSocket for:
@@ -185,6 +195,8 @@ describe('Transcription Component Structure Tests', () => {
     // - State updates trigger UI re-renders
 
     // This verifies the architectural foundation is correct
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
   });
 });

@@ -10,15 +10,15 @@ from cloudpathlib import AnyPath
 
 from backend import kyutai_constants
 from backend import openai_realtime_api_events as ora
-from backend.kyutai_constants import NB_RESPONSES
-from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
-from backend.typing import (
+from backend.app_types import (
     Conversation,
     LLMMessage,
     SpeakerMessage,
     UserSettings,
     WriterMessage,
 )
+from backend.kyutai_constants import NB_RESPONSES
+from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ MAX_PAST_CONVERSATIONS_IN_PROMPT = int(
 class UserData(pydantic.BaseModel):
     user_id: uuid.UUID
     email: str
-    hashed_password: str
+    hashed_password: str | None
     google_sub: str | None
 
     user_settings: UserSettings
@@ -227,3 +227,30 @@ def get_user_data_from_storage(user_email: str) -> UserData:
         raise UserDataNotFoundError(f"No user data found for email: {user_email}")
     else:
         return UserData.model_validate_json(user_data_path.read_text())
+
+
+ANONYMOUS_EMAIL = "anonymous@invincible-voice.local"
+
+
+def get_or_create_anonymous_user() -> UserData:
+    try:
+        return get_user_data_from_storage(ANONYMOUS_EMAIL)
+    except UserDataNotFoundError:
+        user = UserData(
+            user_id=uuid.uuid4(),
+            email=ANONYMOUS_EMAIL,
+            hashed_password=None,
+            google_sub=None,
+            # UserSettings' first four fields are required (no defaults), so an
+            # anonymous user needs explicit empty values, mirroring the app's
+            # DEFAULT_SETTINGS.
+            user_settings=UserSettings(
+                name="",
+                prompt="",
+                additional_keywords=[],
+                friends=[],
+            ),
+            conversations=[],
+        )
+        user.save()
+        return user

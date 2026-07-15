@@ -13,6 +13,7 @@ import { useAuthContext } from '@/auth/authContext';
 import Edit from '@/components/icons/Edit';
 import Plus from '@/components/icons/Plus';
 import Trash from '@/components/icons/Trash';
+import OfflineModeToggle from '@/components/settings/OfflineModeToggle';
 import { useTranslations } from '@/i18n';
 import { estimateTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { playTTSStream } from '@/utils/ttsUtil';
@@ -787,6 +788,8 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   {t('settings.learnStyleHint')}
                 </p>
               </div>
+
+              <OfflineModeToggle />
 
               <div className='flex flex-col gap-2'>
                 <div className='flex items-center justify-between mb-1'>

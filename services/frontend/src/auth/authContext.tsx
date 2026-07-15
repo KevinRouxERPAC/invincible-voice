@@ -12,6 +12,7 @@ import {
 import { useLocale } from '../i18n/I18nContext';
 import type { UserData } from '../types/user';
 import { apiUrl } from '../utils/backend';
+import { isLocalOnlyMode } from '../utils/localMode';
 import {
   addAuthHeaders,
   clearBearerToken,
@@ -239,6 +240,13 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   );
 
   useEffect(() => {
+    // 100%-local mode: no backend, no auth. Skip the network check entirely
+    // and consider the user logged in so the app renders straight away.
+    if (isLocalOnlyMode()) {
+      setAuthStatus(AUTH_STATUSES.LOGGED);
+      return;
+    }
+
     async function checkAuthStatus() {
       const bearerToken = getBearerToken();
 
@@ -276,6 +284,11 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   }, [fetchUserData]);
 
   useEffect(() => {
+    if (isLocalOnlyMode()) {
+      // No backend → no password login form in local mode.
+      setAllowPassword(false);
+      return;
+    }
     async function checkAllowPassword() {
       try {
         const response = await fetch(apiUrl('/auth/allow-password'));
@@ -292,6 +305,10 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   }, []);
 
   useEffect(() => {
+    if (isLocalOnlyMode()) {
+      // No Google sign-in in 100%-local mode.
+      return;
+    }
     async function fetchGoogleClientId() {
       try {
         const response = await fetch(apiUrl('/auth/google-client-id'));

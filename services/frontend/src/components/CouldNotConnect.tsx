@@ -8,6 +8,7 @@ export type HealthStatus = {
   tts_up?: boolean;
   stt_up?: boolean;
   llm_up?: boolean;
+  backend_url?: string;
 };
 
 interface RenderServiceStatusProps {
@@ -71,6 +72,12 @@ const CouldNotConnect: FC<CouldNotConnectProps> = ({ healthStatus }) => {
       <div className='text-center text-xl'>
         <h1 className='text-3xl mb-4'>{t('connection.couldNotConnect')}</h1>
         <p>{t('connection.serviceStatus')}</p>
+        {healthStatus.backend_url && (
+          <p className='text-sm text-ink-2 mt-2'>
+            Backend URL testée :{' '}
+            <span className='font-mono'>{healthStatus.backend_url}</span>
+          </p>
+        )}
         <RenderServiceStatus
           name={t('connection.backend')}
           status={humanReadableStatus[healthStatus.connected]}

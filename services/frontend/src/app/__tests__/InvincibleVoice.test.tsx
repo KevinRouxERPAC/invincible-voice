@@ -21,12 +21,25 @@ jest.mock('@/hooks/useBackendServerUrl', () => ({
   useBackendServerUrl: () => 'http://localhost:8000',
 }));
 
+jest.mock('react-use-websocket', () => ({
+  __esModule: true,
+  default: jest.fn(),
+  ReadyState: {
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+  },
+}));
+
 describe('InvincibleVoice Connect Button Tests', () => {
   const mockSendMessage = jest.fn();
   const mockLastMessage = null;
   const mockReadyState = 1; // OPEN
 
   beforeEach(() => {
+    jest.clearAllMocks();
+
     // Mock fetch for health check
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -40,8 +53,6 @@ describe('InvincibleVoice Connect Button Tests', () => {
       lastMessage: mockLastMessage,
       readyState: mockReadyState,
     });
-
-    jest.clearAllMocks();
   });
 
   test('Connect button activates microphone and establishes WebSocket connection', async () => {
@@ -77,10 +88,14 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Wait for the component to render and health check to complete
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
 
     // Click the Start Conversation button
     await user.click(connectButton);
@@ -96,7 +111,7 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Verify the button text changes to "Stop Conversation"
     await waitFor(() => {
-      expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+      expect(screen.getByTitle('Stop conversation')).toBeInTheDocument();
     });
   });
 
@@ -114,10 +129,14 @@ describe('InvincibleVoice Connect Button Tests', () => {
     render(<InvincibleVoice userId='12345678-1234-4234-8234-123456789012' />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
     await user.click(connectButton);
 
     // Verify the error message is shown
@@ -130,7 +149,9 @@ describe('InvincibleVoice Connect Button Tests', () => {
     });
 
     // Verify the button remains as "Start Conversation"
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
   });
 
   test('Stop Conversation button stops audio and closes WebSocket connection', async () => {
@@ -170,10 +191,14 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // First connect
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
-    const connectButton = screen.getByRole('button', { name: 'Start chatting' });
+    const connectButton = screen.getByRole('button', {
+      name: 'Start chatting',
+    });
 
     // Clear any previous calls before the actual test
     mockShutdownAudio.mockClear();
@@ -182,11 +207,11 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Wait for connection to be established
     await waitFor(() => {
-      expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+      expect(screen.getByTitle('Stop conversation')).toBeInTheDocument();
     });
 
     // Now click disconnect
-    const disconnectButton = screen.getByTitle('Stop the conversation');
+    const disconnectButton = screen.getByTitle('Stop conversation');
     await user.click(disconnectButton);
 
     // Verify shutdown was called at least once
@@ -194,7 +219,9 @@ describe('InvincibleVoice Connect Button Tests', () => {
 
     // Verify button text changes back to "Start Conversation"
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
   });
 });

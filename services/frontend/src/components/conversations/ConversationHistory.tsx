@@ -122,7 +122,7 @@ const ConversationHistory = ({
           alt='Invincible Logo'
           width={150}
           height={150}
-          className='-mt-1'
+          className='-mt-1 logo-themed'
         />
         <Image
           src='/logo_kyutai.svg'

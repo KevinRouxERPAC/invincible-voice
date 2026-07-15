@@ -7,6 +7,8 @@
 // built-in speech synthesis: a worse voice, but the user is never mute.
 import { addAuthHeaders } from '../auth/authUtils';
 import { apiUrl } from './backend';
+import { speakNative, toBcp47 } from './nativeSpeech';
+import { isNativeApp } from './platform';
 import { QuickPhrase } from './userData';
 
 const DB_NAME = 'invincible-voice';
@@ -192,17 +194,33 @@ export interface PlayQuickPhraseOptions {
   lang?: string;
 }
 
-export type QuickPhrasePlayback = 'cached' | 'network' | 'browser-synthesis';
+export type QuickPhrasePlayback =
+  | 'cached'
+  | 'network'
+  | 'browser-synthesis'
+  | 'native';
 
 /**
  * Speak a quick phrase as fast as possible: persisted audio first, then the
  * backend TTS (caching the result), then browser speech synthesis when
  * everything else is unreachable. Resolves with the path that was used.
+ *
+ * In the native app, the phone's TTS engine is used directly: free, instant
+ * and offline.
  */
 export async function playQuickPhrase(
   options: PlayQuickPhraseOptions,
 ): Promise<QuickPhrasePlayback> {
   const { text, voiceName, lang } = options;
+
+  if (isNativeApp()) {
+    await speakNative({
+      text,
+      messageId: crypto.randomUUID(),
+      lang: toBcp47(lang ?? null),
+    });
+    return 'native';
+  }
 
   const stored = await getStoredPhraseAudio(phraseCacheKey(text, voiceName));
   if (stored) {
@@ -229,6 +247,12 @@ export async function prefetchQuickPhrases(
   phrases: QuickPhrase[],
   voiceName?: string | null,
 ): Promise<void> {
+  // Native app speaks with the phone's TTS engine: nothing to prefetch, and
+  // we avoid pointless (paid) backend TTS calls.
+  if (isNativeApp()) {
+    return;
+  }
+
   // eslint-disable-next-line no-restricted-syntax
   for (const phrase of phrases) {
     const key = phraseCacheKey(phrase.text, voiceName);

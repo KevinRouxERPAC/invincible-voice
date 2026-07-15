@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPBearer
 from starlette.responses import Response
 
+from backend.app_types import TTSRequest
 from backend.kyutai_constants import (
     KYUTAI_API_KEY,
     REDIS_URL,
@@ -20,7 +21,6 @@ from backend.libs.redis_lock import RedisLockManager
 from backend.routes.user import get_current_user
 from backend.routes.voices import _get_available_voices
 from backend.storage import UserData
-from backend.typing import TTSRequest
 
 logger = getLogger(__name__)
 

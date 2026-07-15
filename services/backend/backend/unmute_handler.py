@@ -73,7 +73,10 @@ class GradioUpdate(BaseModel):
 
 class UnmuteHandler(AsyncStreamHandler):
     def __init__(
-        self, user_email_or_data: str | UserData, local_time: dt.datetime
+        self,
+        user_email_or_data: str | UserData,
+        local_time: dt.datetime,
+        client_stt: bool = False,
     ) -> None:
         super().__init__(
             input_sample_rate=SAMPLE_RATE,
@@ -82,6 +85,13 @@ class UnmuteHandler(AsyncStreamHandler):
             output_sample_rate=SAMPLE_RATE,
         )
         self.n_samples_received = 0  # Used for measuring time
+        # When True, the client transcribes speech on-device and sends
+        # `speaker.text.append` events; we never receive audio and don't
+        # connect to a server-side STT at all.
+        self.client_stt = client_stt
+        # Used by the WebSocket layer to know whether Opus/audio dependencies
+        # are required.
+        self.audio_enabled = True
         self.output_queue: asyncio.Queue[HandlerOutput] = asyncio.Queue()
 
         self.quest_manager = QuestManager()
@@ -150,6 +160,24 @@ class UnmuteHandler(AsyncStreamHandler):
         )
 
         return is_new_message
+
+    async def add_speaker_text(self, message: ora.SpeakerTextAppend) -> None:
+        """Handle a final utterance transcribed on-device by the client.
+
+        Mirrors what `_stt_loop` + `determine_pause` do for server-side STT:
+        add the text to the chat and kick off suggestion generation.
+        """
+        text = message.text.strip()
+        if not text:
+            return
+
+        self.add_chat_message_delta(text, "user")
+        if self.chatbot.conversation_state_override == "waiting_for_user":
+            self.chatbot.conversation_state_override = None
+
+        started_generating_response = await self._generate_response()
+        if started_generating_response:
+            await self.output_queue.put(ora.InputAudioBufferSpeechStopped())
 
     async def add_keywords(self, message: ora.CurrentKeywords) -> None:
         self.chatbot.current_keywords = message.keywords
@@ -263,7 +291,16 @@ class UnmuteHandler(AsyncStreamHandler):
                 all_text = "".join(all_words)
                 if all_text == "":
                     continue
-                json_decoded = pydantic_core.from_json(all_text, allow_partial=True)
+                try:
+                    json_decoded = pydantic_core.from_json(
+                        all_text, allow_partial=True
+                    )
+                except Exception:
+                    # When the LLM isn't constrained to a strict JSON schema
+                    # (e.g. fallback without `response_format`), we may receive
+                    # partial/unparseable chunks. Keep streaming until it
+                    # becomes valid JSON.
+                    continue
                 if "suggested_keywords" in json_decoded:
                     for i, keyword in enumerate(json_decoded["suggested_keywords"]):
                         if i < nb_keywords_sent:
@@ -323,7 +360,11 @@ class UnmuteHandler(AsyncStreamHandler):
 
     async def receive(self, frame: tuple[int, np.ndarray]) -> None:
         stt = self.stt
-        assert stt is not None
+        if stt is None:
+            # Client does on-device STT (`client_stt`): audio is unexpected,
+            # drop it rather than crash the session.
+            logger.warning("Received audio but no STT is running, dropping frame.")
+            return
         sr = frame[0]
         assert sr == self.input_sample_rate
 
@@ -404,14 +445,17 @@ class UnmuteHandler(AsyncStreamHandler):
 
     def copy(self):
         return UnmuteHandler(
-            self.chatbot.user_data, self.chatbot.user_data.conversations[-1].start_time
+            self.chatbot.user_data,
+            self.chatbot.user_data.conversations[-1].start_time,
+            client_stt=self.client_stt,
         )
 
     async def __aenter__(self) -> None:
         await self.quest_manager.__aenter__()
 
     async def start_up(self):
-        await self.start_up_stt()
+        if not self.client_stt:
+            await self.start_up_stt()
         self.waiting_for_user_start_time = self.audio_received_sec()
 
     async def __aexit__(self, *exc: Any) -> None:

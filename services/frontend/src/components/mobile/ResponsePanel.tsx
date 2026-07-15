@@ -9,24 +9,19 @@ import { cn } from '@/utils/cn';
 
 interface ResponsePanelProps {
   frozenResponses: PendingResponse[] | null;
-  onFreezeToggle: () => void;
   pendingResponses: PendingResponse[];
   onResponseEdit?: (text: string) => void;
   onResponseSelect: (responseId: string) => void;
   onEditResponseInChat?: (text: string) => void;
-  additionalKeywords?: string[];
 }
 
 const ResponsePanel: FC<ResponsePanelProps> = ({
   frozenResponses,
-  onFreezeToggle,
   pendingResponses,
   onResponseEdit = undefined,
   onResponseSelect,
   onEditResponseInChat = undefined,
-  additionalKeywords = [],
 }) => {
-  const t = useTranslations();
   const isFrozen = useMemo(() => frozenResponses !== null, [frozenResponses]);
   const responsesToShow = useMemo(
     () => frozenResponses || pendingResponses,
@@ -51,45 +46,13 @@ const ResponsePanel: FC<ResponsePanelProps> = ({
 
   return (
     <div className='flex flex-col flex-1 min-h-0 overflow-hidden'>
-      {/* Quick response keywords from user settings */}
-      {additionalKeywords.length > 0 && (
-        <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-b border-hairline shrink-0 flex gap-2 overflow-x-auto no-scrollbar overscroll-x-contain'>
-          {additionalKeywords.map((keyword) => (
-            <button
-              key={keyword}
-              className='shrink-0 px-4 min-h-[36px] bg-sage-tint border border-sage rounded-full text-sm text-sage-600 hover:bg-sage-tint transition-colors'
-              onClick={() => onResponseEdit?.(keyword)}
-            >
-              {keyword}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Freeze toggle control */}
-      <div className='px-4 py-2 landscape:py-1 border-b border-hairline shrink-0 flex items-center justify-end'>
-        <button
-          className={cn(
-            'px-3 py-1.5 min-h-[44px] rounded-lg text-sm font-medium transition-colors',
-            isFrozen
-              ? 'bg-blue text-white border border-blue'
-              : 'bg-surface text-ink-2 border border-hairline-2 hover:bg-paper',
-          )}
-          onClick={onFreezeToggle}
-          title={t('conversation.freezeResponses')}
-        >
-          {t('conversation.freezeResponses')}
-        </button>
-      </div>
-
-      {/* Response cards — adaptive: cards grow to fill the available height but
-          never shrink below a tappable minimum; the list scrolls when space is
-          too tight (small phones, split view). Landscape stays a 2x2 grid. */}
-      <div className='flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-2 flex flex-col gap-2 landscape:grid landscape:grid-cols-2 landscape:grid-rows-2 landscape:gap-1 landscape:overflow-hidden'>
+      {/* Response cards — forced 2x2 grid. Rows keep a floor and the grid
+          scrolls, so a cramped viewport never truncates an answer mid-word. */}
+      <div className='flex-1 min-h-0 overflow-y-auto p-4 grid grid-cols-2 auto-rows-[minmax(80px,1fr)] gap-2'>
         {allResponses.slice(0, 4).map((response) => (
           <div
             key={response.id}
-            className='flex-1 min-h-[3.25rem] landscape:min-h-0'
+            className='min-h-0'
           >
             <BaseResponse
               isFrozen={isFrozen}
@@ -172,9 +135,7 @@ const BaseResponse: FC<BaseResponseProps> = ({
                 )}
               </Fragment>
             ) : (
-              <span className='text-muted italic text-base'>
-                {t('conversation.waitingForResponse')}
-              </span>
+              <span className='text-muted italic text-base'>...</span>
             )}
           </p>
         </div>

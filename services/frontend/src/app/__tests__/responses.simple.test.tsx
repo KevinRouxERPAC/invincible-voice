@@ -11,14 +11,16 @@ let mockOnMessage: ((event: { data: string }) => void) | undefined;
 
 jest.mock('react-use-websocket', () => ({
   __esModule: true,
-  default: jest.fn((url: string, options: { onMessage?: typeof mockOnMessage }) => {
-    mockOnMessage = options?.onMessage;
-    return {
-      sendMessage: mockSendMessage,
-      lastMessage: null,
-      readyState: 1, // OPEN
-    };
-  }),
+  default: jest.fn(
+    (url: string, options: { onMessage?: typeof mockOnMessage }) => {
+      mockOnMessage = options?.onMessage;
+      return {
+        sendMessage: mockSendMessage,
+        lastMessage: null,
+        readyState: 1, // OPEN
+      };
+    },
+  ),
   ReadyState: {
     CONNECTING: 0,
     OPEN: 1,
@@ -90,7 +92,9 @@ describe('Response Handling and TTS Tests', () => {
   const establishConnection = async (user) => {
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     const startButton = screen.getByRole('button', { name: 'Start chatting' });
@@ -99,7 +103,7 @@ describe('Response Handling and TTS Tests', () => {
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -192,16 +196,18 @@ describe('Response Handling and TTS Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // Response boxes are not shown when not connected
-    expect(
-      screen.queryByText('Waiting for response…'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Waiting for response…')).not.toBeInTheDocument();
 
     // Only essential buttons are shown
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
 
     // Response-related UI elements are not visible
     expect(screen.queryByText('A')).not.toBeInTheDocument();
@@ -325,15 +331,17 @@ describe('Response Handling and TTS Tests', () => {
     render(<InvincibleVoice />);
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     // Check that response boxes are not shown when not connected
-    expect(
-      screen.queryByText('Waiting for response…'),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Waiting for response…')).not.toBeInTheDocument();
 
     // Only the start conversation and settings buttons should be visible
-    expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Start chatting' }),
+    ).toBeInTheDocument();
   });
 });

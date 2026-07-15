@@ -2,13 +2,10 @@ import asyncio
 import base64
 import json
 import logging
-from typing import Annotated
+from typing import Annotated, Any
 
-import numpy as np
-import sphn
 from fastapi import WebSocket, WebSocketDisconnect, status
 from fastapi.websockets import WebSocketState
-from fastrtc import AdditionalOutputs, CloseStream, audio_to_float32
 from pydantic import Field, TypeAdapter, ValidationError
 
 import backend.openai_realtime_api_events as ora
@@ -21,7 +18,19 @@ from backend.exceptions import (
 )
 from backend.kyutai_constants import SAMPLE_RATE
 from backend.libs.health import get_health
-from backend.unmute_handler import UnmuteHandler
+
+try:
+    import sphn  # type: ignore
+    from fastrtc import AdditionalOutputs, CloseStream, audio_to_float32  # type: ignore
+
+    HAS_AUDIO_DEPS = True
+except ImportError:  # pragma: no cover
+    # Text-only deployments (Android phone/offline) don't need Opus/audio deps.
+    sphn = None  # type: ignore
+    AdditionalOutputs = None  # type: ignore
+    CloseStream = None  # type: ignore
+    audio_to_float32 = None  # type: ignore
+    HAS_AUDIO_DEPS = False
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -81,7 +90,7 @@ async def report_websocket_exception(websocket: WebSocket, exc: Exception):
             logger.warning("Socket already closed.")
 
 
-async def run_route(websocket: WebSocket, handler: UnmuteHandler):
+async def run_route(websocket: WebSocket, handler: Any):
     health = await get_health()
     if not health.ok:
         logger.info("Health check failed, closing WebSocket connection.")
@@ -109,15 +118,21 @@ async def run_route(websocket: WebSocket, handler: UnmuteHandler):
 
 async def receive_loop(
     websocket: WebSocket,
-    handler: UnmuteHandler,
+    handler: Any,
     emit_queue: asyncio.Queue[ora.ServerEvent],
 ):
     """Receive messages from the WebSocket.
 
     Can decide to send messages via `emit_queue`.
     """
-    opus_reader = sphn.OpusStreamReader(SAMPLE_RATE)
     wait_for_first_opus = True
+    opus_reader = None
+    if getattr(handler, "audio_enabled", False):
+        if not HAS_AUDIO_DEPS or sphn is None:
+            raise RuntimeError(
+                "Audio mode requested but audio deps (fastrtc/sphn) are not installed."
+            )
+        opus_reader = sphn.OpusStreamReader(SAMPLE_RATE)
     while True:
         try:
             message_raw = await websocket.receive_text()
@@ -160,6 +175,9 @@ async def receive_loop(
             continue
 
         if isinstance(message, ora.InputAudioBufferAppend):
+            if opus_reader is None:
+                # Text-only mode: ignore audio frames.
+                continue
             opus_bytes = base64.b64decode(message.audio)
             if wait_for_first_opus:
                 # Somehow the UI is sending us potentially old messages from a previous
@@ -172,7 +190,11 @@ async def receive_loop(
             pcm = await asyncio.to_thread(opus_reader.append_bytes, opus_bytes)
 
             if pcm.size:
+                import numpy as np  # local import: only needed for audio path
+
                 await handler.receive((SAMPLE_RATE, pcm[np.newaxis, :]))
+        elif isinstance(message, ora.SpeakerTextAppend):
+            await handler.add_speaker_text(message)
         elif isinstance(message, ora.CurrentKeywords):
             await handler.add_keywords(message)
         elif isinstance(message, ora.DesiredResponsesLenght):
@@ -208,13 +230,19 @@ class EmitDebugLogger:
 
 async def emit_loop(
     websocket: WebSocket,
-    handler: UnmuteHandler,
+    handler: Any,
     emit_queue: asyncio.Queue[ora.ServerEvent],
 ):
     """Send messages to the WebSocket."""
     emit_debug_logger = EmitDebugLogger()
 
-    opus_writer = sphn.OpusStreamWriter(SAMPLE_RATE)
+    opus_writer = None
+    if getattr(handler, "audio_enabled", False):
+        if not HAS_AUDIO_DEPS or sphn is None:
+            raise RuntimeError(
+                "Audio mode requested but audio deps (fastrtc/sphn) are not installed."
+            )
+        opus_writer = sphn.OpusStreamWriter(SAMPLE_RATE)
 
     while True:
         if (
@@ -231,18 +259,27 @@ async def emit_loop(
 
             if emitted_by_handler is None:
                 continue
-            elif isinstance(emitted_by_handler, AdditionalOutputs):
+            elif HAS_AUDIO_DEPS and AdditionalOutputs is not None and isinstance(
+                emitted_by_handler, AdditionalOutputs
+            ):
                 assert len(emitted_by_handler.args) == 1
                 to_emit = ora.UnmuteAdditionalOutputs(
                     args=emitted_by_handler.args[0],
                 )
-            elif isinstance(emitted_by_handler, CloseStream):
+            elif HAS_AUDIO_DEPS and CloseStream is not None and isinstance(
+                emitted_by_handler, CloseStream
+            ):
                 # Close here explicitly so that the receive loop stops too
                 await websocket.close()
                 break
             elif isinstance(emitted_by_handler, ora.ServerEvent):
                 to_emit = emitted_by_handler
             else:
+                if opus_writer is None or audio_to_float32 is None:
+                    # Text-only handler should never emit audio tuples.
+                    raise RuntimeError(
+                        "Handler emitted audio payload in text-only mode."
+                    ) from None
                 _sr, response_id, audio = emitted_by_handler
                 audio = audio_to_float32(audio)
                 opus_bytes = await asyncio.to_thread(opus_writer.append_pcm, audio)

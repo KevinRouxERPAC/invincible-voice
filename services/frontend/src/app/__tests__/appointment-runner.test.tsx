@@ -67,6 +67,8 @@ describe('AppointmentRunner', () => {
       />,
     );
 
-    expect(screen.getByText('This appointment has no phrases yet.')).toBeInTheDocument();
+    expect(
+      screen.getByText('This appointment has no phrases yet.'),
+    ).toBeInTheDocument();
   });
 });

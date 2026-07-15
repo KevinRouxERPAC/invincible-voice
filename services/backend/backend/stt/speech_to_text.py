@@ -10,7 +10,15 @@ from typing import AsyncIterator, Literal, Union
 import msgpack
 import numpy as np
 import websockets
-from fastrtc import audio_to_float32
+
+try:
+    from fastrtc import audio_to_float32  # type: ignore
+
+    HAS_AUDIO_DEPS = True
+except ImportError:  # pragma: no cover
+    # Text-only deployments don't need the audio dependency stack.
+    audio_to_float32 = None  # type: ignore
+    HAS_AUDIO_DEPS = False
 from pydantic import BaseModel, TypeAdapter
 
 from backend import metrics as mt

@@ -45,42 +45,84 @@ class VLLMStream:
         self.temperature = temperature
 
     async def get_stream(
-        self, messages: list[dict[str, str]]
+        self,
+        messages: list[dict[str, str]],
+        *,
+        use_response_format: bool,
     ) -> AsyncStream[ChatCompletionChunk]:
-        response_format = {
-            "type": "json_schema",
-            "json_schema": {
-                "name": "response_suggestion",
-                "strict": True,
-                "schema": StructuredLLMResponse.model_json_schema(),
-            },
-        }
-        logger.info(f"Start text stream from {LLM_URL} with model {self.model}")
+        response_format = None
+        if use_response_format:
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {
+                    "name": "response_suggestion",
+                    "strict": True,
+                    "schema": StructuredLLMResponse.model_json_schema(),
+                },
+            }
 
-        return await self.client.chat.completions.create(
-            model=self.model,
-            messages=cast(Any, messages),  # Cast and hope for the best
-            stream=True,
-            temperature=self.temperature,
-            response_format=response_format,  # type: ignore
+        logger.info(
+            f"Start text stream from {LLM_URL} with model {self.model} (constrained={use_response_format})"
         )
+
+        create_kwargs: dict[str, Any] = {
+            "model": self.model,
+            "messages": cast(Any, messages),  # Cast and hope for the best
+            "stream": True,
+            "temperature": self.temperature,
+        }
+        if response_format is not None:
+            create_kwargs["response_format"] = response_format  # type: ignore
+
+        return await self.client.chat.completions.create(**create_kwargs)
 
     async def chat_completion(
         self, messages: list[dict[str, str]]
     ) -> AsyncIterator[str]:
+        def should_fallback_on_structured_output_error(exc: Exception) -> bool:
+            msg = str(exc).lower()
+            return any(
+                token in msg
+                for token in (
+                    "response_format",
+                    "json_schema",
+                    "grammar",
+                    "not supported",
+                    "either \"json_schema\" or \"grammar\" can be specified",
+                )
+            )
+
+        # 1) Try constrained JSON output with retries on rate-limit.
+        last_exc: Exception | None = None
         for retry_time in (1, 2, 4, 8):
             try:
-                stream = await self.get_stream(messages)
+                stream = await self.get_stream(
+                    messages, use_response_format=True
+                )
                 break
             except openai.RateLimitError as e:
+                last_exc = e
                 logger.warning(
-                    f"Rate limit error when calling LLM, retrying in {retry_time}s. Error: {e}"
+                    "Rate limit error when calling LLM; retrying in %ss. Error: %s",
+                    retry_time,
+                    e,
                 )
                 await asyncio.sleep(retry_time)
+            except Exception as e:
+                last_exc = e
+                if should_fallback_on_structured_output_error(e):
+                    logger.warning(
+                        "LLM rejected `response_format` / structured output; retrying without constraints."
+                    )
+                    stream = await self.get_stream(messages, use_response_format=False)
+                    break
+                raise
         else:
             raise RuntimeError(
-                "Failed to get response from LLM after multiple retries, see error above."
-            )
+                "Failed to get response from LLM after multiple retries."
+            ) from last_exc
+
+        # At this point `stream` must exist (either constrained or fallback).
 
         async with stream:
             async for chunk in stream:

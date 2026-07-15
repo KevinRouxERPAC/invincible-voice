@@ -10,6 +10,7 @@
     "cap:sync": "cap sync android",
     "cap:open:android": "cap open android",
     "android:run": "cap run android",
+    "postinstall": "node scripts/apply-speech-recognition-offline-preference.mjs",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
@@ -17,8 +18,11 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.2",
     "@capacitor/android": "^8.4.0",
     "@capacitor/core": "^8.4.0",
+    "@capacitor/filesystem": "^8.1.2",
     "@capgo/capacitor-social-login": "^8.3.22",
     "clsx": "^2.1.1",
     "lucide-react": "^0.503.0",

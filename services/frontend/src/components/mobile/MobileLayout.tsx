@@ -5,6 +5,7 @@ import { FC } from 'react';
 import EmergencyButton from '@/components/EmergencyButton';
 import StartConversationButton from '@/components/ui/StartConversationButton';
 import { useTranslations } from '@/i18n';
+import { isNativeApp } from '@/utils/platform';
 
 interface MobileNoConversationProps {
   onConnectButtonPress: () => void;
@@ -48,6 +49,11 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
         </button>
       </div>
       <div className='flex-1 flex flex-col items-center justify-center gap-4'>
+        <img
+          src='/logo_invincible.png'
+          alt='InvincibleVoice'
+          className='logo-themed h-10 mb-2'
+        />
         <StartConversationButton
           onClick={onConnectButtonPress}
           label={t('conversation.startChatting')}
@@ -62,21 +68,23 @@ export const MobileNoConversation: FC<MobileNoConversationProps> = ({
           </button>
         )}
       </div>
-      <div
-        className='absolute bottom-0 right-0 p-6 pointer-events-none'
-        style={{ bottom: 'var(--safe-area-inset-bottom)' }}
-      >
-        <div className='flex flex-col items-end pointer-events-auto'>
-          <p className='w-full text-xs text-muted text-right'>
-            {t('common.textToSpeechProvider')}
-          </p>
-          <img
-            src='/gradium.svg'
-            alt='Gradium'
-            className='h-6 mt-1'
-          />
+      {!isNativeApp() && (
+        <div
+          className='absolute bottom-0 right-0 p-6 pointer-events-none'
+          style={{ bottom: 'var(--safe-area-inset-bottom)' }}
+        >
+          <div className='flex flex-col items-end pointer-events-auto'>
+            <p className='w-full text-xs text-muted text-right'>
+              {t('common.textToSpeechProvider')}
+            </p>
+            <img
+              src='/gradium.svg'
+              alt='Gradium'
+              className='h-6 mt-1'
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Safe area spacer for home indicator */}
       <div

@@ -3,6 +3,8 @@ apply plugin: 'com.android.application'
 android {
     namespace = "com.invinciblevoice.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    // NDK used to build the on-device llama.cpp engine (see src/main/cpp).
+    ndkVersion = "27.2.12479018"
     defaultConfig {
         applicationId "com.invinciblevoice.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -15,11 +17,41 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        // Only arm64 phones run the native engine (the target devices). This
+        // also keeps the (heavy) native build fast — no x86 emulator ABI.
+        ndk {
+            abiFilters 'arm64-v8a'
+        }
+        externalNativeBuild {
+            cmake {
+                // Always build the native engine optimized, even in the debug
+                // APK: with the default Debug type ggml compiles at -O0 and is
+                // 10-50x slower (generation crawls). Release gives -O3.
+                //
+                // GGML_CPU_ARM_ARCH: on an Android cross-compile GGML_NATIVE is
+                // off, so ggml can't probe the CPU and defaults to the baseline
+                // armv8-a — WITHOUT the int8 dotprod/i8mm instructions. On those
+                // Q4/Q8 matmuls fall back to slow scalar/NEON paths (~4-10x
+                // slower generation). Every arm64 phone we target (S25+ and any
+                // recent Snapdragon/Exynos) supports armv8.2 dotprod + i8mm +
+                // fp16, so pin the arch to enable the fast int8 kernels.
+                arguments "-DANDROID_STL=c++_shared",
+                          "-DCMAKE_BUILD_TYPE=Release",
+                          "-DGGML_CPU_ARM_ARCH=armv8.2-a+dotprod+i8mm+fp16"
+                cppFlags "-O3"
+            }
+        }
+    }
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.22.1"
+        }
     }
     buildTypes {
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }

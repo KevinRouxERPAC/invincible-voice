@@ -126,7 +126,7 @@
     "yesterday": "Ontem",
     "startChatting": "Começar a conversar",
     "newChat": "Nova conversa",
-    "stopConversation": "Parar a conversa",
+    "stopConversation": "Parar",
     "readyToChat": "Pronto para conversar",
     "startSpeaking": "Comece a falar e sua voz será transcrita. O InvincibleVoice sugerirá respostas para ajudar a se comunicar.",
     "emptyConversation": "Conversa vazia",
@@ -175,7 +175,8 @@
     "backAriaLabel": "Voltar",
     "closeAriaLabel": "Fechar",
     "cancelAriaLabel": "Cancelar",
-    "editResponsePlaceholder": "Digite sua mensagem…"
+    "editResponsePlaceholder": "Digite sua mensagem…",
+    "listening": "Écoute..."
   },
   "documentEditor": {
     "editDocument": "Editar documento",
@@ -198,5 +199,11 @@
     "fallbackInputPlaceholder": "Escreva uma frase para pronunciar…",
     "speak": "Pronunciar",
     "retry": "Tentar ligar novamente"
+  },
+  "model": {
+    "downloadTitle": "A preparar o modo offline",
+    "downloadExplanation": "O assistente descarrega o seu modelo de linguagem uma única vez, para continuar a sugerir respostas mesmo sem ligação à internet.",
+    "offlineFallback": "Modo offline",
+    "offlineFallbackHelp": "Mantém um modelo no telemóvel (cerca de 1 GB) para a aplicação continuar a funcionar sem internet. As sugestões são de menor qualidade."
   }
 }

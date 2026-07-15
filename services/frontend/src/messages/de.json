@@ -126,7 +126,7 @@
     "yesterday": "Gestern",
     "startChatting": "Chatten beginnen",
     "newChat": "Neuer Chat",
-    "stopConversation": "Unterhaltung beenden",
+    "stopConversation": "Beenden",
     "readyToChat": "Bereit zum Chatten",
     "startSpeaking": "Sprechen Sie und Ihre Stimme wird transkribiert. InvincibleVoice wird Antworten vorschlagen, um die Kommunikation zu erleichtern.",
     "emptyConversation": "Leere Unterhaltung",
@@ -161,7 +161,7 @@
     "quickPhrases": "Schnellphrasen",
     "emergencyButton": "Hilfe",
     "emergencyPhrase": "Ich brauche Hilfe, bitte kommen Sie!",
-    "takeFloor": "Ich ergreife das Wort",
+    "takeFloor": "Sprechen",
     "takeFloorHint": "Das Wort ergreifen: Vorschläge erhalten, um das Gespräch zu beginnen oder zu lenken, statt zu antworten.",
     "noKeywordsYet": "Noch keine Schlüsselwörter hinzugefügt. Fügen Sie sie in den Einstellungen hinzu.",
     "directInputTab": "Direkteingabe",
@@ -175,7 +175,8 @@
     "backAriaLabel": "Zurück",
     "closeAriaLabel": "Schließen",
     "cancelAriaLabel": "Abbrechen",
-    "editResponsePlaceholder": "Geben Sie Ihre Nachricht ein…"
+    "editResponsePlaceholder": "Geben Sie Ihre Nachricht ein…",
+    "listening": "Écoute..."
   },
   "documentEditor": {
     "editDocument": "Dokument bearbeiten",
@@ -198,5 +199,11 @@
     "fallbackInputPlaceholder": "Einen Satz zum Vorlesen eingeben…",
     "speak": "Vorlesen",
     "retry": "Verbindung erneut versuchen"
+  },
+  "model": {
+    "downloadTitle": "Offline-Modus wird vorbereitet",
+    "downloadExplanation": "Der Assistent lädt sein Sprachmodell einmalig herunter, damit er auch ohne Internetverbindung Antworten vorschlagen kann.",
+    "offlineFallback": "Offline-Modus",
+    "offlineFallbackHelp": "Behält ein Modell auf dem Telefon (etwa 1 GB), damit die App ohne Internet weiterläuft. Die Vorschläge sind dann schwächer."
   }
 }

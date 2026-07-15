@@ -4,6 +4,7 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from backend.app_types import Conversation, SpeakerMessage
 from backend.routes.auth import get_new_user
 from backend.routes.user import delete_conversation, user_router
 from backend.security import create_access_token
@@ -11,7 +12,6 @@ from backend.storage import (
     MAX_PAST_CONVERSATIONS_IN_PROMPT,
     get_user_data_from_storage,
 )
-from backend.typing import Conversation, SpeakerMessage
 
 
 @pytest.fixture

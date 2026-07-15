@@ -126,7 +126,7 @@
     "yesterday": "Hier",
     "startChatting": "Démarrer la conversation",
     "newChat": "Nouvelle discussion",
-    "stopConversation": "Arrêter la conversation",
+    "stopConversation": "Arrêter",
     "readyToChat": "Prêt à discuter",
     "startSpeaking": "Commencez à parler et votre voix sera transcrite. InvincibleVoice suggérera des réponses pour aider à communiquer.",
     "emptyConversation": "Conversation vide",
@@ -161,7 +161,7 @@
     "quickPhrases": "Phrases rapides",
     "emergencyButton": "À l'aide",
     "emergencyPhrase": "J'ai besoin d'aide, venez s'il vous plaît !",
-    "takeFloor": "Je prends la parole",
+    "takeFloor": "Parler",
     "takeFloorHint": "Prendre la parole : obtenir des suggestions pour lancer ou orienter la conversation au lieu de répondre.",
     "noKeywordsYet": "Aucun mot-clé ajouté pour l'instant. Ajoutez-les dans les paramètres.",
     "directInputTab": "Saisie directe",
@@ -175,7 +175,8 @@
     "backAriaLabel": "Retour",
     "closeAriaLabel": "Fermer",
     "cancelAriaLabel": "Annuler",
-    "editResponsePlaceholder": "Saisissez votre message…"
+    "editResponsePlaceholder": "Saisissez votre message…",
+    "listening": "Écoute..."
   },
   "documentEditor": {
     "editDocument": "Éditer un document",
@@ -198,5 +199,11 @@
     "fallbackInputPlaceholder": "Écrivez une phrase à prononcer…",
     "speak": "Prononcer",
     "retry": "Réessayer la connexion"
+  },
+  "model": {
+    "downloadTitle": "Préparation du mode hors ligne",
+    "downloadExplanation": "L'assistant télécharge une seule fois son modèle de langue, pour continuer à vous proposer des réponses même sans connexion Internet.",
+    "offlineFallback": "Mode hors ligne",
+    "offlineFallbackHelp": "Garde un modèle sur le téléphone (environ 1 Go) pour que l'application continue de fonctionner sans Internet. Les suggestions sont alors moins bonnes."
   }
 }

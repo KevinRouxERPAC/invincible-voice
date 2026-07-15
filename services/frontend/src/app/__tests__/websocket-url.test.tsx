@@ -1,6 +1,18 @@
 import { render, act } from '@testing-library/react';
 import InvincibleVoice from '../../components/InvincibleVoice';
 
+// jest.setup.js mocks authUtils with an anonymous user (no token). This suite
+// asserts how an authenticated user is identified, so it needs a real token.
+jest.mock('@/auth/authUtils', () => ({
+  ...jest.requireActual('@/auth/authUtils'),
+  getBearerToken: () => 'test-bearer-token',
+  getAuthHeaders: () => ({ Authorization: 'Bearer test-bearer-token' }),
+  addAuthHeaders: (headers = {}) => ({
+    ...headers,
+    Authorization: 'Bearer test-bearer-token',
+  }),
+}));
+
 // Mock the custom hooks
 jest.mock('@/hooks/useMicrophoneAccess');
 jest.mock('@/hooks/useAudioProcessor');
@@ -149,10 +161,7 @@ describe('WebSocket URL Construction Tests', () => {
     expect(urlCall[0]).not.toMatch(/user_id=/);
     const options = urlCall[1];
     expect(options.protocols).toEqual(
-      expect.arrayContaining([
-        'realtime',
-        expect.stringMatching(/^Bearer\./),
-      ]),
+      expect.arrayContaining(['realtime', expect.stringMatching(/^Bearer\./)]),
     );
   });
 

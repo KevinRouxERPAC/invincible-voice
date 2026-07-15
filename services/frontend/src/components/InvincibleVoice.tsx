@@ -1,67 +1,52 @@
 'use client';
 
-import { prettyPrintJson } from 'pretty-print-json';
 import {
+  Fragment,
   useCallback,
   useEffect,
-  useState,
-  useRef,
-  Fragment,
-  ChangeEvent,
-  KeyboardEvent as ReactKeyboardEvent,
   useMemo,
+  useRef,
+  useState,
 } from 'react';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
-import { HealthStatus } from '@/components/CouldNotConnect';
-import EmergencyButton from '@/components/EmergencyButton';
-import KeywordChip from '@/components/KeywordChip';
-import KeywordsSuggestion from '@/components/KeywordsSuggestion';
+import ConversationLayout from '@/components/ConversationLayout';
+import type { HealthStatus } from '@/components/CouldNotConnect';
+import ModelDownloadScreen from '@/components/ModelDownloadScreen';
 import OfflineFallback from '@/components/OfflineFallback';
-import QuickPhrases from '@/components/QuickPhrases';
-import ResponseOptions from '@/components/ResponseOptions';
-import AppointmentLauncher from '@/components/appointments/AppointmentLauncher';
-import ChatInterface, {
-  PendingResponse,
-} from '@/components/chat/ChatInterface';
+import type { PendingResponse } from '@/components/chat/ChatInterface';
 import ConfirmationDialog from '@/components/conversations/ConfirmationDialog';
-import ConversationHistory from '@/components/conversations/ConversationHistory';
-import Pause from '@/components/icons/Pause';
-import Reply from '@/components/icons/Reply';
-import MobileConversationLayout from '@/components/mobile/MobileConversationLayout';
-import { MobileNoConversation } from '@/components/mobile/MobileLayout';
-import MobileSettingsPopup from '@/components/settings/MobileSettingsPopup';
-import SettingsPopup from '@/components/settings/SettingsPopup';
-import ErrorMessages, {
-  ErrorItem,
-  makeErrorItem,
-} from '@/components/ui/ErrorMessages';
-import SettingsButton from '@/components/ui/SettingsButton';
-import StartConversationButton from '@/components/ui/StartConversationButton';
+import { type ErrorItem, makeErrorItem } from '@/components/ui/ErrorMessages';
 import {
   NB_KEYWORDS,
   NB_RESPONSES,
-  ResponseSize,
   RESPONSES_SIZES,
+  type ResponseSize,
 } from '@/constants';
 import { useAudioProcessor } from '@/hooks/useAudioProcessor';
 import { useBackendServerUrl } from '@/hooks/useBackendServerUrl';
-import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
+import { useLocalConversation } from '@/hooks/useLocalConversation';
 import { useMicrophoneAccess } from '@/hooks/useMicrophoneAccess';
 import { useMobileDetection } from '@/hooks/useMobileDetection';
 import useWakeLock from '@/hooks/useWakeLock';
 import { useTranslations } from '@/i18n';
-import { ChatMessage } from '@/types/chatHistory';
+import type { ChatMessage } from '@/types/chatHistory';
 import { base64EncodeOpus } from '@/utils/audioUtil';
 import { apiUrl } from '@/utils/backend';
-import { cn } from '@/utils/cn';
-import {
-  convertConversationToChat,
-  getStaticContextOption,
-  getStaticRepeatOption,
-} from '@/utils/conversationUtils';
+import { convertConversationToChat } from '@/utils/conversationUtils';
+import { getLocalLlm } from '@/utils/localLlm';
+import { isLocalMode, isLocalOnlyMode } from '@/utils/localMode';
 import { saveSettingsSnapshot } from '@/utils/localSettingsCache';
+import { ensureLocalModelReady, type ModelState } from '@/utils/modelManager';
+import {
+  isNativeSpeechAvailable,
+  requestNativeSpeechPermission,
+  startNativeListening,
+  toBcp47,
+  type NativeListeningController,
+} from '@/utils/nativeSpeech';
 import { playQuickPhrase, prefetchQuickPhrases } from '@/utils/phraseAudio';
+import { isNativeApp } from '@/utils/platform';
 import { calculateTotalTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { ttsCache } from '@/utils/ttsCache';
 import { playTTSStream } from '@/utils/ttsUtil';
@@ -69,8 +54,8 @@ import { getUiSettings } from '@/utils/uiSettings';
 import {
   deleteConversation,
   getUserData,
-  UserData,
-  UserSettings,
+  type UserData,
+  type UserSettings,
 } from '@/utils/userData';
 
 interface PendingKeyword {
@@ -96,7 +81,6 @@ const InvincibleVoice = () => {
     };
   }, []);
 
-  const { isDevMode } = useKeyboardShortcuts();
   const isMobile = useMobileDetection();
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
   const [userData, setUserData] = useState<UserData | null>(null);
@@ -109,7 +93,6 @@ const InvincibleVoice = () => {
   const [responseTimelines, setResponseTimelines] = useState<number[]>(
     Array(NB_RESPONSES).fill(0),
   );
-  const hidePanes = false;
   const [pendingKeywords, setPendingKeywords] = useState<PendingKeyword[]>([]);
   const [keywordTimelines, setKeywordTimelines] = useState<number[]>(
     Array(NB_KEYWORDS).fill(0),
@@ -121,11 +104,12 @@ const InvincibleVoice = () => {
     useState<string>('');
   const [currentSpeakerMessageStartTime, setCurrentSpeakerMessageStartTime] =
     useState<number | null>(null);
+  // Native STT only: utterances already finished (and sent to the backend)
+  // but not yet flushed to the chat history. Partial results are displayed
+  // appended to this text.
+  const nativeCommittedTextRef = useRef<string>('');
   const [textInput, setTextInput] = useState<string>('');
   const [directiveInput, setDirectiveInput] = useState<string>('');
-  const [activeInputTab, setActiveInputTab] = useState<'directive' | 'manual'>(
-    'directive',
-  );
   const [lastSentKeywords, setLastSentKeywords] = useState<string | null>(null);
   const [lastSentText, setLastSentText] = useState<string>('');
   const textInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -144,31 +128,30 @@ const InvincibleVoice = () => {
   const [conversationToDelete, setConversationToDelete] = useState<
     number | null
   >(null);
-  const [isInEditMode, setIsInEditMode] = useState<boolean>(false);
-  const [insertTextAtCursor, setInsertTextAtCursor] = useState<
-    ((text: string) => void) | null
-  >(null);
   const [frozenResponses, setFrozenResponses] = useState<
     PendingResponse[] | null
   >(null);
-  const [responseSize, setResponseSize] = useState<ResponseSize>(
-    RESPONSES_SIZES.M,
-  );
+  const [, setResponseSize] = useState<ResponseSize>(RESPONSES_SIZES.M);
   const [shouldConnect, setShouldConnect] = useState(false);
   // "Take the floor" mode: ask the backend for openers instead of replies.
   const [isInitiating, setIsInitiating] = useState(false);
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  // Progress of the one-time on-device model download (native app only).
+  const [modelState, setModelState] = useState<ModelState>({
+    status: 'absent',
+  });
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const bearerToken = useMemo(() => getBearerToken(), []);
 
-  const staticContextOption = useMemo(() => getStaticContextOption(t), [t]);
-  const staticRepeatOption = useMemo(() => getStaticRepeatOption(t), [t]);
   const newConversationUrl = useMemo(() => {
     // Create timezone-aware datetime for local_time parameter
     const localTime = new Date().toISOString();
     const encodedLocalTime = encodeURIComponent(localTime);
-    return `${backendServerUrl.toString()}/v1/user/new-conversation?local_time=${encodedLocalTime}`;
+    // Native app: STT runs on the phone, tell the backend not to start
+    // its own (paid) STT connection.
+    const clientStt = isNativeApp() ? '&client_stt=true' : '';
+    return `${backendServerUrl.toString()}/v1/user/new-conversation?local_time=${encodedLocalTime}${clientStt}`;
   }, [backendServerUrl]);
   const handleInComingMessage = useCallback(
     (lastMessage: WebSocketEventMap['message']) => {
@@ -229,6 +212,7 @@ const InvincibleVoice = () => {
             ]);
             setCurrentSpeakerMessage('');
             setCurrentSpeakerMessageStartTime(null);
+            nativeCommittedTextRef.current = '';
           }
 
           setResponseTimelines((prev) => {
@@ -308,14 +292,47 @@ const InvincibleVoice = () => {
       responseTimelines,
     ],
   );
-  const { sendMessage, readyState } = useWebSocket(
+  // Hybrid mode (native app): use the cloud backend for suggestions when it is
+  // reachable (much better quality), and fall back to the on-device model when
+  // offline. `checkHealth` sets `backend_url` to 'local' precisely when it could
+  // not reach the backend, which is our signal to use the on-device engine.
+  // Until the first health check resolves we default to local so the app works
+  // offline out of the box.
+  const localCapable = isLocalMode();
+  const preferLocal =
+    localCapable && (!healthStatus || healthStatus.backend_url === 'local');
+  // When on-device: suggestions are produced locally, so the conversation
+  // WebSocket to the backend is never opened. This local hook mimics
+  // useWebSocket's interface and feeds one.response / one.keyword events into
+  // the very same handler, so nothing downstream changes.
+  const localConversation = useLocalConversation({
+    enabled: preferLocal,
+    connected: shouldConnect,
+    userData,
+    onMessage: handleInComingMessage,
+  });
+  const ws = useWebSocket(
     newConversationUrl,
     {
-      protocols: ['realtime', `Bearer.${bearerToken}`],
+      protocols: bearerToken
+        ? ['realtime', `Bearer.${bearerToken}`]
+        : ['realtime'],
       onMessage: handleInComingMessage,
+      onOpen: () => console.warn('[ws] OPEN', newConversationUrl),
+      onClose: (e) =>
+        console.warn(
+          `[ws] CLOSE code=${(e as CloseEvent).code} reason=${
+            (e as CloseEvent).reason
+          } wasClean=${(e as CloseEvent).wasClean}`,
+        ),
+      onError: (e) => console.error('[ws] ERROR', String(e)),
     },
-    shouldConnect,
+    shouldConnect && !preferLocal,
   );
+  const sendMessage = preferLocal
+    ? localConversation.sendMessage
+    : ws.sendMessage;
+  const readyState = preferLocal ? localConversation.readyState : ws.readyState;
   const clearResponses = useCallback(() => {
     setPendingResponses([]);
     setResponseTimelines(Array(NB_RESPONSES).fill(0));
@@ -323,16 +340,6 @@ const InvincibleVoice = () => {
     setKeywordTimelines(Array(NB_KEYWORDS).fill(0));
     setCurrentSpeakerMessageStartTime(null);
   }, []);
-  const handleFreezeToggle = useCallback(() => {
-    setFrozenResponses((prev) => {
-      if (prev) {
-        return null;
-      }
-      return pendingResponses.filter(
-        (response) => response.text.trim() && response.isComplete,
-      );
-    });
-  }, [pendingResponses]);
   const unfreezeResponses = useCallback(() => {
     setFrozenResponses(null);
   }, []);
@@ -348,6 +355,82 @@ const InvincibleVoice = () => {
     [sendMessage],
   );
   const { setupAudio, shutdownAudio } = useAudioProcessor(onOpusRecorded);
+  const expectedTranscriptionLanguage =
+    userData?.user_settings?.expected_transcription_language ?? null;
+  // Native app: the phone does the speech recognition. Show partial results
+  // live and send each finished utterance to the backend, which only runs
+  // the LLM suggestions on it (no audio ever leaves the device).
+  useEffect(() => {
+    if (!isNativeApp() || readyState !== ReadyState.OPEN) {
+      return undefined;
+    }
+
+    let controller: NativeListeningController | null = null;
+    let cancelled = false;
+
+    startNativeListening({
+      language: toBcp47(expectedTranscriptionLanguage),
+      onPartial: (text) => {
+        setCurrentSpeakerMessage((prev) => {
+          if (prev.length === 0) {
+            setCurrentSpeakerMessageStartTime(Date.now());
+          }
+          const committed = nativeCommittedTextRef.current;
+          return committed ? `${committed} ${text}` : text;
+        });
+      },
+      onUtterance: (text) => {
+        const committed = nativeCommittedTextRef.current;
+        nativeCommittedTextRef.current = committed
+          ? `${committed} ${text}`
+          : text;
+        setCurrentSpeakerMessage(nativeCommittedTextRef.current);
+        sendMessage(
+          JSON.stringify({
+            type: 'speaker.text.append',
+            text,
+          }),
+        );
+      },
+      onError: (error) => {
+        console.error('Native speech recognition error:', error);
+        const message = error instanceof Error ? error.message : String(error);
+        const isNetworkProblem = message.toLowerCase().includes('network');
+        const friendly = isNetworkProblem
+          ? 'Speech recognition failed (offline). Assure you installed the offline language packs on Android, or use manual text input.'
+          : message;
+        setErrors((prev) => {
+          // Avoid spamming the same error every time the recognizer fails.
+          const alreadyShown = prev.some((e) =>
+            e.message.includes('Speech recognition failed'),
+          );
+          if (alreadyShown) {
+            return prev;
+          }
+          return [...prev, makeErrorItem(friendly)];
+        });
+      },
+    })
+      .then((c) => {
+        if (cancelled) {
+          c.stop().catch(() => {});
+        } else {
+          controller = c;
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to start native speech recognition:', error);
+        setErrors((prev) => [
+          ...prev,
+          makeErrorItem(t('errors.microphoneAccessNeeded')),
+        ]);
+      });
+
+    return () => {
+      cancelled = true;
+      controller?.stop().catch(() => {});
+    };
+  }, [readyState, expectedTranscriptionLanguage, sendMessage, t]);
   const sendCurrentKeywords = useCallback(
     (keywords: string | null) => {
       if (keywords !== lastSentKeywords) {
@@ -565,23 +648,12 @@ const InvincibleVoice = () => {
   );
   const handleWordBubbleClick = useCallback(
     (word: string) => {
-      if (isInEditMode && insertTextAtCursor) {
-        insertTextAtCursor(word);
-      } else {
-        const newValue = textInput ? `${textInput} ${word}` : word;
-        setTextInput(newValue);
-        sendCurrentKeywords(newValue.trim());
-        // Unfreeze responses when text input changes
-        unfreezeResponses();
-      }
+      const newValue = textInput ? `${textInput} ${word}` : word;
+      setTextInput(newValue);
+      sendCurrentKeywords(newValue.trim());
+      unfreezeResponses();
     },
-    [
-      textInput,
-      sendCurrentKeywords,
-      isInEditMode,
-      insertTextAtCursor,
-      unfreezeResponses,
-    ],
+    [textInput, sendCurrentKeywords, unfreezeResponses],
   );
   const handleKeywordSelect = useCallback(
     (keywordText: string) => {
@@ -591,50 +663,42 @@ const InvincibleVoice = () => {
   );
   const handleTextInputChange = useCallback(
     (newValue: string) => {
-      setTextInput((oldValue) => {
-        if (newValue !== oldValue) {
-          unfreezeResponses();
-        }
-        if (textInputTimeoutRef.current) {
-          clearTimeout(textInputTimeoutRef.current);
-        }
+      const oldValue = textInput;
+      if (newValue !== oldValue) {
+        unfreezeResponses();
+      }
+      if (textInputTimeoutRef.current) {
+        clearTimeout(textInputTimeoutRef.current);
+      }
 
-        // Detect word completion: user typed a space after non-space characters
-        if (
-          newValue.length > oldValue.length &&
-          newValue.endsWith(' ') &&
-          !oldValue.endsWith(' ')
-        ) {
-          // A word was just completed, send current keywords
-          sendCurrentKeywords(newValue.trim());
-          setLastSentText(newValue);
-        } else if (newValue.trim() === '' && oldValue.trim() !== '') {
-          // Text was cleared, send null
-          sendCurrentKeywords(null);
-          setLastSentText('');
-        }
+      // Detect word completion: user typed a space after non-space characters
+      if (
+        newValue.length > oldValue.length &&
+        newValue.endsWith(' ') &&
+        !oldValue.endsWith(' ')
+      ) {
+        // A word was just completed, send current keywords
+        sendCurrentKeywords(newValue.trim());
+        setLastSentText(newValue);
+      } else if (newValue.trim() === '' && oldValue.trim() !== '') {
+        // Text was cleared, send null
+        sendCurrentKeywords(null);
+        setLastSentText('');
+      }
 
-        textInputTimeoutRef.current = setTimeout(() => {
-          if (newValue !== lastSentText) {
-            if (newValue.trim() !== '') {
-              sendCurrentKeywords(newValue.trim());
-            } else {
-              sendCurrentKeywords(null);
-            }
-            setLastSentText(newValue);
+      textInputTimeoutRef.current = setTimeout(() => {
+        if (newValue !== lastSentText) {
+          if (newValue.trim() !== '') {
+            sendCurrentKeywords(newValue.trim());
+          } else {
+            sendCurrentKeywords(null);
           }
-        }, 2000);
-        return newValue;
-      });
+          setLastSentText(newValue);
+        }
+      }, 2000);
+      setTextInput(newValue);
     },
-    [sendCurrentKeywords, lastSentText, unfreezeResponses],
-  );
-  const handleEditModeChange = useCallback(
-    (isEditing: boolean, insertTextCallback: (text: string) => void) => {
-      setIsInEditMode(isEditing);
-      setInsertTextAtCursor(() => insertTextCallback);
-    },
-    [],
+    [textInput, sendCurrentKeywords, lastSentText, unfreezeResponses],
   );
 
   const handleDirectiveSubmit = useCallback(() => {
@@ -874,6 +938,23 @@ const InvincibleVoice = () => {
         );
       }
 
+      if (isNativeApp()) {
+        // Native app: the speech-recognition plugin owns the microphone, no
+        // getUserMedia/opus pipeline needed. Listening starts once the
+        // WebSocket is open (see the native listening effect).
+        const available = await isNativeSpeechAvailable();
+        const granted = available && (await requestNativeSpeechPermission());
+        if (!granted) {
+          setErrors((prev) => [
+            ...prev,
+            makeErrorItem(t('errors.microphoneAccessNeeded')),
+          ]);
+          return;
+        }
+        setShouldConnect(true);
+        return;
+      }
+
       const mediaStream = await askMicrophoneAccess();
       if (mediaStream) {
         await setupAudio(mediaStream);
@@ -890,6 +971,7 @@ const InvincibleVoice = () => {
     shouldConnect,
     shutdownAudio,
     userData?.user_settings,
+    t,
   ]);
   const onResponseEdit = useCallback(
     (editedText: string) => {
@@ -925,21 +1007,6 @@ const InvincibleVoice = () => {
       sendCurrentKeywords(null);
     },
     [clearResponses, sendCurrentKeywords, sendMessage],
-  );
-  const onChangeTextInput = useCallback(
-    (event: ChangeEvent<HTMLTextAreaElement>) => {
-      handleTextInputChange(event.target.value);
-    },
-    [handleTextInputChange],
-  );
-  const onTextInputKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        handleSendMessage();
-      }
-    },
-    [handleSendMessage],
   );
 
   useEffect(() => {
@@ -993,9 +1060,60 @@ const InvincibleVoice = () => {
   useWakeLock(shouldConnect);
 
   const checkHealth = useCallback(async () => {
+    // 100%-local mode: no backend. Health depends only on the on-device engine
+    // (STT/TTS are always native). Never make a network call, so it works in
+    // airplane mode.
+    if (isLocalMode()) {
+      // Hybrid: prefer the cloud backend (better suggestions) when it is
+      // reachable; otherwise fall back to the on-device model so the app still
+      // works fully offline (airplane mode included). STT/TTS are always native.
+      // A backend-less build skips the probe entirely — zero network.
+      if (!isLocalOnlyMode()) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          const response = await fetch(apiUrl(`/v1/health`), {
+            signal: controller.signal,
+            headers: addAuthHeaders(),
+          });
+          clearTimeout(timeoutId);
+          if (response.ok) {
+            const data = await response.json();
+            data.connected = 'yes_request_ok';
+            setHealthStatus({
+              ...data,
+              // STT/TTS are always the device's, independent of the backend.
+              stt_up: true,
+              tts_up: true,
+              backend_url: apiUrl(`/v1/health`),
+            });
+            return;
+          }
+        } catch {
+          // Unreachable/offline: fall through to the on-device engine below.
+        }
+      }
+      // Backend unreachable: the on-device engine is the only way to suggest
+      // answers. If it is not loaded yet there is nothing to fall back to, so
+      // report unhealthy rather than pretending the app works.
+      const llmReady = (await getLocalLlm()?.isReady()) ?? false;
+      setHealthStatus({
+        connected: 'yes_request_ok',
+        ok: llmReady,
+        backend_url: 'local',
+        stt_up: true,
+        tts_up: true,
+        llm_up: llmReady,
+      });
+      return;
+    }
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      // On native Android we may need a bit more time because /v1/health now
+      // also checks LLM reachability (quick network call). Keep UX responsive
+      // but avoid false negatives due to an overly short abort.
+      const timeoutMs = isNativeApp() ? 6000 : 3000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await fetch(apiUrl(`/v1/health`), {
         signal: controller.signal,
@@ -1007,16 +1125,30 @@ const InvincibleVoice = () => {
         setHealthStatus({
           connected: 'yes_request_fail',
           ok: false,
+          backend_url: apiUrl(`/v1/health`),
+          // On Android, STT/TTS are native/offline: they can still work even
+          // when the backend is down/unreachable.
+          ...(isNativeApp()
+            ? { stt_up: true, tts_up: true, llm_up: false }
+            : {}),
         });
       }
       const data = await response.json();
       data.connected = 'yes_request_ok';
 
-      setHealthStatus(data);
+      setHealthStatus({
+        ...data,
+        // Make the UI deterministic on native Android: TTS uses the device
+        // engine and does not depend on the backend.
+        ...(isNativeApp() ? { tts_up: true } : {}),
+        ...(isNativeApp() ? { backend_url: apiUrl(`/v1/health`) } : {}),
+      });
     } catch {
       setHealthStatus({
         connected: 'no',
         ok: false,
+        backend_url: apiUrl(`/v1/health`),
+        ...(isNativeApp() ? { stt_up: true, tts_up: true, llm_up: false } : {}),
       });
     }
   }, []);
@@ -1027,6 +1159,24 @@ const InvincibleVoice = () => {
     }
     checkHealth();
   }, [backendServerUrl, checkHealth]);
+
+  // Native app: make the on-device fallback usable. Downloads the model on
+  // first run (once, ~1 GB) and loads it into the llama.cpp engine, so that a
+  // later loss of connectivity can fall back to it instead of dying.
+  // Re-check health afterwards: `llm_up` depends on the engine being loaded.
+  useEffect(() => {
+    if (!isLocalMode()) {
+      return;
+    }
+    ensureLocalModelReady(setModelState)
+      .then((path) => {
+        if (path) checkHealth();
+        return path;
+      })
+      .catch((e) => {
+        console.warn('[local] on-device model unavailable', e);
+      });
+  }, [checkHealth]);
 
   // While unhealthy, retry periodically so the app recovers on its own when
   // the connection comes back.
@@ -1216,6 +1366,7 @@ const InvincibleVoice = () => {
     clearResponses();
     setCurrentSpeakerMessage('');
     setCurrentSpeakerMessageStartTime(null);
+    nativeCommittedTextRef.current = '';
 
     // On mobile, default to XS so the compact chips above the text input
     // receive short responses. The layout sends M when Responses tab is active.
@@ -1244,6 +1395,19 @@ const InvincibleVoice = () => {
     );
   }
 
+  // First run with no reachable backend: the on-device model is still
+  // downloading. That is a wait, not a failure, so don't show the offline error
+  // screen over it. When the backend IS reachable the download stays in the
+  // background and the user keeps talking through the cloud.
+  if (preferLocal && modelState.status === 'downloading') {
+    return (
+      <ModelDownloadScreen
+        receivedBytes={modelState.receivedBytes}
+        totalBytes={modelState.totalBytes}
+      />
+    );
+  }
+
   if (healthStatus && !healthStatus.ok) {
     return (
       <OfflineFallback
@@ -1253,483 +1417,59 @@ const InvincibleVoice = () => {
     );
   }
 
-  // Mobile layout
-  if (isMobile) {
-    return (
-      <div className='flex flex-col w-full h-dvh overflow-hidden text-ink'>
-        <ErrorMessages
-          errors={errors}
-          setErrors={setErrors}
-        />
-        {!shouldConnect &&
-          !isViewingPastConversation &&
-          !isShowingHistoryFromIdle && (
-            <MobileNoConversation
-              onConnectButtonPress={onConnectButtonPress}
-              onSettingsPress={handleSettingsOpen}
-              onHistoryPress={() => setIsShowingHistoryFromIdle(true)}
-              hasHistory={(userData?.conversations ?? []).length > 0}
-            />
-          )}
-        {(shouldConnect ||
-          isViewingPastConversation ||
-          isShowingHistoryFromIdle) && (
-          <MobileConversationLayout
-            textInput={textInput}
-            onTextInputChange={handleTextInputChange}
-            onSendMessage={handleSendMessage}
-            frozenResponses={frozenResponses}
-            onFreezeToggle={handleFreezeToggle}
-            pendingResponses={pendingResponses}
-            onResponseSelect={handleResponseSelection}
-            onResponseEdit={onResponseEdit}
-            onResponseSizeChange={handleSelectResponseSize}
-            onConnectButtonPress={onConnectButtonPress}
-            onSettingsPress={handleSettingsOpen}
-            chatHistory={rawChatHistory}
-            isConnected={shouldConnect}
-            currentSpeakerMessage={currentSpeakerMessage}
-            conversations={userData?.conversations ?? []}
-            selectedConversationIndex={selectedConversationIndex}
-            onConversationSelect={handleConversationSelect}
-            onNewConversation={handleNewConversation}
-            onDeleteConversation={handleDeleteConversation}
-            pastConversation={
-              selectedConversationIndex !== null &&
-              userData?.conversations[selectedConversationIndex]
-                ? userData.conversations[selectedConversationIndex]
-                : undefined
-            }
-            isViewingPastConversation={isViewingPastConversation}
-            initialActivePanel={
-              isShowingHistoryFromIdle && !isViewingPastConversation
-                ? 'history'
-                : 'chat'
-            }
-            isHistoryMode={
-              isShowingHistoryFromIdle || isViewingPastConversation
-            }
-            additionalKeywords={
-              userData?.user_settings?.additional_keywords ?? []
-            }
-            quickPhrases={userData?.user_settings?.quick_phrases ?? []}
-            onQuickPhraseSelect={handleQuickPhraseSelect}
-            isInitiating={isInitiating}
-            onToggleInitiating={handleToggleInitiating}
-            onBack={() => {
-              if (isViewingPastConversation) {
-                // Viewing a past conversation → go back to history list
-                setIsViewingPastConversation(false);
-                setSelectedConversationIndex(null);
-                setIsShowingHistoryFromIdle(true);
-              } else {
-                // Browsing history list from idle → go back to idle
-                setIsShowingHistoryFromIdle(false);
-              }
-            }}
-          />
-        )}
-        {isSettingsOpen && userData && (
-          <div className='fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm'>
-            <div
-              role='dialog'
-              aria-modal='true'
-              aria-label={t('settings.title')}
-              className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl'
-            >
-              <MobileSettingsPopup
-                userSettings={userData.user_settings}
-                email={userData.email}
-                onSave={handleSettingsSave}
-                onCancel={handleSettingsCancel}
-              />
-            </div>
-          </div>
-        )}
-        <ConfirmationDialog
-          isOpen={isDeleteDialogOpen}
-          onClose={toggleDeleteConversationDialog}
-          onConfirm={confirmDeleteConversation}
-          title={t('conversation.deleteConversation')}
-          message={t('conversation.deleteConversationMessage')}
-          confirmText={t('common.delete')}
-          cancelText={t('common.cancel')}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className='relative flex flex-col w-full h-screen overflow-hidden text-ink'>
-      <ErrorMessages
+    <Fragment>
+      <ConversationLayout
+        shouldConnect={shouldConnect}
+        onConnectButtonPress={onConnectButtonPress}
+        isMobile={isMobile}
+        chatHistory={rawChatHistory}
+        currentSpeakerMessage={currentSpeakerMessage}
+        pendingResponses={pendingResponses}
+        frozenResponses={frozenResponses}
+        onResponseSelect={handleResponseSelection}
+        onResponseEdit={onResponseEdit}
+        onResponseSizeChange={handleSelectResponseSize}
+        pendingKeywords={pendingKeywords}
+        textInput={textInput}
+        onTextInputChange={handleTextInputChange}
+        onSendMessage={handleSendMessage}
+        directiveInput={directiveInput}
+        onDirectiveInputChange={setDirectiveInput}
+        onDirectiveSubmit={handleDirectiveSubmit}
+        isInitiating={isInitiating}
+        onToggleInitiating={handleToggleInitiating}
+        userData={userData}
+        userDataError={userDataError}
+        selectedConversationIndex={selectedConversationIndex}
+        isViewingPastConversation={isViewingPastConversation}
+        isShowingHistoryFromIdle={isShowingHistoryFromIdle}
+        onConversationSelect={handleConversationSelect}
+        onNewConversation={handleNewConversation}
+        onDeleteConversation={handleDeleteConversation}
+        onShowHistoryFromIdle={() => setIsShowingHistoryFromIdle(true)}
+        onBack={() => {
+          if (isViewingPastConversation) {
+            setIsViewingPastConversation(false);
+            setSelectedConversationIndex(null);
+            setIsShowingHistoryFromIdle(true);
+          } else {
+            setIsShowingHistoryFromIdle(false);
+          }
+        }}
+        isSettingsOpen={isSettingsOpen}
+        settingsBlockedMessage={settingsBlockedMessage}
+        onSettingsOpen={handleSettingsOpen}
+        onSettingsSave={handleSettingsSave}
+        onSettingsCancel={handleSettingsCancel}
         errors={errors}
         setErrors={setErrors}
+        onWordBubbleClick={handleWordBubbleClick}
+        onKeywordSelect={handleKeywordSelect}
+        onIntentClick={handleIntentClick}
+        onQuickPhraseSelect={handleQuickPhraseSelect}
+        debugDict={debugDict}
       />
-      <div className='flex flex-row grow h-screen'>
-        {!hidePanes && (
-          <ConversationHistory
-            conversations={userData?.conversations || []}
-            selectedConversationIndex={selectedConversationIndex}
-            onConversationSelect={handleConversationSelect}
-            onNewConversation={handleNewConversation}
-            onDeleteConversation={handleDeleteConversation}
-          />
-        )}
-        <div className='relative z-0 grid grow h-screen grid-cols-2 overflow-hidden'>
-          <div className='absolute bottom-4 left-4 z-30'>
-            <EmergencyButton />
-          </div>
-          {!shouldConnect && !isViewingPastConversation && (
-            <div className='absolute inset-0 z-20 flex items-center justify-center pointer-events-none'>
-              <StartConversationButton
-                onClick={onConnectButtonPress}
-                label={t('conversation.startChatting')}
-              />
-            </div>
-          )}
-          {!shouldConnect && !isViewingPastConversation && (
-            <div className='absolute bottom-0 right-0 z-20 p-6 pointer-events-none'>
-              <div className='flex flex-col items-end pointer-events-auto'>
-                <p className='text-xs text-muted'>
-                  {t('common.textToSpeechProvider')}
-                </p>
-                <img
-                  src='/gradium.svg'
-                  alt='Gradium'
-                  className='h-6 mt-1'
-                />
-              </div>
-            </div>
-          )}
-          {!hidePanes && (
-            <div className='relative z-0 flex flex-col h-screen gap-8 px-4 pt-6 pb-4 overflow-y-auto'>
-              <div className='flex flex-row items-center justify-between h-10'>
-                {shouldConnect && !isViewingPastConversation ? (
-                  <button
-                    onClick={handleToggleInitiating}
-                    data-scan-item
-                    title={t('conversation.takeFloorHint')}
-                    className={cn(
-                      'shrink-0 h-10 px-5 flex flex-row items-center justify-center gap-2 rounded-2xl text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-sage',
-                      isInitiating
-                        ? 'bg-sage text-white border-sage'
-                        : 'bg-surface text-ink-2 border-hairline-2 hover:bg-paper',
-                    )}
-                  >
-                    {t('conversation.takeFloor')}
-                  </button>
-                ) : (
-                  <span />
-                )}
-                {shouldConnect && !isViewingPastConversation && (
-                  <button
-                    onClick={onConnectButtonPress}
-                    className='shrink-0 h-10 px-5 cursor-pointer flex flex-row items-center justify-center gap-2 rounded-2xl text-sm text-terra bg-terra-tint border border-terra hover:brightness-95 transition'
-                    title={t('conversation.stopConversation')}
-                  >
-                    {t('conversation.stopConversation')}
-                    <Pause
-                      width={24}
-                      height={24}
-                      className='shrink-0'
-                    />
-                  </button>
-                )}
-              </div>
-              <ChatInterface
-                chatHistory={rawChatHistory}
-                isConnected={shouldConnect}
-                currentSpeakerMessage={currentSpeakerMessage}
-                pastConversation={
-                  selectedConversationIndex !== null &&
-                  userData?.conversations[selectedConversationIndex]
-                    ? userData.conversations[selectedConversationIndex]
-                    : undefined
-                }
-                isViewingPastConversation={isViewingPastConversation}
-              />
-              {shouldConnect && !isViewingPastConversation && (
-                <div className='shrink-0'>
-                  <ResponseOptions
-                    responses={pendingResponses}
-                    onSelect={handleResponseSelection}
-                    onEditModeChange={handleEditModeChange}
-                    onEdit={onResponseEdit}
-                    alwaysShow
-                    frozenResponses={frozenResponses}
-                    onFreezeToggle={handleFreezeToggle}
-                    onResponseSizeChange={handleSelectResponseSize}
-                    currentResponseSize={responseSize}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-          <div className='relative z-0 flex flex-col h-screen gap-4 px-4 pt-6 overflow-y-auto pb-14'>
-            {!shouldConnect && !isViewingPastConversation && (
-              <div className='flex flex-row items-center justify-between gap-2 h-10'>
-                <AppointmentLauncher
-                  appointments={userData?.user_settings?.appointments ?? []}
-                  voiceName={userData?.user_settings?.voice}
-                  lang={
-                    userData?.user_settings?.expected_transcription_language
-                  }
-                />
-                <SettingsButton
-                  onClick={handleSettingsOpen}
-                  label={t('settings.changeSettings')}
-                  variant='full'
-                />
-              </div>
-            )}
-            {shouldConnect && !isViewingPastConversation && (
-              <Fragment>
-                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-                  <div className='mb-1 text-sm font-medium text-ink'>
-                    {t('conversation.keywords')}
-                  </div>
-                  <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
-                    {userData?.user_settings?.additional_keywords?.map(
-                      (word) => (
-                        <KeywordChip
-                          key={word}
-                          word={word}
-                          onWordClick={handleWordBubbleClick}
-                          onIntentClick={handleIntentClick}
-                        />
-                      ),
-                    ) || []}
-                    {(!userData?.user_settings?.additional_keywords ||
-                      userData.user_settings.additional_keywords.length ===
-                        0) && (
-                      <p className='text-xs italic text-muted'>
-                        {t('conversation.noKeywordsYet')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {userDataError && (
-                  <div className='p-2 border-b border-hairline'>
-                    <div className='text-right'>
-                      <span className='text-xs text-red-400'>
-                        {t('errors.failedToLoadUserData')}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {settingsBlockedMessage && (
-                  <div className='p-2 border-b border-hairline'>
-                    <div className='px-2 py-1 text-xs text-yellow-200 border border-yellow-500 rounded bg-yellow-900/20'>
-                      {settingsBlockedMessage}
-                    </div>
-                  </div>
-                )}
-                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>
-                  <div className='mb-1 text-sm font-medium text-ink'>
-                    {t('common.friends')}
-                  </div>
-                  <div className='flex flex-wrap gap-1.5 min-h-6 max-h-32 overflow-y-auto overflow-x-hidden py-2 px-0.5'>
-                    {userData?.user_settings?.friends?.map((friend) => (
-                      <div
-                        key={friend}
-                        className='relative group'
-                      >
-                        <button
-                          key={friend}
-                          data-scan-item
-                          onClick={() => handleWordBubbleClick(friend)}
-                          className='h-10 p-px transition-colors cursor-pointer bg-blue rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue'
-                        >
-                          <div className='flex flex-col justify-center px-3 h-full text-sm text-blue-600 font-medium bg-blue-tint rounded-2xl'>
-                            {friend}
-                          </div>
-                        </button>
-                      </div>
-                    ))}
-                    {(!userData?.user_settings?.friends ||
-                      userData.user_settings.friends.length === 0) && (
-                      <p className='text-xs italic text-muted'>
-                        {t('settings.noFriendsAdded')}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <QuickPhrases
-                  phrases={userData?.user_settings?.quick_phrases ?? []}
-                  onSelect={handleQuickPhraseSelect}
-                />
-                <KeywordsSuggestion
-                  keywords={pendingKeywords}
-                  onSelect={handleKeywordSelect}
-                  alwaysShow
-                />
-                <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] grow flex flex-col gap-3'>
-                  <div className='grid grid-cols-2 gap-2 pb-1'>
-                    <button
-                      data-scan-item
-                      onClick={() =>
-                        handleResponseSelection(staticContextOption.id)
-                      }
-                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
-                    >
-                      <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
-                        <div className='flex items-center'>
-                          <span className='hide-on-touch flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
-                            {uiSettings.keyboardLayout === 'qwerty' ? 'Z' : 'W'}
-                          </span>
-                        </div>
-                        <div className='flex-1 pr-2'>
-                          <p className='overflow-hidden text-xs leading-tight italic text-ink-2'>
-                            {staticContextOption.text}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      data-scan-item
-                      onClick={() =>
-                        handleResponseSelection(staticRepeatOption.id)
-                      }
-                      className='w-full h-full text-left transition-all duration-200 rounded-2xl bg-surface-2 border border-dashed border-hairline-2 group hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50'
-                    >
-                      <div className='px-3 py-3 overflow-hidden flex flex-row items-center text-base font-bold rounded-2xl size-full gap-4'>
-                        <div className='flex items-center'>
-                          <span className='hide-on-touch flex flex-col items-center justify-center font-light text-muted border border-dashed border-hairline-2 rounded-sm size-10 font-base bg-paper'>
-                            X
-                          </span>
-                        </div>
-                        <div className='flex-1 pr-2'>
-                          <p className='overflow-hidden text-xs leading-tight italic text-ink-2'>
-                            {staticRepeatOption.text}
-                          </p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {/* Tabs header */}
-                  <div className='flex flex-row border-b border-hairline mb-1'>
-                    <button
-                      type='button'
-                      onClick={() => setActiveInputTab('directive')}
-                      className={cn(
-                        'flex-1 py-2 text-center text-sm font-semibold border-b-2 transition-all cursor-pointer',
-                        activeInputTab === 'directive'
-                          ? 'border-blue text-blue font-bold'
-                          : 'border-transparent text-muted hover:text-ink-2',
-                      )}
-                    >
-                      {t('conversation.aiPilotHint')}{' '}
-                      {t('conversation.aiPilotTab')}
-                    </button>
-                    <button
-                      type='button'
-                      onClick={() => setActiveInputTab('manual')}
-                      className={cn(
-                        'flex-1 py-2 text-center text-sm font-semibold border-b-2 transition-all cursor-pointer',
-                        activeInputTab === 'manual'
-                          ? 'border-blue text-blue font-bold'
-                          : 'border-transparent text-muted hover:text-ink-2',
-                      )}
-                    >
-                      {t('conversation.directInputHint')}{' '}
-                      {t('conversation.directInputTab')}
-                    </button>
-                  </div>
-
-                  {/* Tab contents */}
-                  <div
-                    className={cn(
-                      'flex flex-row gap-2 transition-all duration-200',
-                      activeInputTab !== 'directive' && 'hidden',
-                    )}
-                  >
-                    <input
-                      className='grow px-6 py-4 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-3xl focus:outline-none focus:border-blue'
-                      placeholder={t('conversation.aiPilotPlaceholder')}
-                      value={directiveInput}
-                      onChange={(e) => setDirectiveInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleDirectiveSubmit();
-                        }
-                      }}
-                    />
-                    <button
-                      onClick={handleDirectiveSubmit}
-                      className='px-6 py-4 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-3xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue cursor-pointer'
-                      disabled={!directiveInput.trim()}
-                    >
-                      {t('conversation.aiPilotButton')}
-                    </button>
-                  </div>
-
-                  <div
-                    className={cn(
-                      'flex flex-col gap-3 grow transition-all duration-200',
-                      activeInputTab !== 'manual' && 'hidden',
-                    )}
-                  >
-                    <textarea
-                      className='grow w-full min-h-[80px] px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
-                      placeholder={t('conversation.typeMessagePlaceholder')}
-                      rows={2}
-                      value={textInput}
-                      onChange={onChangeTextInput}
-                      onKeyDown={onTextInputKeyDown}
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      className='self-end h-14 bg-blue hover:bg-blue-600 disabled:opacity-50 transition-colors rounded-2xl w-fit flex flex-row items-center justify-center gap-4 px-8 text-white cursor-pointer'
-                      disabled={!textInput.trim()}
-                    >
-                      {t('conversation.sendMessage')}
-                      <Reply
-                        width={24}
-                        height={24}
-                      />
-                    </button>
-                  </div>
-                </div>
-              </Fragment>
-            )}
-          </div>
-        </div>
-      </div>
-      {isDevMode && (
-        <div className='p-4 overflow-auto border-t border-hairline max-h-64'>
-          <div className='text-xs'>
-            <pre
-              className='wrap-break-word whitespace-pre-wrap'
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{
-                __html: prettyPrintJson.toHtml(debugDict),
-              }}
-            />
-          </div>
-          <div className='mt-2 text-xs text-muted'>
-            Dev mode: press D to toggle
-          </div>
-        </div>
-      )}
-      {isSettingsOpen && userData && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center px-14 py-8 bg-ink/40 backdrop-blur-2xl p-2'>
-          <div
-            role='dialog'
-            aria-modal='true'
-            aria-label={t('settings.title')}
-            className='w-full h-full max-w-7xl max-h-full px-12 pt-6 pb-8 overflow-y-auto border bg-surface border-hairline rounded-[40px] shadow-custom'
-          >
-            <SettingsPopup
-              userSettings={userData.user_settings}
-              email={userData.email}
-              onSave={handleSettingsSave}
-              onCancel={handleSettingsCancel}
-            />
-          </div>
-        </div>
-      )}
       <ConfirmationDialog
         isOpen={isDeleteDialogOpen}
         onClose={toggleDeleteConversationDialog}
@@ -1739,7 +1479,7 @@ const InvincibleVoice = () => {
         confirmText={t('common.delete')}
         cancelText={t('common.cancel')}
       />
-    </div>
+    </Fragment>
   );
 };
 

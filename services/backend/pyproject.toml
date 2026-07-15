@@ -6,15 +6,11 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "fastapi[standard]>=0.115.12",
-    "fastrtc==0.0.23",
-    # fastrtc 0.0.23 imports `gradio.wasm_utils`, removed in gradio 5.46.
-    "gradio<5.46",
     "mistralai>=1.5.1",
     "msgpack>=1.1.0",
     "msgpack-types>=0.5.0",
     "openai>=1.70.0",
     "plotly>=6.0.1",
-    "sphn>=0.2.0",
     "prometheus-fastapi-instrumentator==7.1.0",
     "prometheus-client==0.21.0",
     "ruamel-yaml>=0.18.10",
@@ -27,6 +23,15 @@ dependencies = [
     "google-auth",
     "av==14.0.1",
     "cloudpathlib[s3]>=0.23.0",
+]
+
+[project.optional-dependencies]
+# Audio/STT/TTS modes require the optional audio dependency stack.
+audio = [
+    "fastrtc==0.0.23",
+    # fastrtc 0.0.23 imports `gradio.wasm_utils`, removed in gradio 5.46.
+    "gradio<5.46",
+    "sphn>=0.2.0",
 ]
 
 [build-system]

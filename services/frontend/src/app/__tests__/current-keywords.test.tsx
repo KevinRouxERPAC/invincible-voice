@@ -70,7 +70,9 @@ describe('CurrentKeywords Message Tests', () => {
   const establishConnection = async (user) => {
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     const startButton = screen.getByRole('button', { name: 'Start chatting' });
@@ -79,7 +81,7 @@ describe('CurrentKeywords Message Tests', () => {
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );
@@ -193,7 +195,9 @@ describe('CurrentKeywords Message Tests', () => {
 
     // Wait for start button and click it to establish connection
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Start chatting' })).toBeInTheDocument();
+      expect(
+        screen.getByRole('button', { name: 'Start chatting' }),
+      ).toBeInTheDocument();
     });
 
     const startButton = screen.getByRole('button', { name: 'Start chatting' });
@@ -202,7 +206,7 @@ describe('CurrentKeywords Message Tests', () => {
     // Wait for the connection UI to appear
     await waitFor(
       () => {
-        expect(screen.getByTitle('Stop the conversation')).toBeInTheDocument();
+        expect(screen.getByTitle('Stop conversation')).toBeInTheDocument();
       },
       { timeout: 3000 },
     );

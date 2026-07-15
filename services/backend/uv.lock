@@ -254,9 +254,7 @@ dependencies = [
     { name = "av" },
     { name = "cloudpathlib", extra = ["s3"] },
     { name = "fastapi", extra = ["standard"] },
-    { name = "fastrtc" },
     { name = "google-auth" },
-    { name = "gradio" },
     { name = "gradium" },
     { name = "humanize" },
     { name = "mistralai" },
@@ -270,6 +268,12 @@ dependencies = [
     { name = "pyjwt" },
     { name = "redis" },
     { name = "ruamel-yaml" },
+]
+
+[package.optional-dependencies]
+audio = [
+    { name = "fastrtc" },
+    { name = "gradio" },
     { name = "sphn" },
 ]
 
@@ -290,9 +294,9 @@ requires-dist = [
     { name = "av", specifier = "==14.0.1" },
     { name = "cloudpathlib", extras = ["s3"], specifier = ">=0.23.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.12" },
-    { name = "fastrtc", specifier = "==0.0.23" },
+    { name = "fastrtc", marker = "extra == 'audio'", specifier = "==0.0.23" },
     { name = "google-auth" },
-    { name = "gradio", specifier = "<5.46" },
+    { name = "gradio", marker = "extra == 'audio'", specifier = "<5.46" },
     { name = "gradium", specifier = "==0.5.4" },
     { name = "humanize", specifier = ">=4.12.3" },
     { name = "mistralai", specifier = ">=1.5.1" },
@@ -306,8 +310,9 @@ requires-dist = [
     { name = "pyjwt", specifier = ">=2.13.0" },
     { name = "redis", specifier = ">=6.0.0" },
     { name = "ruamel-yaml", specifier = ">=0.18.10" },
-    { name = "sphn", specifier = ">=0.2.0" },
+    { name = "sphn", marker = "extra == 'audio'", specifier = ">=0.2.0" },
 ]
+provides-extras = ["audio"]
 
 [package.metadata.requires-dev]
 dev = [

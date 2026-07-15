@@ -28,6 +28,11 @@ KYUTAI_API_KEY = os.environ.get("KYUTAI_API_KEY")
 LLM_API_KEY = os.environ["KYUTAI_LLM_API_KEY"]
 LLM_URL = os.environ["KYUTAI_LLM_URL"]
 LLM_MODEL = os.environ["KYUTAI_LLM_MODEL"]
+
+# Backend runtime mode.
+# - "audio": default, uses Opus/VAD server-side STT pipeline.
+# - "text_only": backend does not require audio dependencies (no fastrtc).
+BACKEND_MODE = os.environ.get("BACKEND_MODE", "audio").strip().lower()
 # If None, a dict-based cache will be used instead of Redis
 
 # Redis Configuration for Locking

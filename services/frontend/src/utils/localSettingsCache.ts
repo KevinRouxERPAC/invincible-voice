@@ -4,7 +4,7 @@
 // unreachable we still need the quick phrases (and the voice/language they
 // were cached with) to let the user speak. We persist a minimal snapshot in
 // localStorage on every successful fetch.
-import { QuickPhrase, UserSettings } from './userData';
+import type { QuickPhrase, UserSettings } from './userData';
 
 const STORAGE_KEY = 'invincible-voice-settings-snapshot';
 

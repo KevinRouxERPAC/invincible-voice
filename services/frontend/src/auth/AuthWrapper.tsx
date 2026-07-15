@@ -7,10 +7,12 @@ import React, {
   FormEvent,
   PropsWithChildren,
   useCallback,
+  useEffect,
   useState,
 } from 'react';
 import TermsOfServiceModal from '@/components/TermsOfServiceModal';
 import { useTranslations } from '@/i18n';
+import { isNativeApp } from '@/utils/platform';
 import Google from './Google';
 import { AUTH_STATUSES, useAuthContext } from './authContext';
 
@@ -37,6 +39,23 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
   const handleRefuseTerms = useCallback(() => {
     signOut();
   }, [signOut]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className='flex flex-col items-center justify-center w-full'>
+        <h1 className='mb-4 text-xl'>Loading…</h1>
+      </div>
+    );
+  }
+
+  if (isNativeApp()) {
+    return children;
+  }
 
   if (authStatus === AUTH_STATUSES.NOT_CHECKED) {
     return (

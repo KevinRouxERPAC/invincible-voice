@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from typing_extensions import Annotated
 
+from backend.app_types import GoogleAuthRequest, Language, QuickPhrase, UserSettings
 from backend.kyutai_constants import ALLOW_PASSWORD, GOOGLE_CLIENT_ID
 from backend.libs.google import verify_google_token
 from backend.libs.rate_limit import rate_limit
@@ -17,7 +18,6 @@ from backend.storage import (
     get_user_data_path,
     validate_email,
 )
-from backend.typing import GoogleAuthRequest, Language, QuickPhrase, UserSettings
 
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 

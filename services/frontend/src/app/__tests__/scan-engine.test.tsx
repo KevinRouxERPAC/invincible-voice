@@ -7,14 +7,14 @@ function renderTargets(clicks: jest.Mock[], extra?: ReactNode) {
   return render(
     <ScanProvider>
       <button
-        type="button"
+        type='button'
         data-scan-item
         onClick={clicks[0]}
       >
         Zero
       </button>
       <button
-        type="button"
+        type='button'
         data-scan-item
         onClick={clicks[1]}
       >
@@ -66,7 +66,7 @@ describe('scan engine', () => {
     renderTargets(
       clicks,
       <button
-        type="button"
+        type='button'
         data-scan-item
         data-scan-order={-1}
         onClick={urgent}
