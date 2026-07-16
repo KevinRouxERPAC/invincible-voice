@@ -59,7 +59,4 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build the docker images
-        env:
-          COMMIT_SHA: ${{ github.sha }}
-          BACKEND_REPLICAS_COUNT: 8
-        run: docker compose -f swarm-config.yml build
+        run: docker compose build

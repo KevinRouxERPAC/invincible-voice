@@ -14,6 +14,8 @@ recordings/
 
 # env files (can opt-in for committing if needed)
 .env*
+# ...but the template is safe to commit (no secrets, only placeholders).
+!.env.example
 
 # Deploiement : secrets et caches a ne jamais committer
 API keys.txt
