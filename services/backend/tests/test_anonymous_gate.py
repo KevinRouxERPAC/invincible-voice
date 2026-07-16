@@ -13,18 +13,19 @@ def client() -> TestClient:
     return TestClient(app)
 
 
-def test_anonymous_route_open_by_default(client: TestClient, monkeypatch):
+def test_anonymous_route_closed_by_default(client: TestClient, monkeypatch):
+    # Secure-by-default: without an explicit ALLOW_ANONYMOUS_USER=1, the shared
+    # profile (settings + conversation history, de facto health data) must not
+    # be readable without auth.
+    monkeypatch.setattr(user_routes, "ALLOW_ANONYMOUS_USER", False)
+    response = client.get("/v1/user/anonymous")
+    assert response.status_code == 404
+
+
+def test_anonymous_route_openable_for_private_deployments(
+    client: TestClient, monkeypatch
+):
     monkeypatch.setattr(user_routes, "ALLOW_ANONYMOUS_USER", True)
     response = client.get("/v1/user/anonymous")
     assert response.status_code == 200
     assert response.json()["email"] == "anonymous@invincible-voice.local"
-
-
-def test_anonymous_route_closable_for_public_deployments(
-    client: TestClient, monkeypatch
-):
-    # ALLOW_ANONYMOUS_USER=0: the shared profile (settings + conversation
-    # history, de facto health data) must not be readable without auth.
-    monkeypatch.setattr(user_routes, "ALLOW_ANONYMOUS_USER", False)
-    response = client.get("/v1/user/anonymous")
-    assert response.status_code == 404

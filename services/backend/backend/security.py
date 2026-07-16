@@ -10,7 +10,10 @@ if JWT_SECRET_KEY is None:
     raise Exception("Missing JWT_SECRET_KEY env for JWT encoding")
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
+# 30 min: shorter window limits token-reuse risk on health data. The WebSocket
+# session only checks the token at handshake time, so the live conversation is
+# not interrupted when the token expires.
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 password_hash = PasswordHash.recommended()
 

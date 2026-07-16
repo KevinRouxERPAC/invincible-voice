@@ -77,10 +77,20 @@ def test_login_path_traversal_email_returns_401(client: TestClient):
 
 
 def test_register_then_login_roundtrip(client: TestClient):
-    creds = {"username": "bob@example.com", "password": "hunter2"}
+    creds = {"username": "bob@example.com", "password": "hunter2-strong"}
     response = client.post("/auth/register", params={"language": "en"}, data=creds)
     assert response.status_code == 200
 
     response = client.post("/auth/login", data=creds)
     assert response.status_code == 200
     assert response.json()["access_token"]
+
+
+def test_register_rejects_short_password(client: TestClient):
+    response = client.post(
+        "/auth/register",
+        params={"language": "en"},
+        data={"username": "short@example.com", "password": "hunter2"},
+    )
+    assert response.status_code == 400
+    assert "at least 10 characters" in response.json()["detail"]

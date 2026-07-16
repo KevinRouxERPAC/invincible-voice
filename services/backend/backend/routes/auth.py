@@ -225,6 +225,15 @@ def register(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid email address",
         ) from None
+    # Enforce a minimum length so a 1-character password cannot be registered.
+    # Argon2 hashing does not by itself reject trivial passwords, and a brute
+    # force against a short password is instantaneous even under the rate
+    # limit. 10 is a conservative floor for an AAC tool used in healthcare.
+    if len(form_data.password) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 10 characters long",
+        )
     user_data_path = get_user_data_path(form_data.username)
     if user_data_path.exists():
         raise HTTPException(
@@ -248,6 +257,11 @@ def google_login(
     data: GoogleAuthRequest,
     _rate_limited: Annotated[None, Depends(_auth_rate_limit)] = None,
 ):
+    if not GOOGLE_CLIENT_ID or GOOGLE_CLIENT_ID == "REPLACE_ME":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google sign-in is not configured on this server",
+        )
     google_user = verify_google_token(data.token)
 
     email = google_user["email"]
