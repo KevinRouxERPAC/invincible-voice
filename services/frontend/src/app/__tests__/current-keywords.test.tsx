@@ -274,7 +274,13 @@ describe('CurrentKeywords Message Tests', () => {
   });
 
   test('does not send duplicate CurrentKeywords messages', async () => {
-    const user = userEvent.setup();
+    // Use fake timers so the 2s debounce in handleTextInputChange is fully
+    // under our control: typing "world" (no trailing space) must not fire a
+    // new current.keywords message until the debounce elapses, and when it
+    // does it must carry the full text — never a duplicate of the previous
+    // "hello".
+    jest.useFakeTimers();
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
     setupConnectionMocks();
 
     await act(async () => {
@@ -291,10 +297,9 @@ describe('CurrentKeywords Message Tests', () => {
 
     const textInput = screen.getByPlaceholderText('Type your message here…');
 
-    // Type a word followed by space
+    // Type a word followed by space -> immediate current.keywords('hello').
     await user.type(textInput, 'hello ');
 
-    // Check that CurrentKeywords was sent once
     await waitFor(() => {
       expect(mockSendMessage).toHaveBeenCalledWith(
         JSON.stringify({
@@ -304,20 +309,30 @@ describe('CurrentKeywords Message Tests', () => {
       );
     });
 
-    // Clear previous calls
+    // Clear previous calls.
     mockSendMessage.mockClear();
 
-    // Now we continue typing more text without space - should not trigger another message
+    // Continue typing without a space. Nothing should fire immediately...
     await user.type(textInput, 'world');
 
-    // Wait a bit to ensure no duplicate message is sent
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    const immediateKeywordCalls = mockSendMessage.mock.calls.filter((call) =>
+      call[0].includes('"type":"current.keywords"'),
+    );
+    expect(immediateKeywordCalls).toHaveLength(0);
 
-    // Should not have sent any CurrentKeywords message
+    // ...and even after the debounce elapses, only the full "hello world"
+    // is sent (never a duplicate "hello").
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
     const keywordCalls = mockSendMessage.mock.calls.filter((call) =>
       call[0].includes('"type":"current.keywords"'),
     );
-    expect(keywordCalls).toHaveLength(0);
+    expect(keywordCalls).toHaveLength(1);
+    expect(keywordCalls[0][0]).toContain('"keywords":"hello world"');
+
+    jest.useRealTimers();
   });
 
   test('clears text input when Send button is clicked', async () => {
