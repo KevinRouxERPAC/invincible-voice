@@ -194,9 +194,7 @@ class UserMemory(pydantic.BaseModel):
         self._mark(self.facts_processed_conversations, conversation_start_time)
 
     def is_facts_processed(self, conversation_start_time: dt.datetime) -> bool:
-        return (
-            conversation_start_time.isoformat() in self.facts_processed_conversations
-        )
+        return conversation_start_time.isoformat() in self.facts_processed_conversations
 
     @staticmethod
     def _mark(bucket: list[str], when: dt.datetime) -> None:

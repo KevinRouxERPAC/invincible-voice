@@ -88,7 +88,7 @@ class VLLMStream:
                     "json_schema",
                     "grammar",
                     "not supported",
-                    "either \"json_schema\" or \"grammar\" can be specified",
+                    'either "json_schema" or "grammar" can be specified',
                 )
             )
 
@@ -96,9 +96,7 @@ class VLLMStream:
         last_exc: Exception | None = None
         for retry_time in (1, 2, 4, 8):
             try:
-                stream = await self.get_stream(
-                    messages, use_response_format=True
-                )
+                stream = await self.get_stream(messages, use_response_format=True)
                 break
             except openai.RateLimitError as e:
                 last_exc = e

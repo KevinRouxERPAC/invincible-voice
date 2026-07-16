@@ -23,10 +23,7 @@ async def test_speaker_text_append_triggers_response_generation(monkeypatch):
 
     async def fake_chat_completion(self, messages):
         # Produce the structured JSON expected by `pydantic_core.from_json(...)`.
-        yield (
-            '{"suggested_answers":["Bonjour"],'
-            '"suggested_keywords":["mot1","mot2"]}'
-        )
+        yield ('{"suggested_answers":["Bonjour"],"suggested_keywords":["mot1","mot2"]}')
 
     monkeypatch.setattr(
         unmute_mod.VLLMStream,
@@ -48,7 +45,9 @@ async def test_speaker_text_append_triggers_response_generation(monkeypatch):
         conversations=[],
     )
 
-    handler = UnmuteHandler(user_data, local_time=dt.datetime.now(dt.timezone.utc), client_stt=True)
+    handler = UnmuteHandler(
+        user_data, local_time=dt.datetime.now(dt.timezone.utc), client_stt=True
+    )
 
     async with handler:
         await handler.add_speaker_text(ora.SpeakerTextAppend(text="hello"))
@@ -71,4 +70,3 @@ async def test_speaker_text_append_triggers_response_generation(monkeypatch):
 
         assert found_response is not None
         assert found_keyword is not None
-

@@ -44,9 +44,7 @@ async def test_websocket_route_keeps_running_when_health_ok(monkeypatch):
     monkeypatch.setattr(websockets_mod, "get_health", fake_get_health)
     monkeypatch.setattr(websockets_mod, "receive_loop", fake_receive_loop)
     monkeypatch.setattr(websockets_mod, "emit_loop", fake_emit_loop)
-    monkeypatch.setattr(
-        websockets_mod, "debug_running_tasks", fake_debug_running_tasks
-    )
+    monkeypatch.setattr(websockets_mod, "debug_running_tasks", fake_debug_running_tasks)
 
     class DummyQuestManager:
         async def wait(self):
@@ -63,4 +61,3 @@ async def test_websocket_route_keeps_running_when_health_ok(monkeypatch):
     await websockets_mod.run_route(ws, handler=DummyHandler())  # type: ignore[arg-type]
 
     assert ws.closed is None
-

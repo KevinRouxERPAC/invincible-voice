@@ -92,4 +92,3 @@ async def test_llm_health_returns_false_when_all_candidates_5xx(monkeypatch):
     monkeypatch.setattr(health_mod.httpx, "AsyncClient", FakeAsyncClient)
 
     assert await health_mod._check_llm_up() is False
-

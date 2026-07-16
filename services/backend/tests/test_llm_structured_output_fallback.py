@@ -49,9 +49,7 @@ async def test_structured_output_fallback_retries_without_response_format(
         calls.append(use_response_format)
         if use_response_format:
             raise Exception("response_format json_schema not supported")
-        return FakeStream(
-            '{"suggested_answers":["OK"],"suggested_keywords":["kw1"]}'
-        )
+        return FakeStream('{"suggested_answers":["OK"],"suggested_keywords":["kw1"]}')
 
     monkeypatch.setattr(llm_utils.VLLMStream, "get_stream", fake_get_stream)
 
@@ -61,10 +59,11 @@ async def test_structured_output_fallback_retries_without_response_format(
     )
 
     tokens: list[str] = []
-    async for token in vllm.chat_completion(messages=[{"role": "user", "content": "hi"}]):
+    async for token in vllm.chat_completion(
+        messages=[{"role": "user", "content": "hi"}]
+    ):
         tokens.append(token)
 
     assert calls[0] is True
     assert calls[-1] is False
     assert any("suggested_answers" in t for t in tokens)
-

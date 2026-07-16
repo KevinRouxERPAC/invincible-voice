@@ -259,15 +259,19 @@ async def emit_loop(
 
             if emitted_by_handler is None:
                 continue
-            elif HAS_AUDIO_DEPS and AdditionalOutputs is not None and isinstance(
-                emitted_by_handler, AdditionalOutputs
+            elif (
+                HAS_AUDIO_DEPS
+                and AdditionalOutputs is not None
+                and isinstance(emitted_by_handler, AdditionalOutputs)
             ):
                 assert len(emitted_by_handler.args) == 1
                 to_emit = ora.UnmuteAdditionalOutputs(
                     args=emitted_by_handler.args[0],
                 )
-            elif HAS_AUDIO_DEPS and CloseStream is not None and isinstance(
-                emitted_by_handler, CloseStream
+            elif (
+                HAS_AUDIO_DEPS
+                and CloseStream is not None
+                and isinstance(emitted_by_handler, CloseStream)
             ):
                 # Close here explicitly so that the receive loop stops too
                 await websocket.close()

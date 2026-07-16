@@ -58,4 +58,3 @@ async def test_text_only_speaker_text_append_triggers_one_response_and_keyword(
 
         assert found_response is not None
         assert found_keyword is not None
-

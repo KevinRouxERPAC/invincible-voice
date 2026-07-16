@@ -178,7 +178,9 @@ async def websocket_route(
             else:
                 from backend.unmute_handler import UnmuteHandler
 
-                handler = UnmuteHandler(str(user.email), local_time, client_stt=client_stt)
+                handler = UnmuteHandler(
+                    str(user.email), local_time, client_stt=client_stt
+                )
             async with handler:
                 await handler.start_up()
                 await run_route(websocket, handler)
