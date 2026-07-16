@@ -19,6 +19,12 @@ from backend.app_types import (
 )
 from backend.kyutai_constants import NB_RESPONSES
 from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
+from backend.memory import (
+    MAX_DOCUMENT_CHARS_IN_PROMPT,
+    UserMemory,
+    prune_conversations,
+    select_relevant_past_conversations,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -49,8 +55,17 @@ class UserData(pydantic.BaseModel):
 
     user_settings: UserSettings
     conversations: list[Conversation]
+    # Durable, distilled memory layer: personal facts, contextual style
+    # exchanges, and the LLM-generated tone profile. Derived from
+    # conversations, so it can always be rebuilt. Older conversations can be
+    # pruned from `conversations` without losing their distilled knowledge.
+    memory: UserMemory = pydantic.Field(default_factory=UserMemory)
 
     def save(self) -> None:
+        # Prune raw history before persisting. The distilled facts and style
+        # live in self.memory, so dropping old transcripts loses no knowledge
+        # but keeps save()/load() fast as the user accumulates history.
+        self.conversations = prune_conversations(self.conversations)
         user_data_path = get_user_data_path(self.email)
         user_data_path.parent.mkdir(parents=True, exist_ok=True)
         with user_data_path.open("w") as f:
@@ -69,98 +84,163 @@ class UserData(pydantic.BaseModel):
 
         prompt = BASE_SYSTEM_PROMPT + "\n"
         prompt += "\n"
-        prompt += "## User's name\n"
-        prompt += f"The user is {self.user_settings.name}.\n\n"
-        prompt += "## User's prompt\n"
+        prompt += "## Nom de l'utilisateur\n"
+        prompt += f"L'utilisateur est {self.user_settings.name}.\n\n"
+        prompt += "## Prompt de l'utilisateur\n"
         prompt += self.user_settings.prompt + "\n\n"
-        prompt += "## User's friends\n"
-        prompt += f"The friends of the user are: {self.user_settings.friends}\n\n"
+        prompt += "## Amis de l'utilisateur\n"
+        prompt += f"Les amis de l'utilisateur sont : {self.user_settings.friends}\n\n"
         if self.user_settings.additional_keywords:
-            prompt += "## User's frequently used keywords\n"
+            prompt += "## Mots-clés fréquemment utilisés par l'utilisateur\n"
             prompt += (
-                "These are words the user uses often in everyday life. Take them "
-                "into account when they are relevant to the conversation: "
+                "Ce sont des mots que l'utilisateur emploie souvent au quotidien. Prenez-les "
+                "en compte quand ils sont pertinents pour la conversation : "
                 f"{', '.join(self.user_settings.additional_keywords)}\n\n"
             )
-        prompt += "## User's documents\n"
-        prompt += "The documents are here to get a better understanding of the user\n\n"
+
+        # --- Durable memory layer ------------------------------------------------
+        # Personal facts and the tone profile are distilled from ALL past
+        # conversations, not just the bounded window replayed below. They are
+        # what keeps the user's identity intact once raw transcripts scroll
+        # out of the prompt. This is the core of "same tone, same knowledge".
+        if self.memory.facts:
+            prompt += "## Ce que vous savez de façon durable sur l'utilisateur\n"
+            prompt += (
+                "Ces faits ont été extraits des conversations passées et restent vrais "
+                "d'une session à l'autre. Utilisez-les pour que vos réponses reflètent "
+                "qui est l'utilisateur :\n"
+            )
+            for fact in self.memory.facts:
+                prompt += f"* {fact.text}\n"
+            prompt += "\n"
+
+        if self.user_settings.learn_style and self.memory.tone_profile.summary:
+            prompt += "## Portrait du style de l'utilisateur\n"
+            prompt += (
+                "Voici la voix de l'utilisateur, caractérisée à partir de ce qu'il a "
+                "réellement choisi de dire par le passé. Imitez ce style dans chaque "
+                "réponse suggérée — ton, vocabulaire, longueur des phrases, registre :\n"
+            )
+            prompt += f"{self.memory.tone_profile.summary}\n\n"
+
+        prompt += "## Documents de l'utilisateur\n"
+        prompt += "Les documents sont là pour mieux comprendre l'utilisateur\n\n"
         for i, document in enumerate(self.user_settings.documents):
-            prompt += f'### Document {i + 1} "{document.title}"\n'
-            prompt += f"{document.content}\n\n"
+            prompt += f"### Document {i + 1} « {document.title} »\n"
+            # Cap each document's content so a single huge document can't
+            # blow up every prompt. The on-device builder already does this;
+            # the server path now matches it.
+            content = document.content
+            if len(content) > MAX_DOCUMENT_CHARS_IN_PROMPT:
+                content = content[:MAX_DOCUMENT_CHARS_IN_PROMPT] + " […]"
+            prompt += f"{content}\n\n"
         if self.user_settings.learn_style:
-            style_examples = self._chosen_style_examples()
-            if len(style_examples) >= 3:
-                prompt += "## How the user likes to phrase things\n"
+            # Contextual exchanges: each user reply is paired with the speaker
+            # turn it answered, so the LLM learns the *relation* (how the
+            # user reacts), not just isolated sentences. Falls back to the
+            # legacy decontextualized examples if no exchanges have been
+            # consolidated yet.
+            exchanges = self.memory.style_exchanges
+            if len(exchanges) >= 3:
+                prompt += "## Comment l'utilisateur aime formuler les choses\n"
                 prompt += (
-                    "Below are sentences the user actually chose to say in the past. "
-                    "Use them to match their tone, vocabulary, and typical sentence "
-                    "length when you write the suggested answers — without copying them "
-                    "verbatim unless it fits the current conversation.\n"
+                    "Voici des échanges réels : ce que le locuteur a dit, suivi de la "
+                    "réponse que l'utilisateur a choisie. Reproduisez son ton, son "
+                    "vocabulaire et la longueur habituelle de ses phrases — sans copier "
+                    "mot pour mot, sauf si cela convient à la conversation en cours.\n"
                 )
-                for example in style_examples:
-                    prompt += f"* {example}\n"
+                for exchange in exchanges:
+                    prompt += (
+                        f"* Locuteur : « {exchange.speaker_turn} » → "
+                        f"{self.user_settings.name} : « {exchange.user_reply} »\n"
+                    )
                 prompt += "\n"
-        prompt += "## Past conversations with dates\n"
-        prompt += "The conversations here were done with the software, and are shown to give you"
-        prompt += "context about the user\n\n"
+            else:
+                style_examples = self._chosen_style_examples()
+                if len(style_examples) >= 3:
+                    prompt += "## Comment l'utilisateur aime formuler les choses\n"
+                    prompt += (
+                        "Voici des phrases que l'utilisateur a réellement choisies de dire par le passé. "
+                        "Utilisez-les pour reproduire son ton, son vocabulaire et la longueur habituelle "
+                        "de ses phrases quand vous écrivez les réponses suggérées — sans les copier "
+                        "mot pour mot, sauf si cela convient à la conversation en cours.\n"
+                    )
+                    for example in style_examples:
+                        prompt += f"* {example}\n"
+                    prompt += "\n"
+        prompt += "## Conversations passées avec dates\n"
+        prompt += "Les conversations ici ont eu lieu avec le logiciel et sont montrées pour vous donner"
+        prompt += "du contexte sur l'utilisateur\n\n"
 
         # Keep the current conversation (always the last one) plus a bounded
-        # window of previous ones, so the prompt doesn't grow without limit.
-        recent_conversations = self.conversations[
-            -(MAX_PAST_CONVERSATIONS_IN_PROMPT + 1) :
-        ]
-        for conversation in recent_conversations:
+        # set of previous ones. Selection is relevance-based (keyword overlap
+        # with the current conversation) so past discussions of the *same
+        # topic* surface even if they're older than the chronological window.
+        current_conversation = self.conversations[-1] if self.conversations else None
+        if current_conversation is not None:
+            past_for_prompt = select_relevant_past_conversations(
+                self.conversations,
+                current_conversation,
+                max_count=MAX_PAST_CONVERSATIONS_IN_PROMPT,
+            )
+            # Present oldest-to-newest for natural reading, then the current.
+            ordered = list(past_for_prompt) + [current_conversation]
+        else:
+            ordered = []
+        for conversation in ordered:
             if len(conversation.messages) == 0:
                 continue
             readable_datetime = conversation.start_time.strftime(
                 "%A, %B %d, %Y at %H:%M"  # Monday, July 07, 2025 at 14:56
             )
             if conversation is self.conversations[-1]:
-                prompt += "## Current conversation with the user\n\n"
+                prompt += "## Conversation en cours avec l'utilisateur\n\n"
             else:
                 delta = self.conversations[-1].start_time - conversation.start_time
-                readable_delta = f"({humanize.naturaldelta(delta)} ago)"
+                readable_delta = f"(il y a {humanize.naturaldelta(delta)})"
                 prompt += (
-                    f"### Conversation of {readable_datetime} {readable_delta}\n\n"
+                    f"### Conversation du {readable_datetime} {readable_delta}\n\n"
                 )
 
             for message in conversation.messages:
                 if isinstance(message, SpeakerMessage):
-                    prompt += f"* Speaker: {message.content.strip()}\n"
+                    prompt += f"* Locuteur : {message.content.strip()}\n"
                 else:
                     prompt += (
-                        f"* {self.user_settings.name} says: {message.content.strip()}\n"
+                        f"* {self.user_settings.name} dit : {message.content.strip()}\n"
                     )
 
-        prompt += "## Desired responses length\n"
+        prompt += "## Longueur souhaitée des réponses\n"
 
         min_nb_words, max_nb_words = LENGHT_TO_NB_WORDS[desired_responses_length]
-        prompt += f"Each response should be between {min_nb_words} and {max_nb_words} words long.\n\n"
-        prompt += "## User's keywords and directives to guide your answers\n\n"
+        prompt += f"Chaque réponse doit comporter entre {min_nb_words} et {max_nb_words} mots.\n\n"
+        prompt += (
+            "## Mots-clés et directives de l'utilisateur pour orienter vos réponses\n\n"
+        )
         if user_intent == "directive":
-            prompt += f'The user has given you a direct instruction for the next responses: "{user_text_hint}". Follow this instruction closely to generate {NB_RESPONSES} suggested responses.\n\n'
+            prompt += f"L'utilisateur vous a donné une instruction directe pour les prochaines réponses : « {user_text_hint} ». Suivez cette instruction de près pour générer {NB_RESPONSES} réponses suggérées.\n\n"
         elif user_text_hint is not None or user_intent is not None:
-            prompt += "The user chose the following keywords and intents to guide the answers:\n"
+            prompt += "L'utilisateur a choisi les mots-clés et intentions suivants pour orienter les réponses :\n"
             if user_text_hint:
-                prompt += f"- Keywords: {user_text_hint}\n"
+                prompt += f"- Mots-clés : {user_text_hint}\n"
             if user_intent:
-                prompt += f"- Intent/Action: {user_intent} (You MUST formulate your responses to match this specific intent based on the keywords).\n"
-            prompt += f"Use these concepts in **all** of your {NB_RESPONSES} suggested responses.\n\n"
+                prompt += f"- Intention/Action : {user_intent} (vous DEVEZ formuler vos réponses pour correspondre à cette intention précise, à partir des mots-clés).\n"
+            prompt += f"Utilisez ces concepts dans **toutes** vos {NB_RESPONSES} réponses suggérées.\n\n"
 
         if initiating:
-            prompt += "\n\n## Initiating mode\n"
+            prompt += "\n\n## Mode initiation\n"
             prompt += (
-                "The user wants to TAKE THE FLOOR rather than reply. Ignore the idea "
-                f"of answering a speaker: instead, suggest {NB_RESPONSES} things the user could SAY "
-                "to start or steer the conversation — greetings, questions, requests, "
-                "or statements that open a topic. "
+                "L'utilisateur veut PRENDRE LA PAROLE plutôt que répondre. Oubliez l'idée "
+                f"de répondre à un locuteur : proposez plutôt {NB_RESPONSES} choses que l'utilisateur pourrait DIRE "
+                "pour démarrer ou orienter la conversation — salutations, questions, requêtes "
+                "ou affirmations qui ouvrent un sujet. "
             )
             if initiating_topic:
-                prompt += f"The user SPECIFICALLY wants to start a topic about: {initiating_topic}. Make sure your {NB_RESPONSES} suggestions are openers related to this topic. "
+                prompt += f"L'utilisateur veut SPÉCIFIQUEMENT aborder le sujet : {initiating_topic}. Assurez-vous que vos {NB_RESPONSES} suggestions soient des amorces liées à ce sujet. "
             prompt += (
-                "Follow the user's keywords, persona, "
-                "and documents when they indicate a direction. Keep the keyword "
-                "suggestions as related topics the user might want to bring up.\n"
+                "Suivez les mots-clés, le persona "
+                "et les documents de l'utilisateur quand ils indiquent une direction. Gardez les "
+                "suggestions de mots-clés comme des sujets liés que l'utilisateur pourrait vouloir aborder.\n"
             )
 
         _add_to_llm_ready_conversation(result, "system", prompt)

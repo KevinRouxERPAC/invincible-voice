@@ -120,7 +120,33 @@ class UnmuteHandler(AsyncStreamHandler):
         self.last_additional_output_update = self.audio_received_sec()
 
     async def cleanup(self):
+        # Fold the just-finished conversation into the durable memory
+        # (synchronous, LLM-free: pairs speaker turns with user replies).
+        # This runs before save() so the new exchanges are persisted with
+        # the conversation itself.
+        from backend.memory import update_memory_from_conversation
+
+        current_convo = self.chatbot.user_data.conversations[-1]
+        update_memory_from_conversation(self.chatbot.user_data.memory, current_convo)
         self.chatbot.user_data.save()
+        # LLM-driven refinement (fact extraction + tone profile) runs in the
+        # background so it never blocks session teardown. Best-effort: if it
+        # fails, the existing memory is unchanged and the conversation will
+        # be retried next session.
+        try:
+            import asyncio
+
+            from backend.memory_llm import consolidate_memory_background
+
+            asyncio.create_task(
+                consolidate_memory_background(self.chatbot.user_data.email)
+            )
+        except Exception:
+            logger.warning(
+                "Could not schedule background memory consolidation; "
+                "the synchronous part was already saved.",
+                exc_info=True,
+            )
 
     @property
     def stt(self) -> SpeechToText | None:
@@ -292,9 +318,7 @@ class UnmuteHandler(AsyncStreamHandler):
                 if all_text == "":
                     continue
                 try:
-                    json_decoded = pydantic_core.from_json(
-                        all_text, allow_partial=True
-                    )
+                    json_decoded = pydantic_core.from_json(all_text, allow_partial=True)
                 except Exception:
                     # When the LLM isn't constrained to a strict JSON schema
                     # (e.g. fallback without `response_format`), we may receive

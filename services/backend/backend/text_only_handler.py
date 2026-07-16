@@ -53,7 +53,22 @@ class TextOnlyHandler:
         return None
 
     async def cleanup(self):
+        # Mirror UnmuteHandler.cleanup: fold the conversation into the
+        # durable memory before persisting.
+        from backend.memory import update_memory_from_conversation
+
+        current_convo = self.user_data.conversations[-1]
+        update_memory_from_conversation(self.user_data.memory, current_convo)
         self.user_data.save()
+        # Schedule LLM-driven refinement in the background (facts + tone).
+        try:
+            import asyncio
+
+            from backend.memory_llm import consolidate_memory_background
+
+            asyncio.create_task(consolidate_memory_background(self.user_data.email))
+        except Exception:
+            pass
 
     def _get_or_create_openai_client(self):
         return get_openai_client()
@@ -76,10 +91,15 @@ class TextOnlyHandler:
     async def add_keywords(self, message: ora.CurrentKeywords) -> None:
         self.chatbot.current_keywords = message.keywords
         self.chatbot.current_intent = message.intent
-        if self.chatbot.current_keywords is not None or self.chatbot.current_intent is not None:
+        if (
+            self.chatbot.current_keywords is not None
+            or self.chatbot.current_intent is not None
+        ):
             await self._generate_response()
 
-    async def set_desired_responses_length(self, message: ora.DesiredResponsesLenght) -> None:
+    async def set_desired_responses_length(
+        self, message: ora.DesiredResponsesLenght
+    ) -> None:
         self.chatbot.desired_responses_length = message.length
         await self._generate_response()
 
@@ -150,7 +170,9 @@ class TextOnlyHandler:
                     continue
 
                 try:
-                    json_decoded: Any = pydantic_core.from_json(all_text, allow_partial=True)
+                    json_decoded: Any = pydantic_core.from_json(
+                        all_text, allow_partial=True
+                    )
                 except Exception:
                     continue
 
@@ -201,4 +223,3 @@ class TextOnlyHandler:
             return self.output_queue.get_nowait()
         except asyncio.QueueEmpty:
             return None
-
