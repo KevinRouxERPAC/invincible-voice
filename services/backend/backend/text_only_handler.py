@@ -218,8 +218,13 @@ class TextOnlyHandler:
         await self.quest_manager.__aexit__(*exc)
 
     async def emit(self) -> ora.ServerEvent | None:
-        """Pop the next queued server event, or return None."""
+        """Pop the next queued server event, or return None.
+
+        Must actually await (not just get_nowait): emit_loop() calls this in a
+        tight `while True`, so a synchronous return would starve the event
+        loop and the receive loop would never process incoming messages.
+        """
         try:
-            return self.output_queue.get_nowait()
-        except asyncio.QueueEmpty:
+            return await asyncio.wait_for(self.output_queue.get(), timeout=0.1)
+        except (asyncio.TimeoutError, TimeoutError):
             return None

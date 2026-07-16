@@ -2,10 +2,11 @@
 
 import { RefreshCw, Volume2 } from 'lucide-react';
 import { FC, useCallback, useMemo, useState } from 'react';
-import CouldNotConnect, { HealthStatus } from '@/components/CouldNotConnect';
+import CouldNotConnect from '@/components/CouldNotConnect';
 import EmergencyButton from '@/components/EmergencyButton';
 import QuickPhrases from '@/components/QuickPhrases';
 import { useTranslations } from '@/i18n';
+import type { HealthStatus } from '@/types/health';
 import { loadSettingsSnapshot } from '@/utils/localSettingsCache';
 import { playQuickPhrase } from '@/utils/phraseAudio';
 

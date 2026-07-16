@@ -1,15 +1,7 @@
 import { FC, useMemo } from 'react';
 import { useTranslations } from '@/i18n';
+import type { HealthStatus } from '@/types/health';
 import { cn } from '@/utils/cn';
-
-export type HealthStatus = {
-  connected: 'no' | 'yes_request_ok' | 'yes_request_fail';
-  ok: boolean;
-  tts_up?: boolean;
-  stt_up?: boolean;
-  llm_up?: boolean;
-  backend_url?: string;
-};
 
 interface RenderServiceStatusProps {
   name: string;
@@ -78,6 +70,11 @@ const CouldNotConnect: FC<CouldNotConnectProps> = ({ healthStatus }) => {
             <span className='font-mono'>{healthStatus.backend_url}</span>
           </p>
         )}
+        <RenderServiceStatus
+          name='Internet'
+          status={healthStatus.internet_up}
+          t={t}
+        />
         <RenderServiceStatus
           name={t('connection.backend')}
           status={humanReadableStatus[healthStatus.connected]}

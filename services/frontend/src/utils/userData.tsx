@@ -1,5 +1,5 @@
 // TypeScript types equivalent to the Pydantic models in services/backend/backend/storage.py
-import { addAuthHeaders } from '../auth/authUtils';
+import { addAuthHeaders, getBearerToken } from '../auth/authUtils';
 import { isNativeApp } from '@/utils/platform';
 import { apiUrl } from './backend';
 import { isLocalMode, isLocalOnlyMode } from './localMode';
@@ -208,7 +208,12 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
   }
 
   try {
-    const url = apiUrl(isNativeApp() ? `/v1/user/anonymous` : `/v1/user/`);
+    // Logged-in users (native included) read their own profile. The shared
+    // anonymous profile is only for native builds on trusted/LAN deployments
+    // that explicitly allow it (ALLOW_ANONYMOUS_USER=1) — public backends
+    // close it, so it must never be used once a token exists.
+    const useAnonymous = isNativeApp() && !getBearerToken();
+    const url = apiUrl(useAnonymous ? `/v1/user/anonymous` : `/v1/user/`);
 
     const response = await fetch(url, {
       method: 'GET',
