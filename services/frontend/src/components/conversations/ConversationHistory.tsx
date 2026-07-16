@@ -160,16 +160,16 @@ const ConversationHistory = ({
         <Image
           src='/logo_invincible.png'
           alt='Invincible Logo'
-          width={150}
-          height={150}
-          className='-mt-1 logo-themed'
+          width={185}
+          height={22}
+          className='logo-themed'
         />
         <Image
           src='/logo_kyutai.svg'
           alt='Kyutai Logo'
-          width={155}
-          height={64}
-          className='-ml-8'
+          width={53}
+          height={22}
+          className='logo-themed'
         />
       </div>
       <div className='flex flex-col flex-1 gap-2 px-6 pt-2 pb-10 overflow-y-auto scrollbar-hidden'>

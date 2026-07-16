@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import TermsOfServiceModal from '@/components/TermsOfServiceModal';
 import { useTranslations } from '@/i18n';
-import { isNativeApp } from '@/utils/platform';
+import { isLocalOnlyMode } from '@/utils/localMode';
 import Google from './Google';
 import { AUTH_STATUSES, useAuthContext } from './authContext';
 
@@ -53,7 +53,10 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
     );
   }
 
-  if (isNativeApp()) {
+  // Only the backend-less build skips authentication entirely. The regular
+  // native app talks to the deployed backend (Cerebras/Gradium), which
+  // requires a per-user account — same login flow as the web PWA.
+  if (isLocalOnlyMode()) {
     return children;
   }
 
@@ -149,17 +152,16 @@ const SignInScreen: FC<SignInScreenProps> = ({
           <Image
             src='/logo_invincible.png'
             alt='Invincible Logo'
-            width={150}
-            height={150}
-            className='-mt-1'
+            width={185}
+            height={22}
           />
           by
           <Image
             src='/logo_kyutai.svg'
             alt='Kyutai Logo'
-            width={155}
-            height={64}
-            className='-ml-8'
+            width={53}
+            height={22}
+            className='logo-themed'
           />
         </div>
         <h1 className='text-center text-xl font-bold mb-9'>
@@ -299,17 +301,16 @@ const RegisterScreen: FC<RegisterScreenProps> = ({
           <Image
             src='/logo_invincible.png'
             alt='Invincible Logo'
-            width={150}
-            height={150}
-            className='-mt-1'
+            width={185}
+            height={22}
           />
           by
           <Image
             src='/logo_kyutai.svg'
             alt='Kyutai Logo'
-            width={155}
-            height={64}
-            className='-ml-8'
+            width={53}
+            height={22}
+            className='logo-themed'
           />
         </div>
         <h1 className='text-center text-xl font-bold mb-9'>
