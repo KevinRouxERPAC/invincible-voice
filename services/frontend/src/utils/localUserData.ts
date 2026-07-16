@@ -21,12 +21,15 @@ const STORAGE_KEY = 'invincible-voice-local-userdata';
 
 // Bound how much history we keep on the device. The prompt only ever replays a
 // handful of recent conversations, so there is no point growing localStorage
-// (and the JSON parse cost) without limit.
+// (and the JSON parse cost) without limit. Kept in sync with memory.ts.
 const MAX_STORED_CONVERSATIONS = 30;
 
 // Self-contained skeleton used the first time we persist something locally
 // before any full profile has been mirrored. Kept in sync with
 // userData.tsx::LOCAL_USER_DATA but defined here to avoid a circular import.
+// The memory layer is left undefined here; callers that need a well-shaped
+// empty memory should use `emptyLocalUserData()` or rely on `loadLocalUserData`
+// which normalizes it on read.
 const EMPTY_LOCAL_USER_DATA: UserData = {
   email: '',
   user_id: 'local',
@@ -71,7 +74,11 @@ export function loadLocalUserData(): UserData | null {
   }
 }
 
-/** Persist the full profile, keeping only the most recent conversations. */
+/**
+ * Persist the full profile. The caller is responsible for folding new
+ * conversations into the durable memory (see `updateMemoryFromConversation`)
+ * and for pruning the history before calling; here we only write to storage.
+ */
 export function saveLocalUserData(data: UserData): void {
   if (typeof localStorage === 'undefined') {
     return;
@@ -101,6 +108,13 @@ export function saveLocalUserSettings(settings: UserSettings): void {
  * equivalent of the backend saving on WebSocket disconnect: it is what lets the
  * on-device prompt replay past turns and feed learn_style next time. Empty
  * conversations are ignored so a session with no exchange leaves no trace.
+ *
+ * NOTE: this function does NOT fold the conversation into the durable memory.
+ * Callers that want the style pass to run (the on-device conversation hook)
+ * should call `updateMemoryFromConversation` on the profile's memory first,
+ * then persist via this function — or use `appendLocalConversationWithMemory`
+ * from the hook layer. Keeping memory logic out of this module avoids a
+ * dependency cycle with `memory.ts` (imported by `userData.tsx`).
  */
 export function appendLocalConversation(conversation: Conversation): void {
   if (!conversation.messages.length) {

@@ -1,5 +1,6 @@
 import { getUserData, updateUserSettings } from '../userData';
 import { loadLocalUserData, saveLocalUserData } from '../localUserData';
+import { emptyUserMemory } from '../memory';
 import type { UserSettings } from '../userData';
 
 jest.mock('@/utils/platform', () => ({
@@ -22,6 +23,9 @@ const SERVER_USER = {
   user_id: 'server-123',
   user_settings: { name: 'Kevin' },
   conversations: [],
+  // The backend sends the durable memory layer; getUserData normalizes it
+  // (absent -> empty) before returning and mirroring.
+  memory: emptyUserMemory(),
 };
 
 beforeEach(() => {

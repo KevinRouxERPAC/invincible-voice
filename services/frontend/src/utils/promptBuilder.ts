@@ -11,6 +11,7 @@
 // style examples). These are the main knobs for the "fast & light" goal.
 
 import { NB_KEYWORDS, NB_RESPONSES, ResponseSize } from '@/constants';
+import { UserMemory, normalizeUserMemory } from '@/utils/memory';
 import {
   Conversation,
   UserData,
@@ -106,6 +107,11 @@ function chosenStyleExamples(userData: UserData, limit: number): string[] {
   return examples.slice(-limit);
 }
 
+/** Ensure the memory layer is always present, even on a legacy profile. */
+function memoryOf(userData: UserData): UserMemory {
+  return normalizeUserMemory(userData.memory);
+}
+
 function renderConversation(
   parts: string[],
   conversation: Conversation,
@@ -164,15 +170,58 @@ export function buildSystemPrompt(
     });
   }
 
+  // --- Durable memory layer --------------------------------------------------
+  // Personal facts and the tone profile are distilled from ALL past
+  // conversations, not just the bounded window replayed below. This is the
+  // on-device mirror of the backend's `to_llm_ready_conversation`: it keeps
+  // the user's identity intact once raw transcripts scroll out of the prompt.
+  const memory = memoryOf(userData);
+  if (memory.facts.length) {
+    parts.push(
+      '## What you durably know about the user',
+      'These facts were extracted from past conversations and stay true from one session to the next. Use them so your answers reflect who the user is:',
+    );
+    memory.facts.forEach((fact) => parts.push(`* ${fact.text}`));
+    parts.push('');
+  }
+
+  if (s.learn_style && memory.tone_profile.summary) {
+    parts.push(
+      "## Portrait of the user's style",
+      "This is the user's voice, characterized from what they actually chose to say in the past. Mirror this style in every suggested answer — tone, vocabulary, sentence length, register:",
+      memory.tone_profile.summary,
+      '',
+    );
+  }
+
   if (s.learn_style) {
-    const examples = chosenStyleExamples(userData, MAX_STYLE_EXAMPLES);
-    if (examples.length >= 3) {
-      parts.push('## How the user likes to phrase things');
+    // Contextual exchanges: each user reply is paired with the speaker turn
+    // it answered, so the model learns the *relation* (how the user reacts),
+    // not just isolated sentences. Falls back to the legacy decontextualized
+    // examples if no exchanges have been consolidated yet (e.g. a fresh
+    // profile that has only run cloud-side and not been mirrored down).
+    const exchanges = memory.style_exchanges;
+    if (exchanges.length >= 3) {
       parts.push(
-        'Sentences the user actually chose before. Match their tone, vocabulary and length without copying verbatim:',
+        '## How the user likes to phrase things',
+        'Real exchanges: what the speaker said, followed by the reply the user chose. Reproduce their tone, vocabulary and usual sentence length — without copying word for word unless it fits the current conversation:',
       );
-      examples.forEach((ex) => parts.push(`* ${ex}`));
+      exchanges.forEach((ex) =>
+        parts.push(
+          `* Speaker: "${ex.speaker_turn}" -> ${s.name}: "${ex.user_reply}"`,
+        ),
+      );
       parts.push('');
+    } else {
+      const examples = chosenStyleExamples(userData, MAX_STYLE_EXAMPLES);
+      if (examples.length >= 3) {
+        parts.push(
+          '## How the user likes to phrase things',
+          'Sentences the user actually chose before. Match their tone, vocabulary and length without copying verbatim:',
+        );
+        examples.forEach((ex) => parts.push(`* ${ex}`));
+        parts.push('');
+      }
     }
   }
 

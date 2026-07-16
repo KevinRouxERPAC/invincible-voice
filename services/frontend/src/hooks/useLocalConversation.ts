@@ -22,7 +22,15 @@ import { ReadyState } from 'react-use-websocket';
 
 import { ResponseSize } from '@/constants';
 import { getLocalLlm } from '@/utils/localLlm';
-import { appendLocalConversation } from '@/utils/localUserData';
+import {
+  appendLocalConversation,
+  loadLocalUserData,
+  saveLocalUserData,
+} from '@/utils/localUserData';
+import {
+  normalizeUserMemory,
+  updateMemoryFromConversation,
+} from '@/utils/memory';
 import {
   buildSystemPrompt,
   buildUserTurn,
@@ -129,6 +137,10 @@ export function useLocalConversation({
         ...(base?.conversations ?? []),
         { messages: messagesRef.current, start_time: new Date().toISOString() },
       ],
+      // Carry the durable memory so the on-device prompt injects the user's
+      // distilled facts / tone profile / style exchanges exactly like the
+      // backend. normalizeUserMemory() guards against a missing layer.
+      memory: base?.memory,
     };
 
     const params: PromptParams = {
@@ -276,11 +288,27 @@ export function useLocalConversation({
       // Persist the finished conversation so it survives the session, exactly
       // like the backend saving on WebSocket disconnect. This is what lets the
       // on-device prompt replay past turns and feed learn_style next time.
+      // We also fold the conversation into the durable memory (synchronous,
+      // LLM-free style pass), mirroring `UnmuteHandler.cleanup` so the user's
+      // distilled style survives offline. Fact extraction / tone-profile
+      // refresh are LLM-driven and stay server-side.
       if (messagesRef.current.length > 0) {
-        appendLocalConversation({
+        const finished = {
           messages: messagesRef.current,
           start_time: startTimeRef.current || new Date().toISOString(),
-        });
+        };
+        const base = loadLocalUserData();
+        if (base) {
+          const memory = normalizeUserMemory(base.memory);
+          updateMemoryFromConversation(memory, finished);
+          saveLocalUserData({
+            ...base,
+            conversations: [...base.conversations, finished],
+            memory,
+          });
+        } else {
+          appendLocalConversation(finished);
+        }
       }
       abortRef.current?.abort();
       if (generateTimerRef.current) {

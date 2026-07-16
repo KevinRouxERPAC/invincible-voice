@@ -9,6 +9,7 @@ import {
   saveLocalUserData,
   saveLocalUserSettings,
 } from './localUserData';
+import { UserMemory, emptyUserMemory, normalizeUserMemory } from './memory';
 
 /**
  * Represents a message from a speaker (user input)
@@ -91,6 +92,13 @@ export interface UserData {
   user_id: string; // UUID as string in TypeScript
   user_settings: UserSettings;
   conversations: Conversation[];
+  /**
+   * Durable, distilled memory layer: personal facts, contextual style
+   * exchanges, and the LLM-generated tone profile. Mirrors the backend
+   * `UserMemory`. Derived from conversations so it can always be rebuilt;
+   * absent on legacy profiles (normalized to an empty memory).
+   */
+  memory?: UserMemory;
 }
 
 /**
@@ -142,6 +150,7 @@ export const LOCAL_USER_DATA: UserData = {
     learn_style: false,
   },
   conversations: [],
+  memory: emptyUserMemory(),
 };
 
 /**
@@ -165,7 +174,10 @@ export const LOCAL_USER_DATA: UserData = {
 function buildLocalUserData(): UserData {
   const stored = loadLocalUserData();
   if (stored) {
-    return stored;
+    // Normalize the durable memory: a legacy blob (predating the memory
+    // layer) would have `memory` undefined. We coerce it to a valid empty
+    // memory so the on-device prompt builder always has a well-shaped layer.
+    return { ...stored, memory: normalizeUserMemory(stored.memory) };
   }
   const snapshot = loadSettingsSnapshot();
   if (!snapshot) {
@@ -207,15 +219,24 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
 
     const data: UserData = await response.json();
 
-    // On native, mirror the freshly-fetched profile (settings + history) so the
-    // on-device/offline mode can fall back to the latest server-side state
-    // instead of an empty profile.
+    // The server sends the durable memory layer (facts / tone profile /
+    // style exchanges). Normalize defensively: a legacy or partial payload
+    // would otherwise leave `memory` undefined and the on-device prompt
+    // builder would silently lose the distilled knowledge.
+    const dataWithMemory: UserData = {
+      ...data,
+      memory: normalizeUserMemory(data.memory),
+    };
+
+    // On native, mirror the freshly-fetched profile (settings + history +
+    // memory) so the on-device/offline mode can fall back to the latest
+    // server-side state instead of an empty profile.
     if (isLocalMode()) {
-      saveLocalUserData(data);
+      saveLocalUserData(dataWithMemory);
     }
 
     return {
-      data,
+      data: dataWithMemory,
       status: response.status,
     };
   } catch (error) {
