@@ -150,5 +150,32 @@ describe('TTS Utility', () => {
         playTTSStream({ text: 'Hello world', messageId: 'msg-1' }),
       ).rejects.toThrow('TTS streaming failed');
     });
+
+    test('handles chunks that split a PCM16 sample (odd byte lengths)', async () => {
+      // Two 3-byte chunks: each is odd on its own (which used to throw
+      // "byte length of Int16Array should be a multiple of 2" and abort
+      // playback), but together they form 6 bytes = 3 whole samples.
+      const read = jest
+        .fn()
+        .mockResolvedValueOnce({ value: new Uint8Array([1, 2, 3]), done: false })
+        .mockResolvedValueOnce({ value: new Uint8Array([4, 5, 6]), done: false })
+        .mockResolvedValue({ value: undefined, done: true });
+      global.fetch = jest.fn().mockImplementation((url: string) => {
+        if (url.includes('/v1/tts/sample_rate')) {
+          return Promise.resolve({
+            ok: true,
+            json: () => Promise.resolve({ sample_rate: SAMPLE_RATE }),
+          });
+        }
+        if (url.includes('/v1/tts/')) {
+          return Promise.resolve({ ok: true, body: { getReader: () => ({ read }) } });
+        }
+        return Promise.reject(new Error('Unknown URL'));
+      });
+
+      await expect(
+        playTTSStream({ text: 'odd chunks', messageId: 'm-odd' }),
+      ).resolves.toBeDefined();
+    });
   });
 });

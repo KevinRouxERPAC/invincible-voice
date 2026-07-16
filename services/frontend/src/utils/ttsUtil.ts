@@ -23,6 +23,13 @@ export interface TTSOptions {
    * preference is used (1.0 = normal speed).
    */
   playbackRate?: number;
+  /**
+   * Speak with the phone's built-in TTS engine instead of streaming from the
+   * backend. The native app sets this only when offline; online it uses the
+   * backend (Gradium) cloned voice exactly like the web. Ignored on the web
+   * (there is no native engine).
+   */
+  useNativeVoice?: boolean;
 }
 
 // One AudioContext for the whole session, kept alive by this module-level
@@ -61,10 +68,11 @@ export async function playTTSStream(
   const { text, messageId, cacheType = 'temporary', voiceName } = options;
   const playbackRate = options.playbackRate ?? getSpeechRate();
 
-  // Native app: use the phone's TTS engine — free, offline, no backend call.
-  // The cloned-voice option (voiceName) is a backend/Gradium feature and is
-  // intentionally ignored here.
-  if (isNativeApp()) {
+  // Native app, offline only: use the phone's TTS engine — free, no backend
+  // call. Online the native app streams from the backend like the web, so the
+  // user hears their cloned voice (a backend/Gradium feature). `useNativeVoice`
+  // is driven by the same offline signal as the LLM fallback (preferLocal).
+  if (isNativeApp() && options.useNativeVoice) {
     await speakNative({
       text,
       messageId,
@@ -146,6 +154,12 @@ export async function playTTSStream(
 
   const reader = response.body.getReader();
   const audioChunks: Float32Array[] = [];
+  // A streamed chunk can end in the middle of a 16-bit PCM sample, so its raw
+  // byte length is sometimes odd (the Android WebView splits chunks this way).
+  // Carry that trailing byte over to the next chunk: feeding an odd-length
+  // buffer to Int16Array throws "byte length ... should be a multiple of 2",
+  // which aborted playback and left the "playing" indicator stuck on.
+  let carry = new Uint8Array(0);
   const processChunks = async () => {
     while (true) {
       // eslint-disable-next-line no-await-in-loop
@@ -153,15 +167,39 @@ export async function playTTSStream(
       if (done) {
         break;
       }
+      if (!value || value.byteLength === 0) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
 
-      const pcmArrayBuffer = value.buffer;
-      const numberOfFrames = pcmArrayBuffer.byteLength / 2;
+      // Prepend any byte left over from the previous chunk, then hold back a new
+      // trailing odd byte (if any) for the next one.
+      let bytes = value;
+      if (carry.byteLength > 0) {
+        bytes = new Uint8Array(carry.byteLength + value.byteLength);
+        bytes.set(carry, 0);
+        bytes.set(value, carry.byteLength);
+      }
+      const usableBytes = bytes.byteLength - (bytes.byteLength % 2);
+      carry =
+        usableBytes < bytes.byteLength
+          ? bytes.slice(usableBytes)
+          : new Uint8Array(0);
+      if (usableBytes === 0) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      const numberOfFrames = usableBytes / 2;
       const audioBuffer = audioContext.createBuffer(
         1,
         numberOfFrames,
         SAMPLE_RATE,
       );
-      const pcmInt16View = new Int16Array(pcmArrayBuffer);
+      // slice() yields a fresh, 2-byte-aligned buffer at offset 0, so the
+      // Int16Array view is always valid (value.byteOffset itself may be odd,
+      // and value.buffer could be larger than the chunk).
+      const pcmInt16View = new Int16Array(bytes.slice(0, usableBytes).buffer);
       const pcmFloat32Data = new Float32Array(numberOfFrames);
 
       for (let i = 0; i < numberOfFrames; i += 1) {
