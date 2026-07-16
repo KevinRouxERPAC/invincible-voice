@@ -54,6 +54,7 @@ import { getUiSettings } from '@/utils/uiSettings';
 import {
   deleteConversation,
   getUserData,
+  setConversationArchived,
   type UserData,
   type UserSettings,
 } from '@/utils/userData';
@@ -873,6 +874,56 @@ const InvincibleVoice = () => {
     clearResponses,
     t,
   ]);
+
+  // Archiving is non-destructive and reversible, so — unlike delete — it needs
+  // no confirmation dialog. Flip the flag, persist (localStorage in local mode,
+  // backend otherwise), and mirror it into React state so the row moves between
+  // the main list and the "Archived" section immediately.
+  const handleArchiveConversation = useCallback(
+    async (conversationIndex: number, archived: boolean) => {
+      if (!userData) {
+        return;
+      }
+      try {
+        const result = await setConversationArchived(
+          conversationIndex,
+          archived,
+        );
+        if (result.error) {
+          setErrors((prev) => [
+            ...prev,
+            makeErrorItem(
+              `${t('errors.failedToArchiveConversation')}: ${result.error}`,
+            ),
+          ]);
+          return;
+        }
+        setUserData((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          const newConversations = structuredClone(prev.conversations);
+          if (
+            conversationIndex >= 0 &&
+            conversationIndex < newConversations.length
+          ) {
+            newConversations[conversationIndex] = {
+              ...newConversations[conversationIndex],
+              archived,
+            };
+          }
+          return { ...prev, conversations: newConversations };
+        });
+      } catch (error) {
+        setErrors((prev) => [
+          ...prev,
+          makeErrorItem(`${t('errors.failedToArchiveConversation')}: ${error}`),
+        ]);
+      }
+    },
+    [userData, t],
+  );
+
   const handleSendMessage = useCallback(() => {
     if (!textInput.trim()) {
       return;
@@ -1447,6 +1498,7 @@ const InvincibleVoice = () => {
         onConversationSelect={handleConversationSelect}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
+        onArchiveConversation={handleArchiveConversation}
         onShowHistoryFromIdle={() => setIsShowingHistoryFromIdle(true)}
         onBack={() => {
           if (isViewingPastConversation) {

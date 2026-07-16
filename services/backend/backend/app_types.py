@@ -24,6 +24,11 @@ class WriterMessage(pydantic.BaseModel):
 class Conversation(pydantic.BaseModel):
     messages: list[SpeakerMessage | WriterMessage]
     start_time: dt.datetime
+    # Display-only flag: an archived conversation is hidden from the main
+    # history list but is not deleted and keeps feeding the durable memory /
+    # prompt exactly like any other. Defaults False so existing stored
+    # conversations deserialize unchanged.
+    archived: bool = False
 
 
 class Document(pydantic.BaseModel):

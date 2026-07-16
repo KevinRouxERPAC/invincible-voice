@@ -126,3 +126,40 @@ export function appendLocalConversation(conversation: Conversation): void {
     conversations: [...base.conversations, conversation],
   });
 }
+
+/**
+ * Delete one stored conversation by its index in the (unsorted) history.
+ *
+ * This is the offline equivalent of the backend `DELETE
+ * /v1/user/conversations/{id}`: in local/offline mode there is no backend to
+ * call, so deletion must happen directly in localStorage. A no-op when the
+ * index is out of range, so a stale index can never drop the wrong row.
+ */
+export function deleteLocalConversation(index: number): void {
+  const base = loadLocalUserData();
+  if (!base || index < 0 || index >= base.conversations.length) {
+    return;
+  }
+  const conversations = [...base.conversations];
+  conversations.splice(index, 1);
+  saveLocalUserData({ ...base, conversations });
+}
+
+/**
+ * Archive or unarchive one stored conversation by its index. Archiving is
+ * display-only: the conversation stays in storage and keeps feeding the
+ * durable memory / prompt. A no-op when the index is out of range.
+ */
+export function setLocalConversationArchived(
+  index: number,
+  archived: boolean,
+): void {
+  const base = loadLocalUserData();
+  if (!base || index < 0 || index >= base.conversations.length) {
+    return;
+  }
+  const conversations = base.conversations.map((conversation, i) =>
+    i === index ? { ...conversation, archived } : conversation,
+  );
+  saveLocalUserData({ ...base, conversations });
+}

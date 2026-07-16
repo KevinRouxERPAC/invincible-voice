@@ -35,6 +35,7 @@ describe('ConversationHistory Date Display', () => {
         onConversationSelect={() => {}}
         onNewConversation={() => {}}
         onDeleteConversation={() => {}}
+        onArchiveConversation={() => {}}
       />,
     );
 
@@ -63,6 +64,7 @@ describe('ConversationHistory Date Display', () => {
         onConversationSelect={() => {}}
         onNewConversation={() => {}}
         onDeleteConversation={() => {}}
+        onArchiveConversation={() => {}}
       />,
     );
 
@@ -93,6 +95,7 @@ describe('ConversationHistory Date Display', () => {
         onConversationSelect={() => {}}
         onNewConversation={() => {}}
         onDeleteConversation={() => {}}
+        onArchiveConversation={() => {}}
       />,
     );
 
@@ -124,6 +127,7 @@ describe('ConversationHistory Date Display', () => {
         onConversationSelect={() => {}}
         onNewConversation={() => {}}
         onDeleteConversation={() => {}}
+        onArchiveConversation={() => {}}
       />,
     );
 

@@ -77,6 +77,7 @@ export interface ConversationLayoutProps {
   onConversationSelect: (index: number) => void;
   onNewConversation: () => void;
   onDeleteConversation: (index: number) => void;
+  onArchiveConversation: (index: number, archived: boolean) => void;
   onShowHistoryFromIdle: () => void;
   onBack: () => void;
   isSettingsOpen: boolean;
@@ -123,6 +124,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   onConversationSelect,
   onNewConversation,
   onDeleteConversation,
+  onArchiveConversation,
   onShowHistoryFromIdle,
   onBack,
   isSettingsOpen,
@@ -345,6 +347,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
             onConversationSelect={onConversationSelect}
             onNewConversation={onNewConversation}
             onDeleteConversation={onDeleteConversation}
+            onArchiveConversation={onArchiveConversation}
           />
         )}
 
@@ -459,6 +462,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
                     onConversationSelect={onConversationSelect}
                     onNewConversation={onNewConversation}
                     onDeleteConversation={onDeleteConversation}
+                    onArchiveConversation={onArchiveConversation}
                   />
                 </div>
               </div>

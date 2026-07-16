@@ -41,7 +41,8 @@
     "microphoneRequiresHttps": "L'accès au microphone nécessite HTTPS. Veuillez accéder à l'application via une connexion sécurisée.",
     "microphoneAccessNeeded": "Veuillez autoriser l'accès au microphone pour utiliser InvincibleVoice.",
     "failedToLoadUserData": "Échec du chargement des données utilisateur",
-    "failedToDeleteConversation": "Échec de la suppression de la conversation"
+    "failedToDeleteConversation": "Échec de la suppression de la conversation",
+    "failedToArchiveConversation": "Échec de l'archivage de la conversation"
   },
   "settings": {
     "title": "Paramètres",
@@ -137,6 +138,10 @@
     "repeatQuestion": "Peux-tu répéter ? Le logiciel n'a pas très bien compris.",
     "deleteConversation": "Supprimer la conversation",
     "deleteConversationMessage": "Êtes-vous sûr de vouloir supprimer cette conversation ? Cette action ne peut pas être annulée.",
+    "archive": "Archiver",
+    "unarchive": "Désarchiver",
+    "archivedConversations": "Archivées",
+    "moreActions": "Plus d'actions",
     "noConversationsYet": "Aucune conversation pour le moment",
     "startFirstConversation": "Commencez votre première conversation pour la voir ici",
     "editResponse": "Modifier la réponse",

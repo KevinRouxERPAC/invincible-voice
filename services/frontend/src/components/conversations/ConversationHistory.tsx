@@ -1,6 +1,13 @@
-import { MessageSquare, X } from 'lucide-react';
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronDown,
+  ChevronRight,
+  MessageSquare,
+  X,
+} from 'lucide-react';
 import Image from 'next/image';
-import { useCallback, useMemo } from 'react';
+import { Fragment, useCallback, useMemo, useState } from 'react';
 import ChatBubble from '@/components/icons/ChatBubble';
 import NewConversation from '@/components/icons/NewConversation';
 import { useTranslations } from '@/i18n';
@@ -17,6 +24,7 @@ interface ConversationHistoryProps {
   onConversationSelect: (index: number) => void;
   onNewConversation: () => void;
   onDeleteConversation: (index: number) => void;
+  onArchiveConversation: (index: number, archived: boolean) => void;
 }
 
 const formatConversationPreview = (
@@ -102,17 +110,49 @@ const ConversationHistory = ({
   onConversationSelect,
   onNewConversation,
   onDeleteConversation,
+  onArchiveConversation,
 }: ConversationHistoryProps) => {
   const t = useTranslations();
-  const sortedConversations = useMemo(() => {
-    const newConversationArray = structuredClone(conversations);
-    newConversationArray.sort((a, b) => {
-      const dateA = a.start_time ? new Date(a.start_time).getTime() : 0;
-      const dateB = b.start_time ? new Date(b.start_time).getTime() : 0;
-      return dateB - dateA;
-    });
-    return newConversationArray;
-  }, [conversations]);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const byRecency = useCallback(
+    (list: Conversation[]) =>
+      structuredClone(list).sort((a, b) => {
+        const dateA = a.start_time ? new Date(a.start_time).getTime() : 0;
+        const dateB = b.start_time ? new Date(b.start_time).getTime() : 0;
+        return dateB - dateA;
+      }),
+    [],
+  );
+
+  // Archiving is display-only: split what the user sees without touching data.
+  const activeConversations = useMemo(
+    () => byRecency(conversations.filter((c) => c.archived !== true)),
+    [byRecency, conversations],
+  );
+  const archivedConversations = useMemo(
+    () => byRecency(conversations.filter((c) => c.archived === true)),
+    [byRecency, conversations],
+  );
+
+  // `keyPrefix` keeps keys unique across the active and archived lists (both
+  // render into the same container, so a shared "0" key would clash).
+  const renderCard = (
+    conversation: Conversation,
+    index: number,
+    keyPrefix: string,
+  ) => (
+    <ConversationCard
+      key={`${keyPrefix}-${index}`}
+      conversation={conversation}
+      conversations={conversations}
+      onDeleteConversation={onDeleteConversation}
+      onArchiveConversation={onArchiveConversation}
+      onSelectConversation={onConversationSelect}
+      selectedConversationIndex={selectedConversationIndex}
+      t={t}
+    />
+  );
 
   return (
     <div className='relative flex flex-col shrink-0 h-full pt-4 w-80'>
@@ -133,7 +173,8 @@ const ConversationHistory = ({
         />
       </div>
       <div className='flex flex-col flex-1 gap-2 px-6 pt-2 pb-10 overflow-y-auto scrollbar-hidden'>
-        {sortedConversations.length === 0 ? (
+        {activeConversations.length === 0 &&
+        archivedConversations.length === 0 ? (
           <div className='p-4 text-center text-muted'>
             <MessageSquare
               size={48}
@@ -145,18 +186,33 @@ const ConversationHistory = ({
             </p>
           </div>
         ) : (
-          sortedConversations.map((conversation, index) => (
-            <ConversationCard
-              // eslint-disable-next-line react/no-array-index-key
-              key={index}
-              conversation={conversation}
-              conversations={conversations}
-              onDeleteConversation={onDeleteConversation}
-              onSelectConversation={onConversationSelect}
-              selectedConversationIndex={selectedConversationIndex}
-              t={t}
-            />
-          ))
+          <Fragment>
+            {activeConversations.map((conversation, i) =>
+              renderCard(conversation, i, 'active'),
+            )}
+
+            {archivedConversations.length > 0 && (
+              <Fragment>
+                <button
+                  className='mt-2 min-h-[44px] flex items-center gap-2 px-1 py-2 text-left text-sm text-muted hover:text-ink transition-colors'
+                  onClick={() => setShowArchived((prev) => !prev)}
+                  aria-expanded={showArchived}
+                >
+                  {showArchived ? (
+                    <ChevronDown size={16} />
+                  ) : (
+                    <ChevronRight size={16} />
+                  )}
+                  {t('conversation.archivedConversations')} (
+                  {archivedConversations.length})
+                </button>
+                {showArchived &&
+                  archivedConversations.map((conversation, i) =>
+                    renderCard(conversation, i, 'archived'),
+                  )}
+              </Fragment>
+            )}
+          </Fragment>
         )}
       </div>
       {selectedConversationIndex !== null && (
@@ -182,6 +238,7 @@ interface ConversationCardProps {
   conversation: Conversation;
   conversations: Conversation[];
   onDeleteConversation: (index: number) => void;
+  onArchiveConversation: (index: number, archived: boolean) => void;
   onSelectConversation: (index: number) => void;
   selectedConversationIndex: number | null;
   t: (key: string) => string;
@@ -191,6 +248,7 @@ const ConversationCard = ({
   conversation,
   conversations,
   onDeleteConversation,
+  onArchiveConversation,
   onSelectConversation,
   selectedConversationIndex,
   t,
@@ -201,12 +259,16 @@ const ConversationCard = ({
     );
   }, [conversation, conversations]);
   const isSelected = selectedConversationIndex === originalIndex;
+  const isArchived = conversation.archived === true;
   const onClickConversationCard = useCallback(() => {
     onSelectConversation(originalIndex);
   }, [onSelectConversation, originalIndex]);
   const onClickDeleteConversation = useCallback(() => {
     onDeleteConversation(originalIndex);
   }, [onDeleteConversation, originalIndex]);
+  const onClickArchiveConversation = useCallback(() => {
+    onArchiveConversation(originalIndex, !isArchived);
+  }, [onArchiveConversation, originalIndex, isArchived]);
 
   return (
     <div className='relative'>
@@ -250,15 +312,29 @@ const ConversationCard = ({
           </div>
         </div>
       </button>
-      <button
-        onClick={onClickDeleteConversation}
-        className={cn('absolute right-2 top-2 group-hover:visible', {
-          invisible: !isSelected,
-        })}
-        title={t('conversation.deleteConversation')}
+      <div
+        className={cn(
+          'absolute right-2 top-2 flex items-center gap-1 group-hover:visible',
+          { invisible: !isSelected },
+        )}
       >
-        <X size={16} />
-      </button>
+        <button
+          onClick={onClickArchiveConversation}
+          className='text-muted hover:text-ink transition-colors'
+          title={
+            isArchived ? t('conversation.unarchive') : t('conversation.archive')
+          }
+        >
+          {isArchived ? <ArchiveRestore size={16} /> : <Archive size={16} />}
+        </button>
+        <button
+          onClick={onClickDeleteConversation}
+          className='text-muted hover:text-red transition-colors'
+          title={t('conversation.deleteConversation')}
+        >
+          <X size={16} />
+        </button>
+      </div>
     </div>
   );
 };

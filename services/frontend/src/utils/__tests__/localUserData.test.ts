@@ -1,8 +1,10 @@
 import {
   appendLocalConversation,
+  deleteLocalConversation,
   loadLocalUserData,
   saveLocalUserData,
   saveLocalUserSettings,
+  setLocalConversationArchived,
 } from '../localUserData';
 import type { Conversation, UserData, UserSettings } from '../userData';
 
@@ -122,5 +124,67 @@ describe('appendLocalConversation', () => {
     const stored = loadLocalUserData();
     expect(stored?.user_id).toBe('local');
     expect(stored?.conversations).toHaveLength(1);
+  });
+});
+
+describe('deleteLocalConversation', () => {
+  test('removes the conversation at the given index', () => {
+    saveLocalUserData({
+      ...USER_DATA,
+      conversations: [conversation('A'), conversation('B'), conversation('C')],
+    });
+    deleteLocalConversation(1);
+
+    const stored = loadLocalUserData();
+    expect(stored?.conversations).toHaveLength(2);
+    expect(stored?.conversations.map((c) => c.messages[0].content)).toEqual([
+      'A',
+      'C',
+    ]);
+  });
+
+  test('is a no-op for an out-of-range index (never drops the wrong row)', () => {
+    saveLocalUserData({
+      ...USER_DATA,
+      conversations: [conversation('A'), conversation('B')],
+    });
+    deleteLocalConversation(5);
+    deleteLocalConversation(-1);
+    expect(loadLocalUserData()?.conversations).toHaveLength(2);
+  });
+
+  test('is a no-op when nothing is stored yet', () => {
+    deleteLocalConversation(0);
+    expect(loadLocalUserData()).toBeNull();
+  });
+});
+
+describe('setLocalConversationArchived', () => {
+  test('flips the archived flag without deleting or reordering', () => {
+    saveLocalUserData({
+      ...USER_DATA,
+      conversations: [conversation('A'), conversation('B'), conversation('C')],
+    });
+    setLocalConversationArchived(1, true);
+
+    const stored = loadLocalUserData();
+    expect(stored?.conversations).toHaveLength(3);
+    expect(stored?.conversations[1].archived).toBe(true);
+    // The other conversations are untouched.
+    expect(stored?.conversations[0].archived).toBeUndefined();
+    expect(stored?.conversations[2].archived).toBeUndefined();
+  });
+
+  test('can unarchive (archived back to false)', () => {
+    const archived: Conversation = { ...conversation('A'), archived: true };
+    saveLocalUserData({ ...USER_DATA, conversations: [archived] });
+    setLocalConversationArchived(0, false);
+    expect(loadLocalUserData()?.conversations[0].archived).toBe(false);
+  });
+
+  test('is a no-op for an out-of-range index', () => {
+    saveLocalUserData({ ...USER_DATA, conversations: [conversation('A')] });
+    setLocalConversationArchived(9, true);
+    expect(loadLocalUserData()?.conversations[0].archived).toBeUndefined();
   });
 });

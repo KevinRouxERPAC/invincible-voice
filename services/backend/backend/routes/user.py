@@ -9,6 +9,7 @@ from fastapi import (
     status,
 )
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 from typing_extensions import Annotated
 
 from backend import metrics as mt
@@ -117,6 +118,30 @@ def delete_conversation(
             detail="Conversation not found",
         )
     del user.conversations[conversation_id]
+    user.save()
+
+
+class ConversationArchiveRequest(BaseModel):
+    archived: bool
+
+
+@user_router.patch("/conversations/{conversation_id}")
+def set_conversation_archived(
+    conversation_id: int,
+    body: ConversationArchiveRequest,
+    user: Annotated[UserData, Depends(get_current_user)],
+):
+    # conversation_id is client-controlled: reject out-of-range and negative
+    # indices for the same reasons as delete (a negative index would archive
+    # the wrong conversation, a too-large one would 500).
+    if conversation_id < 0 or conversation_id >= len(user.conversations):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Conversation not found",
+        )
+    # Archiving is display-only: it never removes the conversation nor changes
+    # how it feeds the durable memory / prompt.
+    user.conversations[conversation_id].archived = body.archived
     user.save()
 
 

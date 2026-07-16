@@ -5,9 +5,11 @@ import { apiUrl } from './backend';
 import { isLocalMode, isLocalOnlyMode } from './localMode';
 import { loadSettingsSnapshot } from './localSettingsCache';
 import {
+  deleteLocalConversation,
   loadLocalUserData,
   saveLocalUserData,
   saveLocalUserSettings,
+  setLocalConversationArchived,
 } from './localUserData';
 import { UserMemory, emptyUserMemory, normalizeUserMemory } from './memory';
 
@@ -38,6 +40,11 @@ export type ConversationMessage = SpeakerMessage | WriterMessage;
 export interface Conversation {
   messages: ConversationMessage[];
   start_time: string; // ISO 8601 datetime string from backend
+  // Display-only flag: an archived conversation is hidden from the main
+  // history list (shown in a separate "Archived" section) but is NOT deleted
+  // and keeps feeding the durable memory / prompt exactly like any other. It
+  // is optional so legacy blobs without the field are treated as not archived.
+  archived?: boolean;
 }
 
 /**
@@ -316,6 +323,13 @@ export async function updateUserSettings(
 export async function deleteConversation(
   conversationId: number,
 ): Promise<ApiResponse<void>> {
+  // Local-only build: there is no backend to call. Deleting via a network
+  // request would fail (and be blocked as mixed content), so the delete button
+  // would silently do nothing. Persist the deletion directly in localStorage.
+  if (isLocalOnlyMode()) {
+    deleteLocalConversation(conversationId);
+    return { status: 200 };
+  }
   try {
     const url = apiUrl(`/v1/user/conversations/${conversationId}`);
 
@@ -333,6 +347,53 @@ export async function deleteConversation(
       };
     }
 
+    // Mirror the deletion into the local cache so an offline session doesn't
+    // resurrect the conversation from stale localStorage.
+    deleteLocalConversation(conversationId);
+    return {
+      status: response.status,
+    };
+  } catch (error) {
+    return {
+      error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      status: 0,
+    };
+  }
+}
+
+/**
+ * Archive or unarchive a conversation. Display-only: the conversation is never
+ * deleted and keeps feeding the durable memory / prompt. Mirrors the delete
+ * flow — local/offline persists to localStorage, online hits the backend and
+ * mirrors the change locally.
+ */
+export async function setConversationArchived(
+  conversationId: number,
+  archived: boolean,
+): Promise<ApiResponse<void>> {
+  if (isLocalOnlyMode()) {
+    setLocalConversationArchived(conversationId, archived);
+    return { status: 200 };
+  }
+  try {
+    const url = apiUrl(`/v1/user/conversations/${conversationId}`);
+
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: addAuthHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({ archived }),
+    });
+
+    if (!response.ok) {
+      return {
+        error: `Failed to archive conversation: ${response.status} ${response.statusText}`,
+        status: response.status,
+      };
+    }
+
+    setLocalConversationArchived(conversationId, archived);
     return {
       status: response.status,
     };

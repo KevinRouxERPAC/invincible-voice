@@ -43,6 +43,7 @@ interface MobileConversationLayoutProps {
   onConversationSelect: (index: number) => void;
   onNewConversation: () => void;
   onDeleteConversation: (index: number) => void;
+  onArchiveConversation?: (index: number, archived: boolean) => void;
   pastConversation?: Conversation;
   isViewingPastConversation?: boolean;
   initialActivePanel?: ActivePanel;
@@ -83,6 +84,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
   onConversationSelect,
   onNewConversation,
   onDeleteConversation,
+  onArchiveConversation = () => {},
   pastConversation = undefined,
   isViewingPastConversation = false,
   initialActivePanel = 'chat',
@@ -319,6 +321,7 @@ const MobileConversationLayout: FC<MobileConversationLayoutProps> = ({
               onConversationSelect={onConversationSelect}
               onNewConversation={onNewConversation}
               onDeleteConversation={onDeleteConversation}
+              onArchiveConversation={onArchiveConversation}
             />
           </div>
         </div>

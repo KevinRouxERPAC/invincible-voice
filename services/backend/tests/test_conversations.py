@@ -74,6 +74,64 @@ def test_delete_negative_index_guarded():
     assert len(user.conversations) == 2
 
 
+# --- Archive conversation -----------------------------------------------------
+
+
+def test_archive_sets_flag_without_deleting(client: TestClient):
+    email = "arch-ok@example.com"
+    _make_user(email, 3)
+    response = client.patch(
+        "/v1/user/conversations/1",
+        json={"archived": True},
+        headers=_auth_headers(email),
+    )
+    assert response.status_code == 200
+    stored = get_user_data_from_storage(email)
+    # Nothing deleted; only the flag flipped, and only on the target.
+    assert len(stored.conversations) == 3
+    assert stored.conversations[1].archived is True
+    assert stored.conversations[0].archived is False
+    assert stored.conversations[2].archived is False
+
+
+def test_unarchive_flips_flag_back(client: TestClient):
+    email = "arch-toggle@example.com"
+    user = _make_user(email, 1)
+    user.conversations[0].archived = True
+    user.save()
+    response = client.patch(
+        "/v1/user/conversations/0",
+        json={"archived": False},
+        headers=_auth_headers(email),
+    )
+    assert response.status_code == 200
+    assert get_user_data_from_storage(email).conversations[0].archived is False
+
+
+def test_archive_out_of_range_returns_404(client: TestClient):
+    email = "arch-oob@example.com"
+    _make_user(email, 2)
+    response = client.patch(
+        "/v1/user/conversations/9",
+        json={"archived": True},
+        headers=_auth_headers(email),
+    )
+    assert response.status_code == 404
+
+
+def test_archived_conversation_still_feeds_the_prompt():
+    # Archiving is display-only: an archived conversation must still be replayed
+    # into the LLM prompt so the user keeps "same tone, same knowledge".
+    user = _make_user("arch-prompt@example.com", 2)
+    user.conversations[0].archived = True
+    user.save()
+
+    messages = user.to_llm_ready_conversation(None, "M")
+    prompt = messages[0].content
+    assert "ZMARK0Z" in prompt
+    assert "ZMARK1Z" in prompt
+
+
 # --- FN1: bounded LLM context -------------------------------------------------
 
 
