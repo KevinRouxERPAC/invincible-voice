@@ -8,7 +8,7 @@ technologies to enable fluid conversations.
 
 Get more context about this project on [our official page](https://www.invincible-voice.com/).
 
-This is a fork of the [Kyutai InvincibleVoice project](https://github.com/kyutai-labs/invincible-voice), adapted for French-speaking users with ALS, featuring on-device STT/TTS via Android, offline LLM fallback via llama.cpp, and a Firebase + Cloud Run deployment.
+This is a fork of the [Kyutai InvincibleVoice project](https://github.com/kyutai-labs/invincible-voice), adapted for French-speaking users with ALS, featuring on-device TTS for SOS/quick phrases via Android, and a Firebase + Cloud Run deployment.
 
 ## How it works
 

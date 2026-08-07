@@ -23,6 +23,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import logging
+import os
 from typing import TYPE_CHECKING
 
 from backend.app_types import SpeakerMessage, WriterMessage
@@ -239,11 +240,11 @@ async def consolidate_memory(
 
     Processes any conversations not yet mined (fact extraction), and refreshes
     the tone profile when enough new exchanges have accumulated. Best-effort:
-    any LLM failure is logged and swallowed so the caller (a background task
-    after `save()`) never crashes.
+    any LLM failure is logged and swallowed so the caller never crashes.
 
-    Returns True if anything in `user_data.memory` changed, so the caller can
-    decide whether to persist.
+    Returns True if anything in `user_data.memory` changed — including fact
+    markers and the tone-refresh counter — so the caller always persists
+    progress across sessions.
     """
     from backend.memory import update_memory_from_conversation
 
@@ -274,6 +275,9 @@ async def consolidate_memory(
                 continue
             memory.mark_facts_processed(conversation.start_time)
             memory.conversations_since_tone_refresh += 1
+            # Markers / counter must be persisted even when no new fact text
+            # was added — otherwise the cumulative tone threshold never advances.
+            changed = True
         except Exception as exc:
             # An unexpected crash — not a transient LLM outage, which
             # `extract_facts_from_conversation` reports as None. Mark the
@@ -295,15 +299,16 @@ async def consolidate_memory(
                 )
             memory.mark_facts_processed(conversation.start_time)
             memory.conversations_since_tone_refresh += 1
+            changed = True
 
     # Refresh the tone profile once enough new conversations have accumulated
     # since the last refresh (cumulative across sessions — see the counter's
-    # definition), or when forced (e.g. the user explicitly cleared it).
+    # definition), or when forced (e.g. the user explicitly refreshed memory).
     needs_refresh = force or (
         memory.conversations_since_tone_refresh >= TONE_PROFILE_REFRESH_EVERY
         and len(memory.style_exchanges) >= 3
     )
-    if needs_refresh:
+    if needs_refresh and len(memory.style_exchanges) >= 3:
         try:
             if await refresh_tone_profile(
                 client,
@@ -313,9 +318,60 @@ async def consolidate_memory(
             ):
                 changed = True
                 memory.conversations_since_tone_refresh = 0
+            elif force:
+                # Forced refresh attempted; reset counter so we don't tight-loop
+                # on a transient LLM failure next call.
+                memory.conversations_since_tone_refresh = 0
+                changed = True
         except Exception as exc:
             logger.warning("Tone profile refresh failed: %s", exc)
 
+    return changed
+
+
+# Soft deadline for in-request consolidation on Cloud Run. Long enough for a
+# typical fact pass on a few conversations; short enough not to freeze WS
+# teardown. Remaining work retries next session.
+MEMORY_CONSOLIDATION_TIMEOUT_SECONDS = float(
+    os.environ.get("MEMORY_CONSOLIDATION_TIMEOUT_SECONDS", "12")
+)
+
+
+async def consolidate_memory_for_user(
+    user_email: str,
+    *,
+    force: bool = False,
+    rebuild_style: bool = False,
+) -> bool:
+    """Load user, optionally rebuild style, run LLM consolidation, save.
+
+    Returns True if anything was persisted. Safe to call from cleanup or HTTP.
+    """
+    from backend.kyutai_constants import LLM_MODEL
+    from backend.llm.llm_utils import get_openai_client
+    from backend.memory import rebuild_style_from_history
+    from backend.storage import UserDataNotFoundError, get_user_data_from_storage
+
+    try:
+        user_data = get_user_data_from_storage(user_email)
+    except UserDataNotFoundError:
+        logger.warning("Cannot consolidate memory: user %s not found", user_email)
+        return False
+
+    changed = False
+    if rebuild_style:
+        if rebuild_style_from_history(
+            user_data.memory, user_data.conversations, force=True
+        ):
+            changed = True
+
+    client = get_openai_client()
+    if await consolidate_memory(client, LLM_MODEL, user_data, force=force):
+        changed = True
+
+    if changed:
+        user_data.save()
+        logger.info("Memory consolidated and saved for %s", user_email)
     return changed
 
 
@@ -324,33 +380,53 @@ async def consolidate_memory_background(
     *,
     force: bool = False,
 ) -> None:
-    """Fire-and-forget memory consolidation after a session ends.
+    """Best-effort consolidation after a session ends (legacy entrypoint).
 
-    Loads the user data fresh (the in-memory copy held by the handler may be
-    stale by the time this runs), runs LLM-driven refinement, and persists if
-    anything changed. Designed to be scheduled as a background task so it
-    never blocks the WebSocket teardown or the next session.
-
-    All failures are caught and logged: this is strictly best-effort. If the
-    LLM is unreachable, the user simply keeps their previously consolidated
-    memory, and the conversation will be retried next time.
+    Prefer `await_memory_consolidation` from WebSocket cleanup so work runs
+    inside the Cloud Run request lifetime. This helper remains for callers
+    that still schedule a fire-and-forget task.
     """
-    import logging as _logging
-
-    _log = _logging.getLogger(__name__)
     try:
-        from backend.kyutai_constants import LLM_MODEL
-        from backend.llm.llm_utils import get_openai_client
-        from backend.storage import get_user_data_from_storage
-
-        user_data = get_user_data_from_storage(user_email)
-        client = get_openai_client()
-        if await consolidate_memory(client, LLM_MODEL, user_data, force=force):
-            user_data.save()
-            _log.info("Memory consolidated and saved for %s", user_email)
+        await consolidate_memory_for_user(user_email, force=force)
     except Exception:
-        _log.exception(
+        logger.exception(
             "Background memory consolidation failed for %s; the existing "
             "memory is unchanged.",
+            user_email,
+        )
+
+
+async def await_memory_consolidation(
+    user_email: str,
+    *,
+    timeout: float | None = None,
+) -> None:
+    """Run consolidation inside the current request with a soft timeout.
+
+    Cloud Run freezes CPU after the request ends, so fire-and-forget tasks
+    scheduled from WebSocket `finally` often never complete. Awaiting here
+    (bounded) keeps fact/tone mining alive in production.
+    """
+    import asyncio
+
+    deadline = (
+        MEMORY_CONSOLIDATION_TIMEOUT_SECONDS if timeout is None else timeout
+    )
+    try:
+        await asyncio.wait_for(
+            consolidate_memory_for_user(user_email),
+            timeout=deadline,
+        )
+    except asyncio.TimeoutError:
+        logger.warning(
+            "Memory consolidation timed out after %.1fs for %s; will retry "
+            "next session.",
+            deadline,
+            user_email,
+        )
+    except Exception:
+        logger.exception(
+            "Memory consolidation failed for %s; the existing memory is "
+            "unchanged.",
             user_email,
         )

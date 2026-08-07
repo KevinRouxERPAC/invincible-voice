@@ -11,10 +11,10 @@ import {
 import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
 import ConversationLayout from '@/components/ConversationLayout';
-import ModelDownloadScreen from '@/components/ModelDownloadScreen';
 import OfflineFallback from '@/components/OfflineFallback';
 import type { PendingResponse } from '@/components/chat/ChatInterface';
 import ConfirmationDialog from '@/components/conversations/ConfirmationDialog';
+import type { MobileSettingsPanel } from '@/components/settings/MobileSettingsPopup';
 import { type ErrorItem, makeErrorItem } from '@/components/ui/ErrorMessages';
 import {
   NB_KEYWORDS,
@@ -24,33 +24,20 @@ import {
 } from '@/constants';
 import { useAudioProcessor } from '@/hooks/useAudioProcessor';
 import { useBackendServerUrl } from '@/hooks/useBackendServerUrl';
-import { useLocalConversation } from '@/hooks/useLocalConversation';
 import { useMicrophoneAccess } from '@/hooks/useMicrophoneAccess';
 import { useMobileDetection } from '@/hooks/useMobileDetection';
 import useWakeLock from '@/hooks/useWakeLock';
 import { useTranslations } from '@/i18n';
 import type { ChatMessage } from '@/types/chatHistory';
-import {
-  hasInternetConnectivity,
-  type HealthStatus,
-  shouldUseLocalFallback,
-} from '@/types/health';
+import { hasInternetConnectivity, type HealthStatus } from '@/types/health';
 import { base64EncodeOpus } from '@/utils/audioUtil';
 import { apiUrl } from '@/utils/backend';
 import { convertConversationToChat } from '@/utils/conversationUtils';
-import { getLocalLlm } from '@/utils/localLlm';
-import { isLocalMode, isLocalOnlyMode } from '@/utils/localMode';
 import { saveSettingsSnapshot } from '@/utils/localSettingsCache';
-import { ensureLocalModelReady, type ModelState } from '@/utils/modelManager';
-import {
-  isNativeSpeechAvailable,
-  requestNativeSpeechPermission,
-  startNativeListening,
-  toBcp47,
-  type NativeListeningController,
-} from '@/utils/nativeSpeech';
+import { requestNativeSpeechPermission } from '@/utils/nativeSpeech';
 import { playQuickPhrase, prefetchQuickPhrases } from '@/utils/phraseAudio';
 import { isNativeApp } from '@/utils/platform';
+import { humanizeServerError } from '@/utils/serverErrors';
 import { calculateTotalTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { ttsCache } from '@/utils/ttsCache';
 import { playTTSStream } from '@/utils/ttsUtil';
@@ -109,16 +96,14 @@ const InvincibleVoice = () => {
     useState<string>('');
   const [currentSpeakerMessageStartTime, setCurrentSpeakerMessageStartTime] =
     useState<number | null>(null);
-  // Native STT only: utterances already finished (and sent to the backend)
-  // but not yet flushed to the chat history. Partial results are displayed
-  // appended to this text.
-  const nativeCommittedTextRef = useRef<string>('');
   const [textInput, setTextInput] = useState<string>('');
   const [directiveInput, setDirectiveInput] = useState<string>('');
   const [lastSentKeywords, setLastSentKeywords] = useState<string | null>(null);
   const [lastSentText, setLastSentText] = useState<string>('');
   const textInputTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [settingsPanel, setSettingsPanel] =
+    useState<MobileSettingsPanel>('main');
   const [settingsBlockedMessage, setSettingsBlockedMessage] = useState<
     string | null
   >(null);
@@ -142,10 +127,6 @@ const InvincibleVoice = () => {
   const [isInitiating, setIsInitiating] = useState(false);
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
-  // Progress of the one-time on-device model download (native app only).
-  const [modelState, setModelState] = useState<ModelState>({
-    status: 'absent',
-  });
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const bearerToken = useMemo(() => getBearerToken(), []);
 
@@ -153,10 +134,8 @@ const InvincibleVoice = () => {
     // Create timezone-aware datetime for local_time parameter
     const localTime = new Date().toISOString();
     const encodedLocalTime = encodeURIComponent(localTime);
-    // Whenever this conversation WebSocket actually opens, the app is online and
-    // streams microphone audio, so the backend runs its own (Gradium) STT.
-    // Offline, the native app uses the on-device conversation instead of this
-    // socket, so `client_stt` is no longer needed here.
+    // Conversation WebSocket: the app streams microphone audio and the
+    // backend runs its own (Gradium) STT.
     return `${backendServerUrl.toString()}/v1/user/new-conversation?local_time=${encodedLocalTime}`;
   }, [backendServerUrl]);
   const handleInComingMessage = useCallback(
@@ -182,7 +161,10 @@ const InvincibleVoice = () => {
           console.warn(`Warning from server: ${data.error.message}`, data);
         } else {
           console.error(`Error from server: ${data.error.message}`, data);
-          setErrors((prev) => [...prev, makeErrorItem(data.error.message)]);
+          setErrors((prev) => [
+            ...prev,
+            makeErrorItem(humanizeServerError(data.error.message)),
+          ]);
         }
       } else if (
         data.type === 'conversation.item.input_audio_transcription.delta'
@@ -218,7 +200,6 @@ const InvincibleVoice = () => {
             ]);
             setCurrentSpeakerMessage('');
             setCurrentSpeakerMessageStartTime(null);
-            nativeCommittedTextRef.current = '';
           }
 
           setResponseTimelines((prev) => {
@@ -298,27 +279,6 @@ const InvincibleVoice = () => {
       responseTimelines,
     ],
   );
-  // Hybrid mode (native app): use the cloud backend for suggestions when it is
-  // reachable (much better quality), and fall back to the on-device model when
-  // offline. Until the first health check resolves we default to local so the
-  // app works offline out of the box.
-  const localCapable = isLocalMode();
-  const preferLocal = shouldUseLocalFallback(localCapable, healthStatus);
-  // Voice (STT + TTS) follows the very same offline signal as the LLM: online
-  // the native app streams to the backend (Gradium) like the web; only when the
-  // backend is unreachable does it fall back to the phone's own speech engines.
-  // So voice and suggestions always come from the same place.
-  const useNativeVoice = isNativeApp() && preferLocal;
-  // When on-device: suggestions are produced locally, so the conversation
-  // WebSocket to the backend is never opened. This local hook mimics
-  // useWebSocket's interface and feeds one.response / one.keyword events into
-  // the very same handler, so nothing downstream changes.
-  const localConversation = useLocalConversation({
-    enabled: preferLocal,
-    connected: shouldConnect,
-    userData,
-    onMessage: handleInComingMessage,
-  });
   const ws = useWebSocket(
     newConversationUrl,
     {
@@ -335,12 +295,9 @@ const InvincibleVoice = () => {
         ),
       onError: (e) => console.error('[ws] ERROR', String(e)),
     },
-    shouldConnect && !preferLocal,
+    shouldConnect,
   );
-  const sendMessage = preferLocal
-    ? localConversation.sendMessage
-    : ws.sendMessage;
-  const readyState = preferLocal ? localConversation.readyState : ws.readyState;
+  const { sendMessage, readyState } = ws;
   const clearResponses = useCallback(() => {
     setPendingResponses([]);
     setResponseTimelines(Array(NB_RESPONSES).fill(0));
@@ -363,84 +320,6 @@ const InvincibleVoice = () => {
     [sendMessage],
   );
   const { setupAudio, shutdownAudio } = useAudioProcessor(onOpusRecorded);
-  const expectedTranscriptionLanguage =
-    userData?.user_settings?.expected_transcription_language ?? null;
-  // Native app, offline only: the phone does the speech recognition. Show
-  // partial results live and send each finished utterance to the on-device
-  // conversation, which runs the LLM suggestions on it (no audio leaves the
-  // device). Online, the mic audio is streamed to the backend instead (Gradium
-  // STT), so this native listening must stay off.
-  useEffect(() => {
-    if (!isNativeApp() || !preferLocal || readyState !== ReadyState.OPEN) {
-      return undefined;
-    }
-
-    let controller: NativeListeningController | null = null;
-    let cancelled = false;
-
-    startNativeListening({
-      language: toBcp47(expectedTranscriptionLanguage),
-      onPartial: (text) => {
-        setCurrentSpeakerMessage((prev) => {
-          if (prev.length === 0) {
-            setCurrentSpeakerMessageStartTime(Date.now());
-          }
-          const committed = nativeCommittedTextRef.current;
-          return committed ? `${committed} ${text}` : text;
-        });
-      },
-      onUtterance: (text) => {
-        const committed = nativeCommittedTextRef.current;
-        nativeCommittedTextRef.current = committed
-          ? `${committed} ${text}`
-          : text;
-        setCurrentSpeakerMessage(nativeCommittedTextRef.current);
-        sendMessage(
-          JSON.stringify({
-            type: 'speaker.text.append',
-            text,
-          }),
-        );
-      },
-      onError: (error) => {
-        console.error('Native speech recognition error:', error);
-        const message = error instanceof Error ? error.message : String(error);
-        const isNetworkProblem = message.toLowerCase().includes('network');
-        const friendly = isNetworkProblem
-          ? 'Speech recognition failed (offline). Assure you installed the offline language packs on Android, or use manual text input.'
-          : message;
-        setErrors((prev) => {
-          // Avoid spamming the same error every time the recognizer fails.
-          const alreadyShown = prev.some((e) =>
-            e.message.includes('Speech recognition failed'),
-          );
-          if (alreadyShown) {
-            return prev;
-          }
-          return [...prev, makeErrorItem(friendly)];
-        });
-      },
-    })
-      .then((c) => {
-        if (cancelled) {
-          c.stop().catch(() => {});
-        } else {
-          controller = c;
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to start native speech recognition:', error);
-        setErrors((prev) => [
-          ...prev,
-          makeErrorItem(t('errors.microphoneAccessNeeded')),
-        ]);
-      });
-
-    return () => {
-      cancelled = true;
-      controller?.stop().catch(() => {});
-    };
-  }, [readyState, preferLocal, expectedTranscriptionLanguage, sendMessage, t]);
   const sendCurrentKeywords = useCallback(
     (keywords: string | null) => {
       if (keywords !== lastSentKeywords) {
@@ -538,7 +417,6 @@ const InvincibleVoice = () => {
           text: staticText,
           cacheType: 'permanent', // Use permanent cache for static messages
           messageId: staticMessageId,
-          useNativeVoice,
         }).catch(console.error);
       } else {
         const allResponses = frozenResponses || pendingResponses;
@@ -581,7 +459,6 @@ const InvincibleVoice = () => {
           text: selectedResponse.text,
           cacheType: 'temporary',
           messageId: selectedResponse.messageId,
-          useNativeVoice,
         }).catch(console.error);
       }
       if (!frozenResponses) {
@@ -603,7 +480,6 @@ const InvincibleVoice = () => {
       clearResponses,
       currentSpeakerMessage,
       currentSpeakerMessageStartTime,
-      useNativeVoice,
       t,
     ],
   );
@@ -643,15 +519,13 @@ const InvincibleVoice = () => {
           }),
         );
       }
-      // Online (native or web) uses the cloned Gradium voice; offline the
-      // native app falls back to the phone's engine. Same online/offline
-      // signal as the suggestions' TTS.
+      // Cloud Gradium TTS (cloned voice).
       playQuickPhrase({
         text: phraseText,
         voiceName: userData?.user_settings?.voice,
         lang:
           userData?.user_settings?.expected_transcription_language ?? undefined,
-        preferLocal: useNativeVoice,
+        preferLocal: false,
       }).catch(console.error);
     },
     [
@@ -661,7 +535,6 @@ const InvincibleVoice = () => {
       shouldConnect,
       userData?.user_settings?.voice,
       userData?.user_settings?.expected_transcription_language,
-      useNativeVoice,
     ],
   );
   const handleWordBubbleClick = useCallback(
@@ -745,14 +618,18 @@ const InvincibleVoice = () => {
     },
     [sendMessage, unfreezeResponses],
   );
-  const handleSettingsOpen = useCallback(() => {
-    if (shouldConnect) {
-      setSettingsBlockedMessage(t('settings.lockedDuringConversation'));
-      setTimeout(() => setSettingsBlockedMessage(null), 5000);
-    } else {
+  const handleSettingsOpen = useCallback(
+    (panel: MobileSettingsPanel = 'main') => {
+      if (shouldConnect) {
+        setSettingsBlockedMessage(t('settings.lockedDuringConversation'));
+        setTimeout(() => setSettingsBlockedMessage(null), 5000);
+        return;
+      }
+      setSettingsPanel(panel);
       setIsSettingsOpen(true);
-    }
-  }, [shouldConnect, t]);
+    },
+    [shouldConnect, t],
+  );
   const handleSettingsSave = useCallback((newSettings: UserSettings) => {
     setUserData((prev) =>
       prev
@@ -766,6 +643,12 @@ const InvincibleVoice = () => {
   }, []);
   const handleSettingsCancel = useCallback(() => {
     setIsSettingsOpen(false);
+    setSettingsPanel('main');
+  }, []);
+  const handleShowHistoryFromIdle = useCallback(() => {
+    setIsSettingsOpen(false);
+    setSettingsPanel('main');
+    setIsShowingHistoryFromIdle(true);
   }, []);
   const handleConversationSelect = useCallback(
     (index: number) => {
@@ -941,127 +824,71 @@ const InvincibleVoice = () => {
     [userData, t],
   );
 
-  const handleSendMessage = useCallback(() => {
-    if (!textInput.trim()) {
-      return;
-    }
+  const handleSendMessage = useCallback(
+    (mode: 'speaker' | 'writer' = 'writer') => {
+      if (!textInput.trim()) {
+        return;
+      }
 
-    const customMessageId = crypto.randomUUID();
+      const messageText = textInput.trim();
 
-    setRawChatHistory((prev) => [
-      ...prev,
-      {
-        role: 'assistant',
-        content: textInput,
-        timestamp: Date.now(),
+      if (mode === 'speaker') {
+        setCurrentSpeakerMessage(messageText);
+        setCurrentSpeakerMessageStartTime(Date.now());
+        sendMessage(
+          JSON.stringify({
+            type: 'speaker.text.append',
+            text: messageText,
+          }),
+        );
+        setTextInput('');
+        setLastSentText('');
+        if (textInputTimeoutRef.current) {
+          clearTimeout(textInputTimeoutRef.current);
+        }
+        clearResponses();
+        sendCurrentKeywords(null);
+        return;
+      }
+
+      const customMessageId = crypto.randomUUID();
+
+      setRawChatHistory((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: messageText,
+          timestamp: Date.now(),
+          messageId: customMessageId,
+        },
+      ]);
+      sendMessage(
+        JSON.stringify({
+          type: 'response.selected.by.writer',
+          text: messageText,
+          id: customMessageId,
+        }),
+      );
+      playTTSStream({
+        text: messageText,
+        cacheType: 'temporary',
         messageId: customMessageId,
-      },
-    ]);
-    sendMessage(
-      JSON.stringify({
-        type: 'response.selected.by.writer',
-        text: textInput,
-        id: customMessageId,
-      }),
-    );
-    playTTSStream({
-      text: textInput,
-      cacheType: 'temporary',
-      messageId: customMessageId,
-      useNativeVoice,
-    }).catch(console.error);
+      }).catch(console.error);
 
-    setTextInput('');
-    setLastSentText('');
-    if (textInputTimeoutRef.current) {
-      clearTimeout(textInputTimeoutRef.current);
-    }
-    clearResponses();
-    sendCurrentKeywords(null);
-  }, [
-    textInput,
-    sendMessage,
-    sendCurrentKeywords,
-    clearResponses,
-    useNativeVoice,
-  ]);
+      setTextInput('');
+      setLastSentText('');
+      if (textInputTimeoutRef.current) {
+        clearTimeout(textInputTimeoutRef.current);
+      }
+      clearResponses();
+      sendCurrentKeywords(null);
+    },
+    [textInput, sendMessage, sendCurrentKeywords, clearResponses],
+  );
   const checkHealth = useCallback(async (): Promise<HealthStatus> => {
     const backendHealthUrl = apiUrl(`/v1/health`);
     const internetUp = hasInternetConnectivity();
 
-    const buildLocalHealth = async (
-      connected: HealthStatus['connected'],
-      overrides?: Partial<HealthStatus>,
-    ): Promise<HealthStatus> => {
-      const llmReady = (await getLocalLlm()?.isReady()) ?? false;
-      const nextStatus: HealthStatus = {
-        connected,
-        ok: llmReady,
-        mode: 'local',
-        internet_up: internetUp,
-        backend_up: false,
-        backend_url: backendHealthUrl,
-        stt_up: true,
-        tts_up: true,
-        llm_up: llmReady,
-        ...overrides,
-      };
-      setHealthStatus(nextStatus);
-      return nextStatus;
-    };
-
-    // 100%-local mode: no backend. Health depends only on the on-device engine
-    // (STT/TTS are always native). Never make a network call, so it works in
-    // airplane mode.
-    if (isLocalMode()) {
-      // Hybrid: prefer the cloud backend (better suggestions) when it is
-      // reachable; otherwise fall back to the on-device model so the app still
-      // works fully offline (airplane mode included). STT/TTS are always native.
-      // A backend-less build skips the probe entirely — zero network.
-      if (!isLocalOnlyMode()) {
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 3000);
-          const response = await fetch(backendHealthUrl, {
-            signal: controller.signal,
-            headers: addAuthHeaders(),
-          });
-          clearTimeout(timeoutId);
-          if (response.ok) {
-            const data = await response.json();
-            if (data.ok) {
-              const nextStatus: HealthStatus = {
-                ...data,
-                connected: 'yes_request_ok',
-                mode: 'cloud',
-                internet_up: true,
-                backend_up: true,
-                // STT/TTS are always the device's, independent of the backend.
-                stt_up: true,
-                tts_up: true,
-                backend_url: backendHealthUrl,
-              };
-              setHealthStatus(nextStatus);
-              return nextStatus;
-            }
-            return buildLocalHealth('yes_request_ok', {
-              internet_up: true,
-              backend_up: true,
-            });
-          }
-          return buildLocalHealth('yes_request_fail', {
-            internet_up: true,
-            backend_up: true,
-          });
-        } catch {
-          // Unreachable/offline: fall through to the on-device engine below.
-        }
-      }
-      // Backend unreachable: the on-device engine is the only way to suggest
-      // answers. If it is not loaded yet there is nothing to fall back to, so
-      // report unhealthy rather than pretending the app works.
-      return buildLocalHealth('no');
-    }
     try {
       const controller = new AbortController();
       // On native Android we may need a bit more time because /v1/health now
@@ -1083,8 +910,6 @@ const InvincibleVoice = () => {
           internet_up: true,
           backend_up: true,
           backend_url: backendHealthUrl,
-          // On Android, STT/TTS are native/offline: they can still work even
-          // when the backend is down/unreachable.
           ...(isNativeApp()
             ? { stt_up: true, tts_up: true, llm_up: false }
             : {}),
@@ -1099,9 +924,6 @@ const InvincibleVoice = () => {
         mode: 'cloud',
         internet_up: true,
         backend_up: true,
-        // Make the UI deterministic on native Android: TTS uses the device
-        // engine and does not depend on the backend.
-        ...(isNativeApp() ? { tts_up: true } : {}),
         ...(isNativeApp() ? { backend_url: backendHealthUrl } : {}),
       };
       setHealthStatus(nextStatus);
@@ -1153,36 +975,9 @@ const InvincibleVoice = () => {
         );
       }
 
-      // Decide from the *fresh* health, not the (async) healthStatus state: the
-      // native app streams mic audio to the backend when online (Gradium STT)
-      // and only uses the phone's own recognizer when the backend is
-      // unreachable. This mirrors the LLM hybrid switch so voice and suggestions
-      // come from the same place.
-      const willUseLocal = shouldUseLocalFallback(localCapable, latestHealth);
-      if (isNativeApp() && willUseLocal) {
-        // Offline native fallback: the speech-recognition plugin owns the
-        // microphone, no getUserMedia/opus pipeline needed. Listening starts
-        // once the (local) conversation is open — see the native listening
-        // effect.
-        const available = await isNativeSpeechAvailable();
-        const granted = available && (await requestNativeSpeechPermission());
-        if (!granted) {
-          setErrors((prev) => [
-            ...prev,
-            makeErrorItem(t('errors.microphoneAccessNeeded')),
-          ]);
-          return;
-        }
-        setShouldConnect(true);
-        return;
-      }
-
-      // Online (native or web): stream microphone audio to the backend, which
-      // runs Gradium STT. On native, getUserMedia inside the Android WebView
-      // only succeeds once the OS RECORD_AUDIO permission is granted. Request it
-      // explicitly first (it maps to RECORD_AUDIO, the same permission the
-      // recognizer uses) rather than relying on the WebView's implicit prompt,
-      // whose behaviour varies across Capacitor versions.
+      // Stream microphone audio to the backend (Gradium STT). On native,
+      // getUserMedia inside the Android WebView only succeeds once the OS
+      // RECORD_AUDIO permission is granted. Request it explicitly first.
       if (isNativeApp()) {
         const granted = await requestNativeSpeechPermission();
         if (!granted) {
@@ -1205,7 +1000,6 @@ const InvincibleVoice = () => {
   }, [
     askMicrophoneAccess,
     isViewingPastConversation,
-    localCapable,
     setupAudio,
     shouldConnect,
     shutdownAudio,
@@ -1236,7 +1030,6 @@ const InvincibleVoice = () => {
         text: editedText,
         cacheType: 'temporary',
         messageId: editedMessageId,
-        useNativeVoice,
       }).catch(console.error);
 
       clearResponses();
@@ -1247,7 +1040,7 @@ const InvincibleVoice = () => {
       }
       sendCurrentKeywords(null);
     },
-    [clearResponses, sendCurrentKeywords, sendMessage, useNativeVoice],
+    [clearResponses, sendCurrentKeywords, sendMessage],
   );
 
   useEffect(() => {
@@ -1306,26 +1099,6 @@ const InvincibleVoice = () => {
     }
     checkHealth().catch(() => {});
   }, [backendServerUrl, checkHealth]);
-
-  // Native app: make the on-device fallback usable. Downloads the model on
-  // first run (once, ~1 GB) and loads it into the llama.cpp engine, so that a
-  // later loss of connectivity can fall back to it instead of dying.
-  // Re-check health afterwards: `llm_up` depends on the engine being loaded.
-  useEffect(() => {
-    if (!isLocalMode()) {
-      return;
-    }
-    ensureLocalModelReady(setModelState)
-      .then((path) => {
-        if (path) {
-          checkHealth().catch(() => {});
-        }
-        return path;
-      })
-      .catch((e) => {
-        console.warn('[local] on-device model unavailable', e);
-      });
-  }, [checkHealth]);
 
   // While unhealthy, retry periodically so the app recovers on its own when
   // the connection comes back.
@@ -1529,7 +1302,6 @@ const InvincibleVoice = () => {
     clearResponses();
     setCurrentSpeakerMessage('');
     setCurrentSpeakerMessageStartTime(null);
-    nativeCommittedTextRef.current = '';
 
     // On mobile, default to XS so the compact chips above the text input
     // receive short responses. The layout sends M when Responses tab is active.
@@ -1555,19 +1327,6 @@ const InvincibleVoice = () => {
       <div className='flex flex-col items-center justify-center min-h-screen gap-4'>
         <h1 className='mb-4 text-xl'>{t('common.loading')}</h1>
       </div>
-    );
-  }
-
-  // First run with no reachable backend: the on-device model is still
-  // downloading. That is a wait, not a failure, so don't show the offline error
-  // screen over it. When the backend IS reachable the download stays in the
-  // background and the user keeps talking through the cloud.
-  if (preferLocal && modelState.status === 'downloading') {
-    return (
-      <ModelDownloadScreen
-        receivedBytes={modelState.receivedBytes}
-        totalBytes={modelState.totalBytes}
-      />
     );
   }
 
@@ -1611,7 +1370,7 @@ const InvincibleVoice = () => {
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
         onArchiveConversation={handleArchiveConversation}
-        onShowHistoryFromIdle={() => setIsShowingHistoryFromIdle(true)}
+        onShowHistoryFromIdle={handleShowHistoryFromIdle}
         onBack={() => {
           if (isViewingPastConversation) {
             setIsViewingPastConversation(false);
@@ -1622,6 +1381,7 @@ const InvincibleVoice = () => {
           }
         }}
         isSettingsOpen={isSettingsOpen}
+        settingsPanel={settingsPanel}
         settingsBlockedMessage={settingsBlockedMessage}
         onSettingsOpen={handleSettingsOpen}
         onSettingsSave={handleSettingsSave}

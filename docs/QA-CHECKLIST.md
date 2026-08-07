@@ -50,7 +50,7 @@ Cocher : `[x]` OK · `[ ]` à faire · `N/A` non applicable.
 | 2.6  | Scan (off/auto/step/dwell)    | surlignage + sélection           | [x] auto (scan-engine)                         |
 | 2.7  | Big targets                   | cibles agrandies                 | [x] auto partiel (scanSettings)                |
 | 2.8  | AZERTY / QWERTY               | badges raccourcis live           | [x] auto (`keyboardLayout.test.tsx`)           |
-| 2.9  | learn_style                   | sections prompt on/off           | [x] auto (`promptBuilderLanguage.test.ts`)     |
+| 2.9  | learn_style                   | sections prompt on/off           | [ ] manuel (prompt cloud)                      |
 | 2.10 | Prompt / keywords / friends   | drawer mis à jour                | [x] friends auto / [ ] manuel prompt           |
 | 2.11 | Quick phrases / RDV / docs    | liste / launcher                 | [x] phrases save→refresh auto / [ ] manuel RDV |
 | 2.12 | Settings pendant conversation | bloqué + toast                   | [ ] manuel                                     |
@@ -112,8 +112,8 @@ Cocher : `[x]` OK · `[ ]` à faire · `N/A` non applicable.
 
 | #   | Cas                                        | Statut                      |
 | --- | ------------------------------------------ | --------------------------- |
-| 6.1 | Toggle offline                             | [ ] manuel Android          |
-| 6.2 | SOS / fallback backend down                | [x] auto composants         |
+| 6.1 | OfflineFallback si backend down            | [x] auto composants         |
+| 6.2 | SOS / phrases TTS natif                    | [x] auto composants         |
 | 6.3 | Prefetch phrases avec voix/langue snapshot | [x] auto emergency snapshot |
 
 

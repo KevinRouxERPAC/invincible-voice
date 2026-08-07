@@ -11,7 +11,7 @@ InvincibleVoice is a real-time voice communication system designed to help peopl
 - Backend: FastAPI on **Google Cloud Run** (no local backend on developer machines)
 - Key data flow: STT → LLM (generates 3 response options + 6 keywords) → User selection → TTS
 - Default TTS voice: `d5HyIvCEW_x4BkDk`, French masculine, via Gradium
-- Android app: Capacitor + llama.cpp (NDK) for on-device STT/TTS + offline LLM fallback
+- Android app: Capacitor with on-device TTS for SOS/quick phrases; conversation via Cloud Run
 
 See `DEPLOYMENT.md` for Cloud Run + Firebase setup.
 

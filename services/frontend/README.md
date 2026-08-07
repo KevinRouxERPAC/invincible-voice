@@ -12,7 +12,7 @@ This is the main frontend application for InvincibleVoice, built with Next.js 15
 - **Keyboard shortcuts** for quick response selection
 - **Voice configuration** and personalization (including voice cloning via Gradium)
 - **Responsive design** for various screen sizes
-- **Android native app** (Capacitor) with on-device STT/TTS and offline LLM fallback (llama.cpp)
+- **Android native app** (Capacitor) with on-device TTS for SOS/quick phrases; conversation via Cloud Run
 - **Switch scanning accessibility** (auto/step/dwell modes) for motor-impaired users
 
 ## Development
@@ -111,9 +111,6 @@ Test files are located in `src/app/__tests__/` and alongside components with `.t
 The frontend talks to **Cloud Run** only (no local API):
 
 - `NEXT_PUBLIC_BACKEND_URL` — Cloud Run URL (no `/api` suffix), e.g. in `.env.local`
-- `NEXT_PUBLIC_LOCAL_MODE` - Set to `1` for 100% on-device mode (no backend, no auth)
-- `NEXT_PUBLIC_LOCAL_STUB` - Set to `1` to use the stub local LLM (testing)
-- `NEXT_PUBLIC_LOCAL_MODEL_URL` - Override the GGUF model download URL
 
 ```bash
 cd services/frontend

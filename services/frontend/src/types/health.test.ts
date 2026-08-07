@@ -1,45 +1,34 @@
-import { shouldUseLocalFallback, type HealthStatus } from './health';
+import { hasInternetConnectivity } from './health';
 
-describe('shouldUseLocalFallback', () => {
-  test('uses local mode before the first probe resolves', () => {
-    expect(shouldUseLocalFallback(true, null)).toBe(true);
+describe('hasInternetConnectivity', () => {
+  const originalNavigator = global.navigator;
+
+  afterEach(() => {
+    Object.defineProperty(global, 'navigator', {
+      value: originalNavigator,
+      configurable: true,
+    });
   });
 
-  test('uses cloud mode when the backend is healthy', () => {
-    const healthStatus: HealthStatus = {
-      connected: 'yes_request_ok',
-      ok: true,
-      mode: 'cloud',
-      internet_up: true,
-      backend_up: true,
-      llm_up: true,
-    };
-
-    expect(shouldUseLocalFallback(true, healthStatus)).toBe(false);
+  test('returns undefined when navigator is missing', () => {
+    Object.defineProperty(global, 'navigator', {
+      value: undefined,
+      configurable: true,
+    });
+    expect(hasInternetConnectivity()).toBeUndefined();
   });
 
-  test('keeps local mode when the fallback is selected', () => {
-    const healthStatus: HealthStatus = {
-      connected: 'no',
-      ok: true,
-      mode: 'local',
-      internet_up: false,
-      backend_up: false,
-      llm_up: true,
-      stt_up: true,
-      tts_up: true,
-    };
+  test('returns navigator.onLine when available', () => {
+    Object.defineProperty(global, 'navigator', {
+      value: { onLine: true },
+      configurable: true,
+    });
+    expect(hasInternetConnectivity()).toBe(true);
 
-    expect(shouldUseLocalFallback(true, healthStatus)).toBe(true);
-  });
-
-  test('never uses local mode when the device is not local-capable', () => {
-    const healthStatus: HealthStatus = {
-      connected: 'no',
-      ok: false,
-      mode: 'local',
-    };
-
-    expect(shouldUseLocalFallback(false, healthStatus)).toBe(false);
+    Object.defineProperty(global, 'navigator', {
+      value: { onLine: false },
+      configurable: true,
+    });
+    expect(hasInternetConnectivity()).toBe(false);
   });
 });

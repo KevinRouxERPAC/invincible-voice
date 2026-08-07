@@ -73,6 +73,7 @@ function makeProps(
     onShowHistoryFromIdle: noop,
     onBack: noop,
     isSettingsOpen: true,
+    settingsPanel: 'main',
     settingsBlockedMessage: null,
     onSettingsOpen: noop,
     onSettingsSave: noop,

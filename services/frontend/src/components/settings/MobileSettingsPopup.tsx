@@ -1,21 +1,27 @@
 'use client';
 
-import { FC, useCallback, useState } from 'react';
+import { FC, useCallback, useEffect, useState } from 'react';
 import { useAuthContext } from '@/auth/authContext';
 import { useTranslations } from '@/i18n';
 import { updateUserSettings } from '@/utils/userData';
-import type { UserSettings } from '@/utils/userData';
+import type { QuickPhrase, UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
 import AdminPanel from './AdminPanel';
 import EmailField from './EmailField';
 import NameField from './NameField';
+import QuickPhrasesEditor from './QuickPhrasesEditor';
 import SettingsHeader from './SettingsHeader';
 import SpeechRateSlider from './SpeechRateSlider';
+
+export type MobileSettingsPanel = 'main' | 'phrases' | 'admin';
 
 interface MobileSettingsPopupProps {
   userSettings: UserSettings;
   email: string;
   isAdmin?: boolean;
+  initialPanel?: MobileSettingsPanel;
+  onOpenPhrasesPanel?: () => void;
+  onPanelChange?: (panel: MobileSettingsPanel) => void;
   onSave: (settings: UserSettings) => void;
   onCancel: () => void;
 }
@@ -24,52 +30,124 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
   userSettings,
   email,
   isAdmin = false,
+  initialPanel = 'main',
+  onOpenPhrasesPanel = undefined,
+  onPanelChange = undefined,
   onSave,
   onCancel,
 }) => {
   const t = useTranslations();
   const { signOut } = useAuthContext();
+  const [activePanel, setActivePanel] =
+    useState<MobileSettingsPanel>(initialPanel);
   const [name, setName] = useState(userSettings.name || '');
+  const [prompt, setPrompt] = useState(userSettings.prompt || '');
   const [learnStyle, setLearnStyle] = useState(
     userSettings.learn_style ?? true,
   );
+  const [quickPhrases, setQuickPhrases] = useState<QuickPhrase[]>(
+    userSettings.quick_phrases || [],
+  );
   // Empty string = "let the STT guess" (auto). Persisted as null, like desktop.
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
-
   const [language, setLanguage] = useState(
     userSettings.expected_transcription_language || '',
   );
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const goToPanel = useCallback(
+    (panel: MobileSettingsPanel) => {
+      setActivePanel(panel);
+      onPanelChange?.(panel);
+    },
+    [onPanelChange],
+  );
+
+  useEffect(() => {
+    setActivePanel(initialPanel);
+  }, [initialPanel]);
+
+  useEffect(() => {
+    setName(userSettings.name || '');
+    setPrompt(userSettings.prompt || '');
+    setLearnStyle(userSettings.learn_style ?? true);
+    setQuickPhrases(userSettings.quick_phrases || []);
+    setLanguage(userSettings.expected_transcription_language || '');
+  }, [userSettings]);
 
   const handleSave = useCallback(async () => {
+    setSaveError(null);
     const updatedSettings: UserSettings = {
       ...userSettings,
       name,
+      prompt,
       learn_style: learnStyle,
+      quick_phrases: quickPhrases,
       expected_transcription_language: language || null,
     };
     const result = await updateUserSettings(updatedSettings);
 
     if (!result.error) {
       onSave(updatedSettings);
+      return;
     }
-  }, [name, learnStyle, language, userSettings, onSave]);
+    setSaveError(result.error);
+  }, [name, prompt, learnStyle, quickPhrases, language, userSettings, onSave]);
 
   const handleSignOut = useCallback(() => {
     signOut();
     onCancel();
   }, [signOut, onCancel]);
 
-  if (showAdminPanel && isAdmin) {
+  if (activePanel === 'admin' && isAdmin) {
     return (
       <div className='flex flex-col w-full h-full min-h-0 text-ink'>
         <div className='shrink-0 px-4 pt-4'>
           <SettingsHeader
             title={t('admin.tabTitle')}
-            onCancel={() => setShowAdminPanel(false)}
+            onCancel={onCancel}
+            onBack={() => goToPanel('main')}
+            backLabel={t('common.back')}
           />
         </div>
         <div className='flex-1 min-h-0 overflow-y-auto px-4 pb-4'>
           <AdminPanel currentUserEmail={email} />
+        </div>
+      </div>
+    );
+  }
+
+  if (activePanel === 'phrases') {
+    return (
+      <div className='flex flex-col w-full h-full min-h-0 text-ink'>
+        <div className='shrink-0 px-4 pt-4'>
+          <SettingsHeader
+            title={t('settings.quickPhrases')}
+            onCancel={onCancel}
+            onBack={() => goToPanel('main')}
+            backLabel={t('common.back')}
+          />
+        </div>
+        <div className='flex-1 min-h-0 overflow-y-auto px-4 py-4'>
+          <QuickPhrasesEditor
+            phrases={quickPhrases}
+            onChange={setQuickPhrases}
+          />
+        </div>
+        <div className='shrink-0 flex flex-col gap-3 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] border-t border-hairline bg-surface'>
+          {saveError ? (
+            <p
+              className='text-sm text-red text-center'
+              role='alert'
+            >
+              {saveError}
+            </p>
+          ) : null}
+          <button
+            className='w-full px-6 py-3 text-white bg-sage rounded-2xl font-medium'
+            onClick={handleSave}
+          >
+            {t('common.save')}
+          </button>
         </div>
       </div>
     );
@@ -102,7 +180,8 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
             id='mobile-settings-language-select'
             value={language}
             onChange={(event) => setLanguage(event.target.value)}
-            className='w-full px-4 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+            title={language ? undefined : t('settings.letSpeechToTextGuess')}
+            className='w-full min-h-11 px-4 py-3 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
           >
             <option value=''>{t('settings.letSpeechToTextGuess')}</option>
             <option value='en'>English</option>
@@ -114,6 +193,23 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
         </div>
         <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl'>
           <SpeechRateSlider />
+        </div>
+        <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl flex flex-col gap-2'>
+          <label
+            htmlFor='mobile-persona'
+            className='font-medium text-ink text-sm'
+          >
+            {t('settings.configureAssistant')}
+          </label>
+          <p className='text-xs text-muted'>{t('settings.personaHint')}</p>
+          <textarea
+            id='mobile-persona'
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            rows={4}
+            placeholder={t('settings.promptPlaceholder')}
+            className='w-full min-h-24 px-3 py-2 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl resize-none focus:outline-none focus:border-blue'
+          />
         </div>
         <button
           type='button'
@@ -151,15 +247,32 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
         {isAdmin && (
           <button
             type='button'
-            onClick={() => setShowAdminPanel(true)}
+            onClick={() => goToPanel('admin')}
             className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl text-sm font-medium text-blue'
           >
             {t('admin.openPanel')}
           </button>
         )}
+        <button
+          type='button'
+          onClick={() =>
+            onOpenPhrasesPanel ? onOpenPhrasesPanel() : goToPanel('phrases')
+          }
+          className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl text-sm font-medium text-blue'
+        >
+          {t('conversation.editQuickPhrases')}
+        </button>
       </div>
 
       <div className='shrink-0 flex flex-col gap-3 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] border-t border-hairline bg-surface'>
+        {saveError ? (
+          <p
+            className='text-sm text-red text-center'
+            role='alert'
+          >
+            {saveError}
+          </p>
+        ) : null}
         <div className='w-full flex justify-center'>
           <a
             href='/privacy'

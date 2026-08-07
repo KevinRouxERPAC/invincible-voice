@@ -7,36 +7,27 @@ jest.mock('@/utils/platform', () => ({
   isNativeApp: jest.fn(() => true),
 }));
 
-jest.mock('../localMode', () => ({
-  isLocalMode: jest.fn(() => true),
-  isLocalOnlyMode: jest.fn(() => false),
-}));
-
 jest.mock('../backend', () => ({
   apiUrl: (path: string) => `http://backend${path}`,
 }));
 
-const { isLocalMode, isLocalOnlyMode } = jest.requireMock('../localMode');
+const { isNativeApp } = jest.requireMock('@/utils/platform');
 
 const SERVER_USER = {
   email: 'kevin@example.com',
   user_id: 'server-123',
   user_settings: { name: 'Kevin' },
   conversations: [],
-  // The backend sends the durable memory layer; getUserData normalizes it
-  // (absent -> empty) before returning and mirroring.
   memory: emptyUserMemory(),
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
   window.localStorage.clear();
-  isLocalMode.mockReturnValue(true);
-  isLocalOnlyMode.mockReturnValue(false);
+  isNativeApp.mockReturnValue(true);
 });
 
 describe('getUserData', () => {
-  // The whole point of hybrid mode: online, the real account still wins.
   it('returns the backend profile when the backend answers', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -79,7 +70,7 @@ describe('getUserData', () => {
   });
 
   it('surfaces the error on the web build, which has no fallback', async () => {
-    isLocalMode.mockReturnValue(false);
+    isNativeApp.mockReturnValue(false);
     global.fetch = jest.fn().mockRejectedValue(new Error('offline'));
 
     const result = await getUserData();
@@ -88,18 +79,6 @@ describe('getUserData', () => {
     expect(result.error).toContain('Network error');
   });
 
-  it('never touches the network in a backend-less build', async () => {
-    isLocalOnlyMode.mockReturnValue(true);
-    global.fetch = jest.fn();
-
-    const result = await getUserData();
-
-    expect(global.fetch).not.toHaveBeenCalled();
-    expect(result.data?.user_id).toBe('local');
-  });
-
-  // The whole point of the offline-persistence fix: the persona AND the
-  // conversation history must survive the backend going away.
   it('mirrors the fetched profile locally so it survives offline', async () => {
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -160,14 +139,15 @@ describe('updateUserSettings (local mirror)', () => {
     expect(loadLocalUserData()?.user_settings.name).toBe('Kevin');
   });
 
-  it('never touches the network in a backend-less build', async () => {
-    isLocalOnlyMode.mockReturnValue(true);
-    global.fetch = jest.fn();
+  it('keeps the local mirror as success when the cloud POST fails offline', async () => {
+    global.fetch = jest
+      .fn()
+      .mockRejectedValue(new TypeError('Failed to fetch'));
 
     const result = await updateUserSettings(SETTINGS);
 
-    expect(global.fetch).not.toHaveBeenCalled();
-    expect(result.status).toBe(200);
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(0);
     expect(loadLocalUserData()?.user_settings.name).toBe('Kevin');
   });
 });

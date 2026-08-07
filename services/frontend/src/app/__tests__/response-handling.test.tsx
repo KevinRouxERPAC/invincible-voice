@@ -296,7 +296,7 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
     await waitFor(
       () => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/v1/tts/',
+          expect.stringContaining('/v1/tts/'),
           expect.objectContaining({
             method: 'POST',
             body: expect.stringMatching(/"text":"I will choose this response"/),
@@ -310,7 +310,7 @@ describe('InvincibleVoice Response Handling and TTS Tests', () => {
     await waitFor(
       () => {
         expect(global.fetch).toHaveBeenCalledWith(
-          '/api/v1/tts/',
+          expect.stringContaining('/v1/tts/'),
           expect.objectContaining({
             body: expect.stringMatching(/"message_id":"[0-9a-f-]{36}"/),
           }),

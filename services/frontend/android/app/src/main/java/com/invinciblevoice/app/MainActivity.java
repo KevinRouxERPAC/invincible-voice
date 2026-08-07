@@ -19,13 +19,6 @@ public class MainActivity
     implements ModifiedMainActivityForSocialLoginPlugin {
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
-        // Register the on-device LLM plugin before the bridge starts.
-        registerPlugin(LlamaCppPlugin.class);
-        super.onCreate(savedInstanceState);
-    }
-
-    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 

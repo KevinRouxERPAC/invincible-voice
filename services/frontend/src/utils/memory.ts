@@ -56,9 +56,6 @@ export const MAX_FACTS = 50; // server: 50
 export const MAX_STYLE_EXCHANGES = 12; // server: 15
 export const MAX_STORED_CONVERSATIONS = 30; // server: 200
 
-// Only conversations with at least this many user-chosen messages are worth
-// mining for style/knowledge.
-const MIN_MESSAGES_FOR_EXTRACTION = 2;
 // Replies shorter than this (in words) teach nothing about tone and would
 // crowd out more expressive examples.
 const MIN_REPLY_WORDS = 2;
@@ -242,10 +239,12 @@ export function isFactsProcessed(
 
 // --- Synchronous extraction (LLM-free) ---------------------------------------
 
+export const INITIATIVE_SPEAKER_TURN = '(initiative)';
+
 /**
  * Pair each user-chosen reply with the speaker turn(s) immediately before it.
- * Consecutive speaker lines fuse into one turn, mirroring a real conversation
- * rather than one-line ping-pong.
+ * Consecutive speaker lines fuse into one turn. Replies without a preceding
+ * speaker (openings) are kept under INITIATIVE_SPEAKER_TURN.
  */
 export function extractStyleExchanges(
   messages: ConversationMessageLike[],
@@ -265,32 +264,28 @@ export function extractStyleExchanges(
         pendingSpeakerLines.length = 0;
         return;
       }
-      if (pendingSpeakerLines.length > 0) {
-        exchanges.push({
-          speaker_turn: pendingSpeakerLines.join(' '),
-          user_reply: reply,
-        });
-      }
+      exchanges.push({
+        speaker_turn:
+          pendingSpeakerLines.length > 0
+            ? pendingSpeakerLines.join(' ')
+            : INITIATIVE_SPEAKER_TURN,
+        user_reply: reply,
+      });
       pendingSpeakerLines.length = 0;
     }
   });
   return exchanges;
 }
 
-/** Whether a conversation is worth mining at all. */
+/** Whether a conversation has at least one user-chosen reply worth mining. */
 export function hasMinimalSignal(messages: ConversationMessageLike[]): boolean {
-  const hasWriter = messages.some(isWriterLike);
-  const hasSpeaker = messages.some(isSpeakerLike);
-  return (
-    hasWriter && hasSpeaker && messages.length >= MIN_MESSAGES_FOR_EXTRACTION
-  );
+  return messages.some(isWriterLike);
 }
 
 /**
  * Fold one conversation into the durable memory, synchronously (LLM-free).
  * Extracts contextual style exchanges. Fact extraction is LLM-driven and only
- * happens server-side; offline we rely on the style pass + the facts already
- * distilled. Idempotent: calling it twice on the same conversation is a no-op.
+ * happens server-side. Idempotent. Empty sessions are left unmarked.
  *
  * Returns true if anything changed.
  */
@@ -302,7 +297,6 @@ export function updateMemoryFromConversation(
 
   const { messages } = conversation;
   if (!hasMinimalSignal(messages)) {
-    markProcessed(memory, conversation.start_time);
     return false;
   }
 

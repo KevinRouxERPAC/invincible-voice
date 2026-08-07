@@ -91,7 +91,7 @@ describe('fetchAndStorePhraseAudio', () => {
 
     expect(audio.sampleRate).toBe(SAMPLE_RATE);
     expect(audio.pcm).toHaveLength(8);
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/', {
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: expect.stringContaining('"voice_name":"ma-voix"'),

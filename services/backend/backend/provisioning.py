@@ -3,6 +3,20 @@ import uuid
 from backend.app_types import Language, QuickPhrase, UserSettings
 from backend.storage import UserData
 
+DEFAULT_USER_NAMES: dict[str, str] = {
+    "en": "New user",
+    "fr": "Nouvel utilisateur",
+    "de": "Neuer Benutzer",
+    "es": "Nuevo usuario",
+    "pt": "Novo usuário",
+}
+
+
+def is_default_user_name(name: str | None) -> bool:
+    if not name:
+        return True
+    return name.strip() in DEFAULT_USER_NAMES.values()
+
 
 def get_new_user(
     email: str,
@@ -12,13 +26,7 @@ def get_new_user(
     is_admin: bool = False,
 ) -> UserData:
     # Default name and keywords based on language
-    default_names = {
-        "en": "New user",
-        "fr": "Nouvel utilisateur",
-        "de": "Neuer Benutzer",
-        "es": "Nuevo usuario",
-        "pt": "Novo usuário",
-    }
+    default_names = DEFAULT_USER_NAMES
 
     default_keywords = {
         "en": [

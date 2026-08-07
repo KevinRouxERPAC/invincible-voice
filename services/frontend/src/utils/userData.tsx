@@ -2,7 +2,6 @@
 import { addAuthHeaders, getBearerToken } from '../auth/authUtils';
 import { isNativeApp } from '@/utils/platform';
 import { apiUrl } from './backend';
-import { isLocalMode, isLocalOnlyMode } from './localMode';
 import { loadSettingsSnapshot } from './localSettingsCache';
 import {
   deleteLocalConversation,
@@ -203,11 +202,6 @@ function buildLocalUserData(): UserData {
 }
 
 export async function getUserData(): Promise<ApiResponse<UserData>> {
-  // Backend-less build: never touch the network, not even to fail.
-  if (isLocalOnlyMode()) {
-    return { data: buildLocalUserData(), status: 200 };
-  }
-
   try {
     // Logged-in users (native included) read their own profile. The shared
     // anonymous profile is only for native builds on trusted/LAN deployments
@@ -234,17 +228,15 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
 
     // The server sends the durable memory layer (facts / tone profile /
     // style exchanges). Normalize defensively: a legacy or partial payload
-    // would otherwise leave `memory` undefined and the on-device prompt
-    // builder would silently lose the distilled knowledge.
+    // would otherwise leave `memory` undefined.
     const dataWithMemory: UserData = {
       ...data,
       memory: normalizeUserMemory(data.memory),
     };
 
-    // On native, mirror the freshly-fetched profile (settings + history +
-    // memory) so the on-device/offline mode can fall back to the latest
-    // server-side state instead of an empty profile.
-    if (isLocalMode()) {
+    // On native, mirror the freshly-fetched profile so SOS / OfflineFallback
+    // can still use the latest settings and phrases when the backend is down.
+    if (isNativeApp()) {
       saveLocalUserData(dataWithMemory);
     }
 
@@ -253,10 +245,9 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
       status: response.status,
     };
   } catch (error) {
-    // Unreachable backend (airplane mode, no coverage). On native we can still
-    // run entirely on-device, so hand back a local profile instead of failing.
-    // The web build has nothing to fall back to.
-    if (isLocalMode()) {
+    // Unreachable backend (airplane mode, no coverage). On native, hand back
+    // the mirrored profile so SOS and quick phrases still work.
+    if (isNativeApp()) {
       return {
         data: buildLocalUserData(),
         status: 200,
@@ -279,15 +270,10 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
 export async function updateUserSettings(
   settings: UserSettings,
 ): Promise<ApiResponse<void>> {
-  // On native, mirror the persona locally first so an offline edit is never
-  // lost, and so the on-device prompt uses the updated profile immediately.
-  if (isLocalMode()) {
+  // On native, mirror settings first so SOS / OfflineFallback keep working
+  // offline even if the cloud POST fails.
+  if (isNativeApp()) {
     saveLocalUserSettings(settings);
-  }
-  // Backend-less build: there is no server to POST to, and the network must
-  // never be touched. The local mirror above is the source of truth.
-  if (isLocalOnlyMode()) {
-    return { status: 200 };
   }
 
   try {
@@ -302,6 +288,12 @@ export async function updateUserSettings(
     });
 
     if (!response.ok) {
+      // Native already mirrored locally; keep the edit even if the cloud
+      // sync fails (offline, 5xx, etc.). Auth errors still surface so the
+      // UI can prompt a re-login.
+      if (isNativeApp() && response.status !== 401 && response.status !== 403) {
+        return { status: response.status };
+      }
       return {
         error: `Failed to update user settings: ${response.status} ${response.statusText}`,
         status: response.status,
@@ -311,6 +303,84 @@ export async function updateUserSettings(
     return {
       status: response.status,
     };
+  } catch (error) {
+    // Offline on native: local mirror above is the source of truth.
+    if (isNativeApp()) {
+      return { status: 0 };
+    }
+    return {
+      error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      status: 0,
+    };
+  }
+}
+
+/**
+ * Rebuild style from history and force LLM memory consolidation.
+ * POST /v1/user/memory/refresh
+ */
+export async function refreshUserMemory(): Promise<ApiResponse<UserData>> {
+  try {
+    const url = apiUrl(`/v1/user/memory/refresh`);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: addAuthHeaders({
+        'Content-Type': 'application/json',
+      }),
+    });
+    if (!response.ok) {
+      return {
+        error: `Failed to refresh memory: ${response.status} ${response.statusText}`,
+        status: response.status,
+      };
+    }
+    const data: UserData = await response.json();
+    const dataWithMemory: UserData = {
+      ...data,
+      memory: normalizeUserMemory(data.memory),
+    };
+    if (isNativeApp()) {
+      saveLocalUserData(dataWithMemory);
+    }
+    return { data: dataWithMemory, status: response.status };
+  } catch (error) {
+    return {
+      error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      status: 0,
+    };
+  }
+}
+
+/**
+ * Delete one learned fact from durable memory.
+ * DELETE /v1/user/memory/facts/{fact_index}
+ */
+export async function deleteMemoryFact(
+  factIndex: number,
+): Promise<ApiResponse<UserData>> {
+  try {
+    const url = apiUrl(`/v1/user/memory/facts/${factIndex}`);
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: addAuthHeaders({
+        'Content-Type': 'application/json',
+      }),
+    });
+    if (!response.ok) {
+      return {
+        error: `Failed to delete fact: ${response.status} ${response.statusText}`,
+        status: response.status,
+      };
+    }
+    const data: UserData = await response.json();
+    const dataWithMemory: UserData = {
+      ...data,
+      memory: normalizeUserMemory(data.memory),
+    };
+    if (isNativeApp()) {
+      saveLocalUserData(dataWithMemory);
+    }
+    return { data: dataWithMemory, status: response.status };
   } catch (error) {
     return {
       error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -329,13 +399,6 @@ export async function updateUserSettings(
 export async function deleteConversation(
   conversationId: number,
 ): Promise<ApiResponse<void>> {
-  // Local-only build: there is no backend to call. Deleting via a network
-  // request would fail (and be blocked as mixed content), so the delete button
-  // would silently do nothing. Persist the deletion directly in localStorage.
-  if (isLocalOnlyMode()) {
-    deleteLocalConversation(conversationId);
-    return { status: 200 };
-  }
   try {
     const url = apiUrl(`/v1/user/conversations/${conversationId}`);
 
@@ -377,10 +440,6 @@ export async function setConversationArchived(
   conversationId: number,
   archived: boolean,
 ): Promise<ApiResponse<void>> {
-  if (isLocalOnlyMode()) {
-    setLocalConversationArchived(conversationId, archived);
-    return { status: 200 };
-  }
   try {
     const url = apiUrl(`/v1/user/conversations/${conversationId}`);
 

@@ -94,8 +94,20 @@ class UserData(pydantic.BaseModel):
         )
         prompt += "## Nom de l'utilisateur\n"
         prompt += f"L'utilisateur est {self.user_settings.name}.\n\n"
-        prompt += "## Prompt de l'utilisateur\n"
-        prompt += self.user_settings.prompt + "\n\n"
+        prompt += "## Personnage / identité de l'utilisateur\n"
+        prompt += (
+            "Voici qui est l'utilisateur — sa personnalité, son contexte de vie, "
+            "son ton souhaité. Les suggestions doivent sonner comme s'il parlait "
+            "lui-même (pas comme un assistant générique) :\n"
+        )
+        persona = (self.user_settings.prompt or "").strip()
+        if persona:
+            prompt += persona + "\n\n"
+        else:
+            prompt += (
+                "(Aucun personnage explicite fourni — appuyez-vous sur les faits, "
+                "le style appris et l'historique.)\n\n"
+            )
         prompt += "## Amis de l'utilisateur\n"
         prompt += f"Les amis de l'utilisateur sont : {self.user_settings.friends}\n\n"
         if self.user_settings.additional_keywords:

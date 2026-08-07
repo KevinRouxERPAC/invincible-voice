@@ -68,10 +68,8 @@ export async function playTTSStream(
   const { text, messageId, cacheType = 'temporary', voiceName } = options;
   const playbackRate = options.playbackRate ?? getSpeechRate();
 
-  // Native app, offline only: use the phone's TTS engine — free, no backend
-  // call. Online the native app streams from the backend like the web, so the
-  // user hears their cloned voice (a backend/Gradium feature). `useNativeVoice`
-  // is driven by the same offline signal as the LLM fallback (preferLocal).
+  // Native app can force the phone TTS engine (SOS / OfflineFallback). Online
+  // conversation uses the Gradium backend voice like the web.
   if (isNativeApp() && options.useNativeVoice) {
     await speakNative({
       text,

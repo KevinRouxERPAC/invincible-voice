@@ -1,4 +1,5 @@
 import logging
+import os
 import secrets
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -45,7 +46,11 @@ ClientEventAdapter = TypeAdapter(
 
 
 # Background metrics tasks
-redis_metrics_task = RedisMetricsBackgroundTask(REDIS_URL)
+redis_metrics_task = (
+    RedisMetricsBackgroundTask(REDIS_URL)
+    if os.getenv("REDIS_URL")
+    else None
+)
 storage_metrics_task = StorageMetricsBackgroundTask(USERS_SETTINGS_AND_HISTORY_DIR)
 
 
@@ -53,12 +58,14 @@ storage_metrics_task = StorageMetricsBackgroundTask(USERS_SETTINGS_AND_HISTORY_D
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup/shutdown events."""
     # Startup
-    await redis_metrics_task.start()
+    if redis_metrics_task is not None:
+        await redis_metrics_task.start()
     await storage_metrics_task.start()
     yield
     # Shutdown
     await storage_metrics_task.stop()
-    await redis_metrics_task.stop()
+    if redis_metrics_task is not None:
+        await redis_metrics_task.stop()
 
 
 app = FastAPI(openapi_prefix="/api", lifespan=lifespan)

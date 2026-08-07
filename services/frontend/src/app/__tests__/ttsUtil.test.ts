@@ -70,8 +70,8 @@ describe('TTS Utility', () => {
         cacheType: 'temporary',
       });
 
-      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/sample_rate');
-      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/', {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/sample_rate'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: 'Hello world', message_id: 'msg-1' }),
@@ -87,7 +87,7 @@ describe('TTS Utility', () => {
         voiceName: 'my-voice',
       });
 
-      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/', {
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -122,9 +122,9 @@ describe('TTS Utility', () => {
       });
 
       // Only the sample-rate endpoint is hit, not the TTS endpoint
-      expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/sample_rate');
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/sample_rate'));
       expect(global.fetch).not.toHaveBeenCalledWith(
-        '/api/v1/tts/',
+        expect.stringContaining('/v1/tts/'),
         expect.anything(),
       );
     });

@@ -75,9 +75,14 @@ MAX_DOCUMENT_CHARS_IN_PROMPT = int(
     os.environ.get("MEMORY_MAX_DOCUMENT_CHARS_IN_PROMPT", "4000")
 )
 
-# Only conversations with at least this many user-chosen messages are worth
-# mining for style/knowledge. A one-message exchange carries little signal.
+# Only conversations with at least this many messages are worth mining when
+# both speaker and writer are present. A lone WriterMessage (initiative) is
+# still mined via INITIATIVE_SPEAKER_TURN.
 MIN_MESSAGES_FOR_EXTRACTION = 2
+
+# Synthetic speaker turn used when the user speaks / chooses a reply without a
+# preceding interlocutor turn (session opening, custom phrase, initiating).
+INITIATIVE_SPEAKER_TURN = "(initiative)"
 
 
 # --- Data models --------------------------------------------------------------
@@ -223,7 +228,9 @@ def extract_style_exchanges_from_conversation(
     `messages` is a list of `SpeakerMessage | WriterMessage`. We accumulate
     consecutive speaker lines into one `speaker_turn` (a real conversation is
     not one-line ping-pong), and emit an exchange when a `WriterMessage`
-    arrives.
+    arrives. Replies with no preceding speaker (opening / initiative) are
+    still kept, anchored on `INITIATIVE_SPEAKER_TURN`, so the user's own
+    phrasing feeds learn_style even without an interlocutor turn.
     """
     from backend.app_types import SpeakerMessage, WriterMessage
 
@@ -240,27 +247,29 @@ def extract_style_exchanges_from_conversation(
             if not reply:
                 pending_speaker_lines.clear()
                 continue
-            if pending_speaker_lines:
-                speaker_turn = " ".join(pending_speaker_lines)
-                exchanges.append(
-                    StyleExchange(speaker_turn=speaker_turn, user_reply=reply)
-                )
+            speaker_turn = (
+                " ".join(pending_speaker_lines)
+                if pending_speaker_lines
+                else INITIATIVE_SPEAKER_TURN
+            )
+            exchanges.append(
+                StyleExchange(speaker_turn=speaker_turn, user_reply=reply)
+            )
             pending_speaker_lines.clear()
 
     return exchanges
 
 
 def has_minimal_signal(messages: list) -> bool:
-    """Whether a conversation is worth mining at all.
+    """Whether a conversation is worth mining for style.
 
-    We need at least one user-chosen reply (a `WriterMessage`) to learn
-    anything about style, and at least one speaker turn to give it context.
+    A single user-chosen reply (`WriterMessage`) is enough: openings and
+    custom phrases teach phrasing even without a speaker turn. Empty
+    sessions (no Writer) are not mined and must not burn the processed marker.
     """
-    from backend.app_types import SpeakerMessage, WriterMessage
+    from backend.app_types import WriterMessage
 
-    has_writer = any(isinstance(m, WriterMessage) for m in messages)
-    has_speaker = any(isinstance(m, SpeakerMessage) for m in messages)
-    return has_writer and has_speaker and len(messages) >= MIN_MESSAGES_FOR_EXTRACTION
+    return any(isinstance(m, WriterMessage) for m in messages)
 
 
 def update_memory_from_conversation(
@@ -272,6 +281,8 @@ def update_memory_from_conversation(
     handled separately. Returns True if anything changed.
 
     Idempotent: calling it twice on the same conversation is a no-op.
+    Conversations with no WriterMessage are left unmarked so a later session
+    that actually contains choices can still be mined.
     """
     if now is None:
         now = dt.datetime.now(dt.timezone.utc)
@@ -281,7 +292,7 @@ def update_memory_from_conversation(
 
     messages = conversation.messages
     if not has_minimal_signal(messages):
-        memory.mark_processed(conversation.start_time)
+        # Empty / listen-only session: do NOT mark processed.
         return False
 
     changed = False
@@ -292,6 +303,29 @@ def update_memory_from_conversation(
             changed = True
 
     memory.mark_processed(conversation.start_time)
+    return changed
+
+
+def rebuild_style_from_history(
+    memory: UserMemory,
+    conversations: list,
+    *,
+    force: bool = False,
+) -> bool:
+    """Re-extract style exchanges from stored conversations.
+
+    When `force` is True, clears existing style exchanges and the sync
+    processed markers so previously empty or initiating-only sessions can be
+    reminted with the current extraction rules.
+    """
+    if force:
+        memory.style_exchanges = []
+        memory.processed_conversations = []
+
+    changed = force
+    for conversation in conversations:
+        if update_memory_from_conversation(memory, conversation):
+            changed = True
     return changed
 
 

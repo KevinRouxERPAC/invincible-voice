@@ -71,10 +71,15 @@ def test_consecutive_speaker_lines_fuse_into_one_turn():
     assert exchanges[0].speaker_turn == "Salut. Comment ça va ?"
 
 
-def test_writer_without_preceding_speaker_yields_no_exchange():
-    # A reply with no speaker turn to anchor it carries no relational signal.
-    messages = [_writer("Bonjour à tous.")]
-    assert extract_style_exchanges_from_conversation(messages) == []
+def test_writer_without_preceding_speaker_yields_initiative_exchange():
+    # Openings / custom phrases still teach phrasing via a synthetic anchor.
+    from backend.memory import INITIATIVE_SPEAKER_TURN
+
+    messages = [_writer("Bonjour à tous mes amis.")]
+    exchanges = extract_style_exchanges_from_conversation(messages)
+    assert len(exchanges) == 1
+    assert exchanges[0].speaker_turn == INITIATIVE_SPEAKER_TURN
+    assert exchanges[0].user_reply == "Bonjour à tous mes amis."
 
 
 # --- update_memory_from_conversation ------------------------------------------
@@ -107,11 +112,34 @@ def test_update_memory_skips_trivial_replies():
     assert memory.style_exchanges == []
 
 
-def test_update_memory_marks_conversation_processed_even_without_signal():
+def test_update_memory_does_not_mark_empty_conversation_processed():
     memory = UserMemory()
     conv = _conv([], _when(1))  # empty conversation
-    update_memory_from_conversation(memory, conv)
+    assert update_memory_from_conversation(memory, conv) is False
+    assert not memory.is_processed(conv.start_time)
+
+
+def test_update_memory_mines_initiating_writer():
+    memory = UserMemory()
+    conv = _conv([_writer("Je voudrais parler du cinéma ce soir.")], _when(2))
+    assert update_memory_from_conversation(memory, conv) is True
+    assert len(memory.style_exchanges) == 1
     assert memory.is_processed(conv.start_time)
+
+
+def test_rebuild_style_from_history_force_remints():
+    from backend.memory import INITIATIVE_SPEAKER_TURN, rebuild_style_from_history
+
+    memory = UserMemory()
+    conv = _conv([_writer("Merci beaucoup pour ton aide aujourd'hui.")], _when(3))
+    # Simulate a legacy "burned" empty pass that marked processed with no exchange.
+    memory.mark_processed(conv.start_time)
+    assert memory.style_exchanges == []
+
+    changed = rebuild_style_from_history(memory, [conv], force=True)
+    assert changed is True
+    assert len(memory.style_exchanges) == 1
+    assert memory.style_exchanges[0].speaker_turn == INITIATIVE_SPEAKER_TURN
 
 
 # --- Fact dedup and capping --------------------------------------------------
@@ -459,3 +487,28 @@ async def test_tone_profile_refreshes_after_enough_conversations():
     assert "posée" in user.memory.tone_profile.summary
     # Counter reset so the profile isn't regenerated every single session.
     assert user.memory.conversations_since_tone_refresh == 0
+
+@pytest.mark.asyncio
+async def test_consolidate_persists_markers_when_no_new_facts():
+    """Fact markers / tone counter must flip `changed` even with empty facts."""
+    from backend.memory_llm import consolidate_memory
+    from backend.routes.auth import get_new_user
+
+    user = get_new_user("markers@example.com", "fr")
+    conv = _conv(
+        [
+            SpeakerMessage(speaker="Ami", content="Tu viens ?"),
+            _writer("Oui je passe te voir tout a l'heure."),
+        ],
+        _when(1),
+    )
+    user.conversations.append(conv)
+    update_memory_from_conversation(user.memory, conv)
+
+    client = _FakeOpenAIClient('{"facts": []}')
+    changed = await consolidate_memory(client, "fake-model", user)
+
+    assert changed is True
+    assert user.memory.is_facts_processed(conv.start_time)
+    assert user.memory.conversations_since_tone_refresh == 1
+    assert user.memory.facts == []

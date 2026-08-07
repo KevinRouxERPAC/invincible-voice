@@ -125,28 +125,15 @@ class UnmuteHandler(AsyncStreamHandler):
         # This runs before save() so the new exchanges are persisted with
         # the conversation itself.
         from backend.memory import update_memory_from_conversation
+        from backend.memory_llm import await_memory_consolidation
 
         current_convo = self.chatbot.user_data.conversations[-1]
         update_memory_from_conversation(self.chatbot.user_data.memory, current_convo)
         self.chatbot.user_data.save()
-        # LLM-driven refinement (fact extraction + tone profile) runs in the
-        # background so it never blocks session teardown. Best-effort: if it
-        # fails, the existing memory is unchanged and the conversation will
-        # be retried next session.
-        try:
-            import asyncio
-
-            from backend.memory_llm import consolidate_memory_background
-
-            asyncio.create_task(
-                consolidate_memory_background(self.chatbot.user_data.email)
-            )
-        except Exception:
-            logger.warning(
-                "Could not schedule background memory consolidation; "
-                "the synchronous part was already saved.",
-                exc_info=True,
-            )
+        # LLM-driven refinement (fact extraction + tone profile) must run
+        # inside this request: Cloud Run freezes CPU after the WebSocket
+        # closes, so fire-and-forget tasks often never complete.
+        await await_memory_consolidation(self.chatbot.user_data.email)
 
     @property
     def stt(self) -> SpeechToText | None:

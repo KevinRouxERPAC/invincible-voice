@@ -204,6 +204,11 @@ export default function RootLayout({
                   document.documentElement.style.setProperty('--fz', String(settings.fontScale));
                 }
               } catch (e) {}
+
+              // Capacitor safe-area injection expects document.head; ensure it exists early.
+              if (typeof document !== 'undefined' && document.documentElement && !document.head) {
+                document.documentElement.prepend(document.createElement('head'));
+              }
             `,
           }}
         />

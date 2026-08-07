@@ -30,7 +30,9 @@ import ChatPanel from '@/components/mobile/ChatPanel';
 import HistoryPanel from '@/components/mobile/HistoryPanel';
 import QuickPhrasesSheet from '@/components/mobile/QuickPhrasesSheet';
 import ResponsePanel from '@/components/mobile/ResponsePanel';
-import MobileSettingsPopup from '@/components/settings/MobileSettingsPopup';
+import MobileSettingsPopup, {
+  type MobileSettingsPanel,
+} from '@/components/settings/MobileSettingsPopup';
 import SettingsPopup from '@/components/settings/SettingsPopup';
 import BrandLogos from '@/components/ui/BrandLogos';
 import ErrorMessages, { type ErrorItem } from '@/components/ui/ErrorMessages';
@@ -68,7 +70,7 @@ export interface ConversationLayoutProps {
   pendingKeywords: PendingKeyword[];
   textInput: string;
   onTextInputChange: (value: string) => void;
-  onSendMessage: () => void;
+  onSendMessage: (mode?: 'speaker' | 'writer') => void;
   directiveInput: string;
   onDirectiveInputChange: (value: string) => void;
   onDirectiveSubmit: () => void;
@@ -86,8 +88,9 @@ export interface ConversationLayoutProps {
   onShowHistoryFromIdle: () => void;
   onBack: () => void;
   isSettingsOpen: boolean;
+  settingsPanel: MobileSettingsPanel;
   settingsBlockedMessage: string | null;
-  onSettingsOpen: () => void;
+  onSettingsOpen: (panel?: MobileSettingsPanel) => void;
   onSettingsSave: (settings: UserSettings) => void;
   onSettingsCancel: () => void;
   errors: ErrorItem[];
@@ -133,6 +136,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   onShowHistoryFromIdle,
   onBack,
   isSettingsOpen,
+  settingsPanel,
   settingsBlockedMessage,
   onSettingsOpen,
   onSettingsSave,
@@ -154,6 +158,14 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   const [isDirectiveOpen, setIsDirectiveOpen] = useState(false);
   const [isQuickPhrasesOpen, setIsQuickPhrasesOpen] = useState(false);
   const [isWriteExpanded, setIsWriteExpanded] = useState(false);
+  const isComposingWriterResponseRef = useRef(false);
+  const openSettingsMain = useCallback(() => {
+    onSettingsOpen('main');
+  }, [onSettingsOpen]);
+
+  const openQuickPhrasesEditor = useCallback(() => {
+    onSettingsOpen('phrases');
+  }, [onSettingsOpen]);
   const [activePanel, setActivePanel] = useState<ActivePanel>(
     isShowingHistoryFromIdle && !isViewingPastConversation ? 'history' : 'chat',
   );
@@ -203,17 +215,9 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     },
     [onTextInputChange],
   );
-  const onTextInputKeyDown = useCallback(
-    (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        onSendMessage();
-      }
-    },
-    [onSendMessage],
-  );
   const handleEditResponse = useCallback(
     (text: string) => {
+      isComposingWriterResponseRef.current = true;
       onTextInputChange(text);
       if (isFocusedMobileSession) {
         setIsWriteExpanded(true);
@@ -236,6 +240,45 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
       }, 0);
     },
     [onTextInputChange, isFocusedMobileSession],
+  );
+
+  const handleFooterSend = useCallback(
+    (mode?: 'speaker' | 'writer') => {
+      triggerHapticFeedback();
+      if (isFocusedMobileSession) {
+        setIsWriteExpanded(false);
+      }
+      onSendMessage(mode);
+      isComposingWriterResponseRef.current = false;
+    },
+    [isFocusedMobileSession, onSendMessage],
+  );
+
+  const handleMobileWriteSend = useCallback(() => {
+    handleFooterSend(
+      isFocusedMobileSession && !isComposingWriterResponseRef.current
+        ? 'speaker'
+        : 'writer',
+    );
+  }, [handleFooterSend, isFocusedMobileSession]);
+
+  const onTextInputKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (isFocusedMobileSession && isWriteExpanded) {
+          handleMobileWriteSend();
+        } else {
+          handleFooterSend('writer');
+        }
+      }
+    },
+    [
+      handleFooterSend,
+      handleMobileWriteSend,
+      isFocusedMobileSession,
+      isWriteExpanded,
+    ],
   );
 
   const pastConversation =
@@ -272,24 +315,34 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
           />
           {t('conversation.startChatting')}
         </button>
-        <p className='mt-6 mb-2.5 self-start text-[11px] font-bold uppercase tracking-wide text-muted'>
+        <div className='mt-6 mb-2.5 self-start text-[11px] font-bold uppercase tracking-wide text-muted'>
           {t('conversation.quickPhrasesInstant')}
-        </p>
+        </div>
         <QuickPhrases
           phrases={quickPhrases}
           onSelect={onQuickPhraseSelect}
           grid
           maxItems={5}
-          onEdit={onSettingsOpen}
+          onEdit={openQuickPhrasesEditor}
         />
       </div>
       {isMobile && (
-        <button
-          className='shrink-0 py-3 text-sm font-bold text-blue hover:text-blue-600 transition-colors'
-          onClick={onShowHistoryFromIdle}
-        >
-          {t('conversation.viewHistory')}
-        </button>
+        <div className='shrink-0 flex flex-col items-center gap-1 w-full'>
+          <button
+            type='button'
+            className='py-3 text-sm font-bold text-blue hover:text-blue-600 transition-colors'
+            onClick={openQuickPhrasesEditor}
+          >
+            {t('conversation.editQuickPhrasesLong')}
+          </button>
+          <button
+            type='button'
+            className='py-3 text-sm font-bold text-blue hover:text-blue-600 transition-colors'
+            onClick={onShowHistoryFromIdle}
+          >
+            {t('conversation.viewHistory')}
+          </button>
+        </div>
       )}
       {!isNativeApp() && (
         <p className='shrink-0 pt-2 text-xs text-muted text-center'>
@@ -308,6 +361,148 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   // --- Idle: no session, no history browsing ---
   const showIdle =
     !shouldConnect && !isViewingPastConversation && !isShowingHistoryFromIdle;
+
+  const renderMainBody = () => {
+    if (isHistoryListOnly) {
+      return (
+        <HistoryPanel
+          conversations={userData?.conversations ?? []}
+          selectedConversationIndex={selectedConversationIndex}
+          onConversationSelect={onConversationSelect}
+          onNewConversation={onNewConversation}
+          onDeleteConversation={onDeleteConversation}
+          onArchiveConversation={onArchiveConversation}
+        />
+      );
+    }
+
+    if (showIdle) {
+      return renderIdleContent();
+    }
+
+    return (
+      <Fragment>
+        {isSplitView ? (
+          <div
+            className={cn(
+              'flex-1 min-h-0 flex flex-col',
+              !isFocusedMobileSession && 'landscape:flex-row',
+            )}
+          >
+            <div
+              className={cn(
+                'flex flex-col flex-1 min-h-0',
+                !isFocusedMobileSession && 'landscape:basis-1/2',
+              )}
+            >
+              <ChatPanel
+                chatHistory={chatHistory}
+                isConnected={shouldConnect}
+                currentSpeakerMessage={currentSpeakerMessage}
+              />
+            </div>
+            <div
+              className={cn(
+                'flex flex-col min-h-0 border-t border-hairline',
+                isFocusedMobileSession
+                  ? 'shrink-0 h-[42%] min-h-[236px]'
+                  : 'shrink-0 h-[42%] min-h-[190px] landscape:h-auto landscape:flex-1 landscape:basis-1/2 landscape:border-t-0 landscape:border-l',
+              )}
+            >
+              <ResponsePanel
+                frozenResponses={frozenResponses}
+                pendingResponses={pendingResponses}
+                onResponseEdit={onResponseEdit}
+                onResponseSelect={onResponseSelect}
+                onEditResponseInChat={handleEditResponse}
+                large
+              />
+            </div>
+          </div>
+        ) : (
+          <div className='flex-1 min-h-0 flex flex-col'>
+            <div className='flex border-b border-hairline shrink-0'>
+              <button
+                className={cn(
+                  'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
+                  activePanel === 'chat'
+                    ? 'text-blue-600 border-b-2 border-blue'
+                    : 'text-muted hover:text-ink',
+                )}
+                onClick={() => setActivePanel('chat')}
+              >
+                {t('conversation.chat')}
+              </button>
+              <button
+                className={cn(
+                  'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
+                  activePanel === 'history'
+                    ? 'text-blue-600 border-b-2 border-blue'
+                    : 'text-muted hover:text-ink',
+                )}
+                onClick={() => setActivePanel('history')}
+              >
+                {t('conversation.history')}
+              </button>
+            </div>
+            <div
+              className={cn(
+                activePanel === 'chat'
+                  ? 'flex flex-col flex-1 min-h-0'
+                  : 'hidden',
+              )}
+            >
+              <ChatPanel
+                chatHistory={chatHistory}
+                isConnected={shouldConnect}
+                currentSpeakerMessage={currentSpeakerMessage}
+                pastConversation={pastConversation}
+                isViewingPastConversation={isViewingPastConversation}
+              />
+            </div>
+            <div
+              className={cn(
+                activePanel === 'history'
+                  ? 'flex flex-col flex-1 min-h-0'
+                  : 'hidden',
+              )}
+            >
+              <HistoryPanel
+                conversations={userData?.conversations ?? []}
+                selectedConversationIndex={selectedConversationIndex}
+                onConversationSelect={onConversationSelect}
+                onNewConversation={onNewConversation}
+                onDeleteConversation={onDeleteConversation}
+                onArchiveConversation={onArchiveConversation}
+              />
+            </div>
+          </div>
+        )}
+
+        {shouldConnect && !isHistoryMode && (
+          <AccessoriesDrawer
+            open={isDrawerOpen || !isMobile}
+            onClose={() => setIsDrawerOpen(false)}
+            additionalKeywords={
+              userData?.user_settings?.additional_keywords ?? []
+            }
+            friends={userData?.user_settings?.friends ?? []}
+            quickPhrases={userData?.user_settings?.quick_phrases ?? []}
+            appointments={userData?.user_settings?.appointments ?? []}
+            voiceName={userData?.user_settings?.voice}
+            lang={userData?.user_settings?.expected_transcription_language}
+            pendingKeywords={pendingKeywords}
+            userDataError={userDataError}
+            settingsBlockedMessage={settingsBlockedMessage}
+            onWordBubbleClick={onWordBubbleClick}
+            onKeywordSelect={onKeywordSelect}
+            onIntentClick={onIntentClick}
+            onQuickPhraseSelect={onQuickPhraseSelect}
+          />
+        )}
+      </Fragment>
+    );
+  };
 
   const renderHeaderLeft = () => {
     if (shouldConnect) {
@@ -330,17 +525,24 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     if (isHistoryMode) {
       return (
         <button
+          type='button'
           aria-label={t('conversation.backAriaLabel')}
-          className='min-w-0 shrink mr-auto h-11 px-4 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
+          className='min-w-0 shrink mr-auto h-11 px-4 cursor-pointer bg-surface border border-hairline-2 text-ink-2 hover:bg-paper transition-colors rounded-2xl flex flex-row items-center justify-center gap-2 text-sm font-bold'
           onClick={onBack}
           title={t('common.back')}
         >
-          <ArrowLeft
-            width={20}
-            height={20}
-            className='shrink-0'
-          />
-          <span className='truncate'>{t('common.back')}</span>
+          {isMobile ? (
+            t('common.back')
+          ) : (
+            <Fragment>
+              <ArrowLeft
+                width={20}
+                height={20}
+                className='shrink-0'
+              />
+              <span className='truncate'>{t('common.back')}</span>
+            </Fragment>
+          )}
         </button>
       );
     }
@@ -370,10 +572,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
           />
           <button
             className='px-3 py-2 bg-blue-tint border-2 border-blue text-blue-600 rounded-md hover:bg-blue-tint-2 transition-colors disabled:opacity-50 text-sm font-bold min-w-[56px] min-h-[44px]'
-            onClick={() => {
-              triggerHapticFeedback();
-              onSendMessage();
-            }}
+            onClick={handleMobileWriteSend}
             disabled={!textInput.trim()}
           >
             {t('conversation.sendMessage')}
@@ -489,10 +688,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
         />
         <button
           className='px-3 py-2 bg-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 text-sm min-w-[56px] min-h-[44px]'
-          onClick={() => {
-            triggerHapticFeedback();
-            onSendMessage();
-          }}
+          onClick={() => handleFooterSend('writer')}
           disabled={!textInput.trim()}
         >
           {t('conversation.sendMessage')}
@@ -558,7 +754,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
           {(!shouldConnect || !isMobile) && (
             <button
               className='shrink-0 size-11 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-sm flex items-center justify-center text-ink-2'
-              onClick={onSettingsOpen}
+              onClick={openSettingsMain}
               title={t('settings.changeSettings')}
             >
               <Settings size={20} />
@@ -592,138 +788,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
           />
         )}
 
-        {showIdle ? (
-          renderIdleContent()
-        ) : (
-          <Fragment>
-            {/* Main: chat + responses (split) or tabs */}
-            {isSplitView ? (
-              <div
-                className={cn(
-                  'flex-1 min-h-0 flex flex-col',
-                  !isFocusedMobileSession && 'landscape:flex-row',
-                )}
-              >
-                {/* Message bubbles fill the top in every layout; during a
-                    focused mobile session the suggestions sit below them as
-                    full-width stacked rows. */}
-                <div
-                  className={cn(
-                    'flex flex-col flex-1 min-h-0',
-                    !isFocusedMobileSession && 'landscape:basis-1/2',
-                  )}
-                >
-                  <ChatPanel
-                    chatHistory={chatHistory}
-                    isConnected={shouldConnect}
-                    currentSpeakerMessage={currentSpeakerMessage}
-                  />
-                </div>
-                <div
-                  className={cn(
-                    'flex flex-col min-h-0 border-t border-hairline',
-                    isFocusedMobileSession
-                      ? 'shrink-0 h-[42%] min-h-[236px]'
-                      : 'shrink-0 h-[42%] min-h-[190px] landscape:h-auto landscape:flex-1 landscape:basis-1/2 landscape:border-t-0 landscape:border-l',
-                  )}
-                >
-                  <ResponsePanel
-                    frozenResponses={frozenResponses}
-                    pendingResponses={pendingResponses}
-                    onResponseEdit={onResponseEdit}
-                    onResponseSelect={onResponseSelect}
-                    onEditResponseInChat={handleEditResponse}
-                    large
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className='flex-1 min-h-0 flex flex-col'>
-                {/* History list from idle: no tabs (wireframe 2a) */}
-                {!isHistoryListOnly && (
-                  <div className='flex border-b border-hairline shrink-0'>
-                    <button
-                      className={cn(
-                        'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
-                        activePanel === 'chat'
-                          ? 'text-blue-600 border-b-2 border-blue'
-                          : 'text-muted hover:text-ink',
-                      )}
-                      onClick={() => setActivePanel('chat')}
-                    >
-                      {t('conversation.chat')}
-                    </button>
-                    <button
-                      className={cn(
-                        'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
-                        activePanel === 'history'
-                          ? 'text-blue-600 border-b-2 border-blue'
-                          : 'text-muted hover:text-ink',
-                      )}
-                      onClick={() => setActivePanel('history')}
-                    >
-                      {t('conversation.history')}
-                    </button>
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    activePanel === 'chat' && !isHistoryListOnly
-                      ? 'flex flex-col flex-1 min-h-0'
-                      : 'hidden',
-                  )}
-                >
-                  <ChatPanel
-                    chatHistory={chatHistory}
-                    isConnected={shouldConnect}
-                    currentSpeakerMessage={currentSpeakerMessage}
-                    pastConversation={pastConversation}
-                    isViewingPastConversation={isViewingPastConversation}
-                  />
-                </div>
-                <div
-                  className={cn(
-                    activePanel === 'history' || isHistoryListOnly
-                      ? 'flex flex-col flex-1 min-h-0'
-                      : 'hidden',
-                  )}
-                >
-                  <HistoryPanel
-                    conversations={userData?.conversations ?? []}
-                    selectedConversationIndex={selectedConversationIndex}
-                    onConversationSelect={onConversationSelect}
-                    onNewConversation={onNewConversation}
-                    onDeleteConversation={onDeleteConversation}
-                    onArchiveConversation={onArchiveConversation}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Accessories drawer: pinned on desktop, overlay on mobile */}
-            {shouldConnect && !isHistoryMode && (
-              <AccessoriesDrawer
-                open={isDrawerOpen || !isMobile}
-                onClose={() => setIsDrawerOpen(false)}
-                additionalKeywords={
-                  userData?.user_settings?.additional_keywords ?? []
-                }
-                friends={userData?.user_settings?.friends ?? []}
-                quickPhrases={userData?.user_settings?.quick_phrases ?? []}
-                appointments={userData?.user_settings?.appointments ?? []}
-                voiceName={userData?.user_settings?.voice}
-                lang={userData?.user_settings?.expected_transcription_language}
-                pendingKeywords={pendingKeywords}
-                userDataError={userDataError}
-                settingsBlockedMessage={settingsBlockedMessage}
-                onWordBubbleClick={onWordBubbleClick}
-                onKeywordSelect={onKeywordSelect}
-                onIntentClick={onIntentClick}
-                onQuickPhraseSelect={onQuickPhraseSelect}
-              />
-            )}
-          </Fragment>
-        )}
+        {renderMainBody()}
       </div>
 
       {/* === Footer: ribbon (mobile session) or full input === */}
@@ -740,7 +805,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
           phrases={quickPhrases}
           onSelect={onQuickPhraseSelect}
           onClose={() => setIsQuickPhrasesOpen(false)}
-          onEdit={onSettingsOpen}
+          onEdit={openQuickPhrasesEditor}
         />
       )}
 
@@ -767,18 +832,28 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
 
       {/* Settings modal */}
       {isSettingsOpen && userData && (
-        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 lg:px-14 lg:py-8 bg-ink/40 backdrop-blur-sm lg:backdrop-blur-2xl'>
+        <div className='fixed inset-0 z-50 flex items-center justify-center p-4 lg:px-14 lg:py-8'>
+          <button
+            type='button'
+            aria-label={t('common.cancel')}
+            className='absolute inset-0 bg-ink/40 backdrop-blur-sm lg:backdrop-blur-2xl'
+            onClick={onSettingsCancel}
+          />
           <div
             role='dialog'
             aria-modal='true'
             aria-label={t('settings.title')}
-            className='w-full h-full max-w-md max-h-full flex flex-col overflow-hidden border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl lg:max-w-7xl lg:rounded-xl lg:shadow-custom lg:px-12 lg:pt-6 lg:pb-8'
+            className='relative w-full h-full max-w-md max-h-full flex flex-col overflow-hidden border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl lg:max-w-7xl lg:rounded-xl lg:shadow-custom lg:px-12 lg:pt-6 lg:pb-8'
           >
             {isMobile ? (
               <MobileSettingsPopup
+                key={settingsPanel}
                 userSettings={userData.user_settings}
                 email={userData.email}
                 isAdmin={Boolean(userData.is_admin)}
+                initialPanel={settingsPanel}
+                onOpenPhrasesPanel={openQuickPhrasesEditor}
+                onPanelChange={onSettingsOpen}
                 onSave={onSettingsSave}
                 onCancel={onSettingsCancel}
               />

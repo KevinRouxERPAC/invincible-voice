@@ -55,9 +55,11 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
         ))}
         {onEdit && (
           <button
+            type='button'
             data-scan-item
             className='min-h-[52px] flex items-center justify-center px-2 py-1.5 text-sm font-bold text-muted bg-surface border-2 border-hairline-2 rounded-[14px]'
             onClick={onEdit}
+            aria-label={t('settings.quickPhrases')}
           >
             {t('conversation.editQuickPhrases')}
           </button>

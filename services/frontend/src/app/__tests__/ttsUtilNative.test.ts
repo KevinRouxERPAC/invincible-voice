@@ -93,9 +93,9 @@ describe('playTTSStream on the native app', () => {
     });
 
     expect(speakNative).not.toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith('/api/v1/tts/sample_rate');
+    expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/v1/tts/sample_rate'));
     expect(global.fetch).toHaveBeenCalledWith(
-      '/api/v1/tts/',
+      expect.stringContaining('/v1/tts/'),
       expect.objectContaining({ method: 'POST' }),
     );
   });

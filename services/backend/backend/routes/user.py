@@ -105,6 +105,50 @@ def update_user_settings(
     user.save()
 
 
+@user_router.post("/memory/refresh")
+async def refresh_user_memory(
+    user: Annotated[UserData, Depends(get_current_user)],
+) -> UserData:
+    """Rebuild style from history and force LLM memory consolidation.
+
+    Used when the user (or an aidant) wants to refresh the learned persona
+    after past sessions failed to consolidate, or after changing how they speak.
+    """
+    from backend.memory_llm import consolidate_memory_for_user
+    from backend.storage import UserDataNotFoundError
+
+    await consolidate_memory_for_user(
+        user.email,
+        force=True,
+        rebuild_style=True,
+    )
+    try:
+        refreshed = get_user_data_from_storage(user.email)
+    except UserDataNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
+        ) from exc
+    return apply_admin_bootstrap(refreshed)
+
+
+@user_router.delete("/memory/facts/{fact_index}")
+def delete_memory_fact(
+    fact_index: int,
+    user: Annotated[UserData, Depends(get_current_user)],
+) -> UserData:
+    """Remove one learned fact the user no longer wants injected into prompts."""
+    facts = user.memory.facts
+    if fact_index < 0 or fact_index >= len(facts):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Fact not found",
+        )
+    del facts[fact_index]
+    user.save()
+    return apply_admin_bootstrap(user)
+
+
 @user_router.delete("/conversations/{conversation_id}")
 def delete_conversation(
     conversation_id: int,

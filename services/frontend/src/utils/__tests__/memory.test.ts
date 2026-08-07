@@ -55,8 +55,13 @@ describe('extractStyleExchanges', () => {
     expect(exchanges[0].speaker_turn).toBe('Salut. Comment ça va ?');
   });
 
-  test('a writer reply with no preceding speaker yields no exchange', () => {
-    expect(extractStyleExchanges([writer('Bonjour à tous.')])).toEqual([]);
+  test('a writer reply with no preceding speaker yields an initiative exchange', () => {
+    const exchanges = extractStyleExchanges([
+      writer('Bonjour à tous mes amis.'),
+    ]);
+    expect(exchanges).toHaveLength(1);
+    expect(exchanges[0].speaker_turn).toBe('(initiative)');
+    expect(exchanges[0].user_reply).toBe('Bonjour à tous mes amis.');
   });
 });
 
@@ -84,11 +89,11 @@ describe('updateMemoryFromConversation', () => {
     expect(memory.style_exchanges).toEqual([]);
   });
 
-  test('marks a conversation processed even without signal', () => {
+  test('does not mark an empty conversation processed', () => {
     const memory = emptyUserMemory();
     const c = conv([], '2026-07-10T10:00:00.000Z');
-    updateMemoryFromConversation(memory, c);
-    expect(isProcessed(memory, c.start_time)).toBe(true);
+    expect(updateMemoryFromConversation(memory, c)).toBe(false);
+    expect(isProcessed(memory, c.start_time)).toBe(false);
   });
 });
 
@@ -173,9 +178,10 @@ describe('pruneConversations', () => {
 // --- hasMinimalSignal --------------------------------------------------------
 
 describe('hasMinimalSignal', () => {
-  test('rejects empty and one-sided conversations', () => {
+  test('requires at least one writer reply', () => {
     expect(hasMinimalSignal([])).toBe(false);
     expect(hasMinimalSignal([speaker('Hello')])).toBe(false);
+    expect(hasMinimalSignal([writer('Salut à tous')])).toBe(true);
     expect(
       hasMinimalSignal([speaker('Hello'), writer('Salut toi')]),
     ).toBe(true);

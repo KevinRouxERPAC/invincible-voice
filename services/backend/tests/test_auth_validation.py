@@ -139,3 +139,27 @@ def test_google_login_links_first_sign_in_for_google_only_user(
 
     saved = get_user_data_from_storage(email)
     assert saved.google_sub == "google-sub-456"
+
+
+@patch("backend.routes.auth.GOOGLE_CLIENT_ID", "test-google-client-id")
+@patch("backend.routes.auth.verify_google_token")
+def test_google_login_applies_google_display_name(
+    mock_verify_google_token, client: TestClient
+):
+    email = "named-google@example.com"
+    user = get_new_user(email, "fr", hashed_password="")
+    user.save()
+
+    mock_verify_google_token.return_value = {
+        "email": email,
+        "sub": "google-sub-named",
+        "name": "Kevin Dupont",
+    }
+    response = client.post(
+        "/auth/google",
+        json={"token": "fake-token", "language": "fr"},
+    )
+    assert response.status_code == 200
+
+    saved = get_user_data_from_storage(email)
+    assert saved.user_settings.name == "Kevin Dupont"

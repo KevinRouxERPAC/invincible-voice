@@ -69,7 +69,9 @@ async def report_websocket_exception(websocket: WebSocket, exc: Exception):
         else:
             logger.exception("Unexpected error: %r", exc)
             mt.HARD_ERRORS.inc()
-            error_message = "Internal server error :( Complain to Kyutai"
+            error_message = (
+                "Le serveur a rencontré une erreur. Réessayez dans un instant."
+            )
 
     if error_message is not None:
         mt.FORCE_DISCONNECTS.inc()

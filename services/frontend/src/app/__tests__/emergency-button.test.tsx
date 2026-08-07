@@ -41,6 +41,9 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'my-voice',
       lang: 'fr',
+      preferLocal: true,
+      pitch: 0.8,
+      rate: 1.1,
     });
   });
 
@@ -69,6 +72,9 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'old-voice',
       lang: 'en',
+      preferLocal: true,
+      pitch: 0.8,
+      rate: 1.1,
     });
 
     unmount();
@@ -86,6 +92,9 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'new-voice',
       lang: 'fr',
+      preferLocal: true,
+      pitch: 0.8,
+      rate: 1.1,
     });
   });
 });

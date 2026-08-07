@@ -13,8 +13,9 @@ import { useAuthContext } from '@/auth/authContext';
 import Edit from '@/components/icons/Edit';
 import Plus from '@/components/icons/Plus';
 import Trash from '@/components/icons/Trash';
-import OfflineModeToggle from '@/components/settings/OfflineModeToggle';
 import { useTranslations } from '@/i18n';
+import { normalizeUserMemory } from '@/utils/memory';
+import type { UserMemory } from '@/utils/memory';
 import { estimateTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { playTTSStream } from '@/utils/ttsUtil';
 import {
@@ -25,6 +26,8 @@ import {
   getVoices,
   createVoice,
   deleteVoice,
+  refreshUserMemory,
+  deleteMemoryFact,
 } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
@@ -58,8 +61,13 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
   onCancel,
 }) => {
   const t = useTranslations();
-  const { signOut } = useAuthContext();
+  const { signOut, userData, fetchUserData } = useAuthContext();
   const [formData, setFormData] = useState<UserSettings>(userSettings);
+  const [memory, setMemory] = useState<UserMemory>(() =>
+    normalizeUserMemory(userData?.memory),
+  );
+  const [isRefreshingMemory, setIsRefreshingMemory] = useState(false);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [newFriendInput, setNewFriendInput] = useState<string>('');
   const [newKeywordInput, setNewKeywordInput] = useState<string>('');
@@ -463,6 +471,40 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
     });
   }, [userSettings]);
 
+  useEffect(() => {
+    setMemory(normalizeUserMemory(userData?.memory));
+  }, [userData?.memory]);
+
+  const handleRefreshMemory = useCallback(async () => {
+    setMemoryError(null);
+    setIsRefreshingMemory(true);
+    try {
+      const result = await refreshUserMemory();
+      if (result.error || !result.data) {
+        setMemoryError(result.error || t('settings.refreshMemoryError'));
+        return;
+      }
+      setMemory(normalizeUserMemory(result.data.memory));
+      await fetchUserData();
+    } finally {
+      setIsRefreshingMemory(false);
+    }
+  }, [fetchUserData, t]);
+
+  const handleDeleteFact = useCallback(
+    async (index: number) => {
+      setMemoryError(null);
+      const result = await deleteMemoryFact(index);
+      if (result.error || !result.data) {
+        setMemoryError(result.error || t('settings.anErrorOccurred'));
+        return;
+      }
+      setMemory(normalizeUserMemory(result.data.memory));
+      await fetchUserData();
+    },
+    [fetchUserData, t],
+  );
+
   const TABS: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: t('settings.tabProfile') },
     { id: 'voice', label: t('common.voice') },
@@ -791,8 +833,6 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </p>
               </div>
 
-              <OfflineModeToggle />
-
               <div className='flex flex-col gap-2'>
                 <div className='flex items-center justify-between mb-1'>
                   <div className='text-sm font-medium text-ink'>
@@ -803,6 +843,9 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                     {formatTokenCount(promptTokenCount)}
                   </span>
                 </div>
+                <p className='px-1 text-xs text-muted'>
+                  {t('settings.personaHint')}
+                </p>
 
                 <textarea
                   value={formData.prompt}
@@ -810,6 +853,83 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                   className='w-full min-h-[180px] px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue scrollbar-hidden scrollable'
                   placeholder={t('settings.promptPlaceholder')}
                 />
+              </div>
+
+              <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] flex flex-col gap-3'>
+                <div className='flex items-start justify-between gap-3'>
+                  <div>
+                    <div className='text-sm font-medium text-ink'>
+                      {t('settings.learnedMemory')}
+                    </div>
+                    <p className='mt-1 text-xs text-muted'>
+                      {t('settings.learnedMemoryHint')}
+                    </p>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={handleRefreshMemory}
+                    disabled={isRefreshingMemory}
+                    className='shrink-0 px-3 py-2 text-sm font-medium text-ink bg-surface-2 border border-hairline-2 rounded-2xl hover:border-blue disabled:opacity-60'
+                  >
+                    {isRefreshingMemory
+                      ? t('settings.refreshMemoryBusy')
+                      : t('settings.refreshMemory')}
+                  </button>
+                </div>
+                {memoryError && (
+                  <p
+                    className='text-sm text-red'
+                    role='alert'
+                  >
+                    {memoryError}
+                  </p>
+                )}
+                <div>
+                  <div className='text-xs font-medium uppercase tracking-wide text-muted'>
+                    {t('settings.tonePortrait')}
+                  </div>
+                  <p className='mt-1 text-sm text-ink whitespace-pre-wrap'>
+                    {memory.tone_profile.summary ||
+                      t('settings.noTonePortrait')}
+                  </p>
+                </div>
+                <div>
+                  <div className='text-xs font-medium uppercase tracking-wide text-muted'>
+                    {t('settings.learnedFacts')}
+                  </div>
+                  {memory.facts.length === 0 ? (
+                    <p className='mt-1 text-sm italic text-muted'>
+                      {t('settings.noLearnedFacts')}
+                    </p>
+                  ) : (
+                    <ul className='mt-2 flex flex-col gap-1.5'>
+                      {memory.facts.map((fact, index) => (
+                        <li
+                          key={`${fact.text}-${index}`}
+                          className='flex items-start justify-between gap-2 rounded-2xl bg-surface-2 px-3 py-2'
+                        >
+                          <span className='text-sm text-ink'>{fact.text}</span>
+                          <button
+                            type='button'
+                            onClick={() => {
+                              handleDeleteFact(index);
+                            }}
+                            aria-label={t('settings.deleteFact')}
+                            className='shrink-0 p-1 text-muted hover:text-red'
+                          >
+                            <Trash className='size-4' />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <p className='text-xs text-muted'>
+                  {t('settings.styleExchangesCount').replace(
+                    '{count}',
+                    String(memory.style_exchanges.length),
+                  )}
+                </p>
               </div>
 
               <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px]'>

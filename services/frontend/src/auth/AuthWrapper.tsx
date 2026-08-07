@@ -12,7 +12,6 @@ import React, {
 import TermsOfServiceModal from '@/components/TermsOfServiceModal';
 import BrandLogos from '@/components/ui/BrandLogos';
 import { useTranslations } from '@/i18n';
-import { isLocalOnlyMode } from '@/utils/localMode';
 import Google from './Google';
 import { AUTH_STATUSES, useAuthContext } from './authContext';
 
@@ -46,13 +45,6 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
         <h1 className='mb-4 text-xl'>Loading…</h1>
       </div>
     );
-  }
-
-  // Only the backend-less build skips authentication entirely. The regular
-  // native app talks to the deployed backend (Cerebras/Gradium), which
-  // requires a per-user account — same login flow as the web PWA.
-  if (isLocalOnlyMode()) {
-    return children;
   }
 
   if (authStatus === AUTH_STATUSES.NOT_CHECKED) {

@@ -54,21 +54,15 @@ class TextOnlyHandler:
 
     async def cleanup(self):
         # Mirror UnmuteHandler.cleanup: fold the conversation into the
-        # durable memory before persisting.
+        # durable memory before persisting, then await LLM refinement inside
+        # the request (Cloud Run will not run post-request tasks reliably).
         from backend.memory import update_memory_from_conversation
+        from backend.memory_llm import await_memory_consolidation
 
         current_convo = self.user_data.conversations[-1]
         update_memory_from_conversation(self.user_data.memory, current_convo)
         self.user_data.save()
-        # Schedule LLM-driven refinement in the background (facts + tone).
-        try:
-            import asyncio
-
-            from backend.memory_llm import consolidate_memory_background
-
-            asyncio.create_task(consolidate_memory_background(self.user_data.email))
-        except Exception:
-            pass
+        await await_memory_consolidation(self.user_data.email)
 
     def _get_or_create_openai_client(self):
         return get_openai_client()

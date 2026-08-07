@@ -10,6 +10,7 @@ from backend.libs.google import verify_google_token
 from backend.libs.rate_limit import rate_limit
 from backend.provisioning import (
     get_new_user,  # noqa: F401 — re-exported for tests/tools
+    is_default_user_name,
 )
 from backend.security import create_access_token, verify_password
 from backend.storage import (
@@ -26,6 +27,14 @@ auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 # and Google sign-in to blunt brute-force and abuse.
 _AUTH_RATE_PER_MINUTE = int(os.environ.get("AUTH_RATE_LIMIT_PER_MINUTE", "10"))
 _auth_rate_limit = rate_limit("auth", _AUTH_RATE_PER_MINUTE, 60.0)
+
+
+def _apply_google_display_name(user, google_user: dict) -> None:
+    """Fill the placeholder name from Google profile on first / repeat sign-in."""
+    google_name = (google_user.get("name") or "").strip()
+    if google_name and is_default_user_name(user.user_settings.name):
+        user.user_settings.name = google_name
+        user.save()
 
 
 @auth_router.post("/login")
@@ -109,6 +118,8 @@ def google_login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Google account mismatch",
         )
+
+    _apply_google_display_name(user, google_user)
 
     jwt_token = create_access_token({"sub": user.email})
 
