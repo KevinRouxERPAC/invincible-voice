@@ -23,7 +23,7 @@ const TermsOfServiceModal: FC<TermsOfServiceModalProps> = ({
         <div className='px-4 py-4 text-center text-base leading-relaxed'>
           {t('common.termsOfServiceMessage')}{' '}
           <a
-            href='https://kyutai.org/privacy-policy'
+            href='/privacy'
             target='_blank'
             rel='noopener noreferrer'
             className='underline text-blue hover:text-blue-600'

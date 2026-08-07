@@ -10,6 +10,10 @@ interface QuickPhrasesProps {
   onSelect: (text: string) => void;
   /** Compact horizontal strip (mobile) instead of the full panel */
   compact?: boolean;
+  /** 2-column grid for the home screen (wireframe 2a) */
+  grid?: boolean;
+  onEdit?: () => void;
+  maxItems?: number;
 }
 
 /**
@@ -20,9 +24,47 @@ const QuickPhrases: FC<QuickPhrasesProps> = ({
   phrases,
   onSelect,
   compact = false,
+  grid = false,
+  onEdit = undefined,
+  maxItems = 5,
 }) => {
   const t = useTranslations();
   const groups = useMemo(() => groupPhrasesByCategory(phrases), [phrases]);
+
+  if (phrases.length === 0 && !onEdit) {
+    return null;
+  }
+
+  if (grid) {
+    const shown = phrases.slice(0, maxItems);
+    return (
+      <div
+        className='grid grid-cols-2 gap-2 content-start'
+        aria-label={t('conversation.quickPhrases')}
+      >
+        {shown.map((phrase) => (
+          <button
+            key={`${phrase.category}|${phrase.text}`}
+            data-scan-item
+            className='min-h-[52px] flex items-center justify-center px-2 py-1.5 text-sm font-bold text-ink-2 bg-surface border-2 border-hairline-2 rounded-[14px] text-center wrap-break-word'
+            onClick={() => onSelect(phrase.text)}
+            title={phrase.text}
+          >
+            {phrase.text}
+          </button>
+        ))}
+        {onEdit && (
+          <button
+            data-scan-item
+            className='min-h-[52px] flex items-center justify-center px-2 py-1.5 text-sm font-bold text-muted bg-surface border-2 border-hairline-2 rounded-[14px]'
+            onClick={onEdit}
+          >
+            {t('conversation.editQuickPhrases')}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (phrases.length === 0) {
     return null;

@@ -10,10 +10,15 @@ if JWT_SECRET_KEY is None:
     raise Exception("Missing JWT_SECRET_KEY env for JWT encoding")
 
 ALGORITHM = "HS256"
-# 30 min: shorter window limits token-reuse risk on health data. The WebSocket
-# session only checks the token at handshake time, so the live conversation is
-# not interrupted when the token expires.
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+# Access-token lifetime. This is a daily-use AAC tool on the user's personal
+# device: a 30-minute token forced a fresh login on almost every launch, which
+# is unacceptable for someone who relies on the app to speak. The default now
+# matches the client cookie lifetime (90 days) so a single sign-in lasts, and
+# any 401 still clears the token and returns the user to login. Tunable via the
+# ACCESS_TOKEN_EXPIRE_MINUTES env var for deployments that want a shorter window.
+ACCESS_TOKEN_EXPIRE_MINUTES = int(
+    os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", str(60 * 24 * 90))
+)
 
 password_hash = PasswordHash.recommended()
 

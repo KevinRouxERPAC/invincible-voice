@@ -74,9 +74,9 @@ USERS_AUDIO_DIR.mkdir(parents=True, exist_ok=True)
 
 USERS_SETTINGS_AND_HISTORY_DIR = USERS_DATA_DIR / "user_settings_and_history"
 USERS_SETTINGS_AND_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-TTS_VOICE_ID = os.environ.get(
-    "TTS_VOICE_ID", "vMYQUSzm6GRkJX6d"
-)  # Olivier (fr, masculin)
+# Default Gradium voice_id, used when the user has not picked one in their
+# settings. Overridable via the TTS_VOICE_ID env var on Cloud Run.
+TTS_VOICE_ID = os.environ.get("TTS_VOICE_ID", "d5HyIvCEW_x4BkDk")
 
 
 ALLOW_PASSWORD = is_value_true(
@@ -95,7 +95,12 @@ METRICS_TOKEN = os.environ.get("METRICS_TOKEN", "")
 # served from a different origin than the backend (e.g. PWA on Firebase Hosting
 # calling the Cloud Run backend). Comma-separated, e.g.
 # "https://my-app.web.app,https://my-app.firebaseapp.com".
-_DEFAULT_CORS_ORIGINS = ["http://localhost", "http://localhost:3000"]
+_DEFAULT_CORS_ORIGINS = [
+    "http://localhost",
+    "http://localhost:3000",
+    # Capacitor Android/iOS WebView origin when the native app calls Cloud Run.
+    "https://localhost",
+]
 _extra_cors = os.environ.get("CORS_ALLOW_ORIGINS", "")
 CORS_ALLOW_ORIGINS = _DEFAULT_CORS_ORIGINS + [
     origin.strip() for origin in _extra_cors.split(",") if origin.strip()

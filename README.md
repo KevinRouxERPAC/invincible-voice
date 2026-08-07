@@ -16,127 +16,27 @@ It is very similar to the [Unmute project](https://github.com/kyutai-labs/unmute
 
 ## 🚀 Getting Started
 
-If you just want to try it out, you can head to the [deployed app](https://invinciblevoice-81c67.web.app). If you want to run it locally, continue reading!
+**There is no local backend on your PC.** The API runs only on **Google Cloud Run**.
 
-We provide two ways of doing this (see below); we recommend starting with the Gradium STT/TTS + Cerebras LLM option, as it is easier to set up, and moving to the fully self-hosted option (Kyutai STT/TTS + vLLM) once you are more confortable with the project.
+- Try the [deployed app](https://invinciblevoice-81c67.web.app)
+- Full deploy guide: [`DEPLOYMENT.md`](DEPLOYMENT.md)
 
-### Démarrage rapide (Windows / PowerShell)
+### Develop the frontend against Cloud Run
 
-1. **Configurer les variables d'environnement** — copiez le modèle et renseignez vos clés :
-   ```powershell
-   Copy-Item .env.example .env
-   # puis éditez .env (clés Cerebras + Gradium, JWT_SECRET_KEY, etc.)
-   ```
+1. Deploy (or reuse) the backend on Cloud Run — see `DEPLOYMENT.md`.
+2. Configure the frontend:
 
-2. **Générer les certificats HTTPS locaux** (requis par Traefik) :
-   ```powershell
-   ./scripts/generate-local-certs.ps1
-   ```
-   Ce script crée `volumes/certs/cert.pem` et `volumes/certs/key.pem` (auto-signés, valides 1 an). Votre navigateur affichera un avertissement — acceptez l'exception pour `localhost`.
-
-3. **Démarrer les services** :
-   ```powershell
-   docker compose up
-   ```
-   - Frontend : https://localhost
-   - Backend API : https://localhost/api
-   - Grafana : http://localhost/grafana (identifiants dans `.env`)
-
-Voir `DEPLOYMENT.md` pour le déploiement gratuit en production (Firebase Hosting + Cloud Run).
-
-### Using Gradium for STT/TTS and an LLM service compatible with the OpenAI API
-
-This is the easiest way to get started since it doesn't require a GPU nor much setup.
-
-#### The LLM service
-
-For the LLM, we recommend grabbing a key from [Cerebras](https://www.cerebras.ai/) as their service has a very low latency and high throughput API, which is great for fast suggestions in the InvincibleVoice UI. The free tier is enough to get you started.
-We recommend:
-```
-export KYUTAI_LLM_URL=https://api.cerebras.ai/v1
-export KYUTAI_LLM_MODEL=qwen-3-235b-a22b-instruct-2507
-export KYUTAI_LLM_API_KEY=<your_cerebras_api_key>
+```powershell
+cd services/frontend
+Copy-Item .env.production.example .env.local
+# Set NEXT_PUBLIC_BACKEND_URL=https://YOUR-SERVICE-xxxxx.run.app  (no /api suffix)
+pnpm install
+pnpm dev
 ```
 
-Of course anything else works as long as it is OpenAI compatible. Latency and throughput are important here to have a fluid experience, keep that in mind when choosing your provider and model.
+3. Create users via **Paramètres → Administration** in the app (or `scripts/create_user.py` with `KYUTAI_USERS_DATA_PATH=gs://…`).
 
-#### The audio services
-
-You can use [Gradium](https://gradium.ai/) for STT and TTS by grabbing an API key from them, the free tier should be enough to get you started. Then you need to set the following environment variables:
-```
-export GRADIUM_API_KEY=<your_gradium_api_key>
-export TTS_VOICE_ID=vMYQUSzm6GRkJX6d   # Olivier (fr, masculin) — défaut du code
-export TTS_SERVER=https://eu.api.gradium.ai/api/
-export TTS_IS_GRADIUM=true
-export KYUTAI_STT_URL=wss://eu.api.gradium.ai/api/speech/asr
-export STT_IS_GRADIUM=true
-```
-
-and then
-```
-docker compose up
-```
-
-### Using STT/TTS from Kyutai along with a self-hosted LLM
-
-If you have enough compute power, you can run the entire stack locally. This has the advantage of complete privacy and complete ownership of stack and data, but is more involved. This is nice for commercial use.
-
-#### The LLM service
-
-We recommend using [vLLM](https://docs.vllm.ai/en/stable/) or an equivalent LLM engine.
-The environment variables you need to set are:
-```
-export KYUTAI_LLM_URL=http://localhost:8000
-export KYUTAI_LLM_MODEL=qwen-3-235b-a22b-instruct-2507  # or similar
-```
-
-Optionnel pour les serveurs OpenAI-compatible locaux : vous pouvez laisser
-`KYUTAI_LLM_API_KEY` vide si votre serveur ne requiert pas d’auth.
-Le backend utilise `/v1/health` comme “connectivity check” et tente
-`GET /models` et `GET /v1/models` (si votre `KYUTAI_LLM_URL` se termine par
-`/v1`). Les statuts `401/403/404` sont considérés comme “LLM joignable” pour
-éviter un basculement en mode offline côté UI.
-
-#### The audio services
-
-You'll need to set up both STT and TTS servers from Kyutai. For the moment we only support the server of [Delayed Stream Modelling](https://github.com/kyutai-labs/delayed-streams-modeling).
-Then you need to set the following environment variables:
-```
-export STT_IS_GRADIUM=false
-export TTS_IS_GRADIUM=false
-export TTS_SERVER=<your_tts_server_url>
-export KYUTAI_STT_URL=<your_stt_server_url>
-export KYUTAI_API_KEY=<your_kyutai_api_key>
-```
-
-You can then start the project with docker:
-```
-docker compose up
-```
-
-### Local HTTPS certificates (required by `docker-compose.yml`)
-
-This repository’s `docker-compose.yml` uses Traefik HTTPS with `websecure` and mounts:
-`./volumes/certs:/certs:ro`, so Traefik expects:
-
-- `cert.pem`
-- `key.pem`
-
-Generate self-signed development certs directly in `volumes/certs`:
-```bash
-mkdir -p volumes/certs
-openssl req -x509 -newkey rsa:2048 -sha256 -nodes -days 365 \
-  -keyout volumes/certs/key.pem \
-  -out volumes/certs/cert.pem \
-  -subj '/C=US/ST=NA/L=NA/O=Local Dev/CN=localhost' \
-  -addext 'subjectAltName=DNS:localhost,IP:127.0.0.1'
-```
-
-Then run:
-```bash
-docker compose up
-```
-If you prefer to avoid HTTPS locally, remove/disable the `websecure` routers and TLS settings in `docker-compose.yml` instead of mounting certs.
+Root `.env` holds secrets used when deploying Cloud Run (Cerebras, Gradium, JWT, `GOOGLE_CLIENT_ID`, etc.). It is **not** used to start a local API.
 
 ### Android app: free on-device STT/TTS
 
@@ -153,10 +53,7 @@ packs are installed:
   The backend `/v1/tts/` route is never called from the app (cloned voices are
   a web-only feature).
 
-Only the LLM suggestions still go through the backend, so a daily-use setup
-with e.g. the Cerebras free tier runs at no API cost. The web frontend keeps
-using the configured STT/TTS services as before.
-
+Only the LLM suggestions still go through Cloud Run. See `services/frontend/android/README.md`.
 
 ### Getting involved with the project
 

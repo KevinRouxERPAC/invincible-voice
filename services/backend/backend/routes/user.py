@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from typing_extensions import Annotated
 
 from backend import metrics as mt
+from backend.admin_access import apply_admin_bootstrap
 from backend.app_types import UserSettings
 from backend.kyutai_constants import (
     ALLOW_ANONYMOUS_USER,
@@ -86,7 +87,7 @@ def get_current_user(
 def get_me(
     user: Annotated[UserData, Depends(get_current_user)],
 ) -> UserData:
-    return user
+    return apply_admin_bootstrap(user)
 
 
 @user_router.post("/accept_terms_of_services")

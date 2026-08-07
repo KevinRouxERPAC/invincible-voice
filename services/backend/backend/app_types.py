@@ -68,7 +68,7 @@ class UserSettings(pydantic.BaseModel):
     learn_style: bool = True
 
 
-# Languages supported by the default user settings, see get_new_user()
+# Languages supported by the default user settings, see backend.provisioning.get_new_user()
 Language = Literal["en", "fr", "de", "es", "pt"]
 
 

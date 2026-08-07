@@ -58,5 +58,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build the docker images
-        run: docker compose build
+      - name: Build backend (Cloud Run target)
+        run: docker build --target cloudrun -t invincible-voice-backend:latest services/backend
+
+      - name: Build frontend (production image)
+        run: docker build -t invincible-voice-frontend:latest services/frontend

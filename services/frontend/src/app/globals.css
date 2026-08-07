@@ -84,6 +84,9 @@
    `1rem` vaut toujours 16px (font-size racine fixe), la mise en page ne bouge pas. */
 body {
   font-size: calc(1rem * var(--fz));
+  /* Fixed app shell: never rubber-band the page itself — only the inner
+     panels scroll (history, chat, settings). */
+  overscroll-behavior: none;
 }
 
 /* High-contrast mode (supports both body and html selectors) */

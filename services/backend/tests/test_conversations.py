@@ -132,6 +132,32 @@ def test_archived_conversation_still_feeds_the_prompt():
     assert "ZMARK1Z" in prompt
 
 
+# --- Output-language lock -----------------------------------------------------
+
+
+def test_prompt_has_no_language_lock_by_default():
+    # Default settings leave the language on "auto": no hard lock, so the
+    # bilingual "mirror the speaker" behaviour is still available.
+    user = _make_user("lang-auto@example.com", 1)
+    messages = user.to_llm_ready_conversation(None, "M")
+    prompt = messages[0].content
+    assert "Langue imposée par l'utilisateur" not in prompt
+
+
+def test_prompt_locks_output_language_when_set():
+    # A chosen language must derail-proof the suggestions: a mis-detected STT
+    # word can no longer flip the whole conversation into another language the
+    # voiceless user cannot correct by speaking.
+    user = _make_user("lang-fr@example.com", 1)
+    user.user_settings.expected_transcription_language = "fr"
+    user.save()
+
+    messages = user.to_llm_ready_conversation(None, "M")
+    prompt = messages[0].content
+    assert "Langue imposée par l'utilisateur" in prompt
+    assert "français" in prompt
+
+
 # --- FN1: bounded LLM context -------------------------------------------------
 
 

@@ -124,6 +124,19 @@ Java_com_invinciblevoice_app_LlamaBridge_nativeGenerate(
     return env->NewStringUTF("");
   }
 
+  // A prompt bigger than the context window makes llama_decode abort the whole
+  // process (ggml_abort -> SIGABRT), killing the app. Keep the tail: the latest
+  // turns and the generation directive live at the end of the prompt, and the
+  // GBNF grammar still guarantees the output shape even with the preamble cut.
+  const int budget = h->n_ctx - jmaxTokens - 8;
+  if (budget > 1 && (int)tokens.size() > budget) {
+    LOGE("prompt too long (%d tok, budget %d): keeping the last %d tokens",
+         (int)tokens.size(), budget, budget - 1);
+    std::vector<llama_token> tail(tokens.end() - (budget - 1), tokens.end());
+    tail.insert(tail.begin(), tokens.front());  // keep BOS
+    tokens = std::move(tail);
+  }
+
   // Fresh KV cache for this generation.
   llama_memory_clear(llama_get_memory(h->ctx), true);
 

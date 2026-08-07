@@ -25,17 +25,29 @@ function bearerCookieOptions() {
 }
 
 export function getBearerToken(): string | undefined {
-  return new Cookies().get(BEARER_COOKIE);
+  const cookieToken = new Cookies().get(BEARER_COOKIE);
+  if (cookieToken) return cookieToken;
+
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(BEARER_COOKIE) || undefined;
+  }
+  return undefined;
 }
 
 export function setBearerToken(token: string): void {
   new Cookies().set(BEARER_COOKIE, token, bearerCookieOptions());
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(BEARER_COOKIE, token);
+  }
 }
 
 export function clearBearerToken(): void {
   // The path must match the one used when setting the cookie, otherwise the
   // removal is a no-op and the user stays "logged in".
   new Cookies().remove(BEARER_COOKIE, { path: '/' });
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(BEARER_COOKIE);
+  }
 }
 
 export function getAuthHeaders(): HeadersInit {

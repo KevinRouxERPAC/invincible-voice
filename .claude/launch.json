@@ -4,11 +4,11 @@
     {
       "name": "frontend",
       "runtimeExecutable": "corepack",
-      "runtimeArgs": ["pnpm", "dev", "--port", "3100"],
+      "runtimeArgs": ["pnpm", "dev", "--port", "3200"],
       "cwd": "services/frontend",
-      "port": 3100,
+      "port": 3200,
       "env": {
-        "NEXT_PUBLIC_BACKEND_URL": "http://localhost:8800"
+        "NEXT_PUBLIC_BACKEND_URL": "https://invincible-backend-s2y5qx44wa-ew.a.run.app"
       }
     }
   ]

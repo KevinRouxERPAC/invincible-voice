@@ -99,4 +99,17 @@ describe('ConversationLayout settings modal', () => {
       screen.getByText(/More settings are available/i),
     ).toBeInTheDocument();
   });
+
+  it('exposes the transcription-language selector on mobile', () => {
+    // The language lock is the ALS user's only way back to French after a
+    // mis-detected word (see bug 2). It was previously desktop-only, leaving
+    // phone users with no recovery path.
+    render(<ConversationLayout {...makeProps({ isMobile: true })} />);
+
+    const select = screen.getByLabelText(/Expected transcription language/i);
+    expect(select).toBeInTheDocument();
+    expect(
+      screen.getByRole('option', { name: 'Français' }),
+    ).toBeInTheDocument();
+  });
 });

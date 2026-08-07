@@ -231,8 +231,11 @@ class UnmuteHandler(AsyncStreamHandler):
         await self._generate_response()
 
     async def select_response(self, message_content: str, id_: uuid.UUID):
+        # Record what the user chose to say, but do NOT generate a new set of
+        # suggestions: the user's own reply is not a cue to answer — that would
+        # be answering ourselves and burns LLM credits for nothing. Fresh
+        # suggestions come from the next speaker turn (add_speaker_text).
         self.chatbot.select_response(message_content, id_)
-        await self._generate_response()
 
     async def _generate_response(self) -> bool:
         current_chatbot_proxy_hash = self.chatbot.proxy_hash()

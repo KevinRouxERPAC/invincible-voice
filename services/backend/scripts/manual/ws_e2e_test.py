@@ -3,6 +3,9 @@
 Reproduit exactement ce que fait l'app native : ouverture du WebSocket avec
 le sous-protocole Bearer, envoi d'un événement speaker.text.append, lecture
 des one.response / one.keyword générés par Cerebras.
+
+Usage:
+  uv run python scripts/manual/ws_e2e_test.py <jwt_token>
 """
 
 import asyncio
@@ -14,15 +17,15 @@ import urllib.parse
 import websockets
 
 BACKEND = "wss://invincible-backend-s2y5qx44wa-ew.a.run.app"
-TOKEN = sys.argv[1]
 
 
 async def main() -> None:
+    token = sys.argv[1]
     local_time = urllib.parse.quote(dt.datetime.now(dt.timezone.utc).isoformat())
     url = f"{BACKEND}/v1/user/new-conversation?local_time={local_time}&client_stt=true"
     async with websockets.connect(
         url,
-        subprotocols=["realtime", f"Bearer.{TOKEN}"],
+        subprotocols=["realtime", f"Bearer.{token}"],
         additional_headers={"Origin": "https://localhost"},
         open_timeout=120,
     ) as ws:
@@ -55,4 +58,8 @@ async def main() -> None:
         print("DONE, responses:", responses)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: ws_e2e_test.py <jwt_token>", file=sys.stderr)
+        raise SystemExit(2)
+    asyncio.run(main())

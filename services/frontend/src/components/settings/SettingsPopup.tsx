@@ -28,6 +28,7 @@ import {
 } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
+import AdminPanel from './AdminPanel';
 import AppointmentsEditor from './AppointmentsEditor';
 import DocumentEditorPopup from './DocumentEditorPopup';
 import EmailField from './EmailField';
@@ -36,6 +37,7 @@ import SpeechRateSlider from './SpeechRateSlider';
 interface SettingsPopupProps {
   userSettings: UserSettings;
   email: string;
+  isAdmin?: boolean;
   onSave: (settings: UserSettings) => void;
   onCancel: () => void;
 }
@@ -45,11 +47,13 @@ type SettingsTab =
   | 'voice'
   | 'accessibility'
   | 'assistant'
-  | 'content';
+  | 'content'
+  | 'admin';
 
 const SettingsPopup: FC<SettingsPopupProps> = ({
   userSettings,
   email,
+  isAdmin = false,
   onSave,
   onCancel,
 }) => {
@@ -465,6 +469,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
     { id: 'accessibility', label: t('settings.tabAccessibility') },
     { id: 'assistant', label: t('settings.tabAssistant') },
     { id: 'content', label: t('settings.tabContent') },
+    ...(isAdmin ? [{ id: 'admin' as const, label: t('admin.tabTitle') }] : []),
   ];
 
   const tabButtonClass = (tab: SettingsTab) =>
@@ -602,18 +607,15 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
 
                     {availableVoices &&
                       Object.entries(availableVoices)
-                        .sort(([, langA], [, langB]) =>
-                          langA.localeCompare(langB),
+                        .sort(([, nameA], [, nameB]) =>
+                          nameA.localeCompare(nameB),
                         )
-                        .map(([voiceName, language]) => (
+                        .map(([voiceId, voiceName]) => (
                           <option
-                            key={voiceName}
-                            value={voiceName}
+                            key={voiceId}
+                            value={voiceId}
                           >
-                            {voiceName.includes('/')
-                              ? voiceName.substring(voiceName.indexOf('/') + 1)
-                              : voiceName}
-                            ({language})
+                            {voiceName || voiceId}
                           </option>
                         ))}
                   </select>
@@ -816,14 +818,14 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </div>
                 <div className='flex flex-col w-full gap-0.5'>
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
-                    {formData.additional_keywords.map((keyword) => (
+                    {(formData.additional_keywords || []).map((keyword) => (
                       <AdditionalKeyword
                         key={keyword}
                         keyword={keyword}
                         removeKeyword={handleRemoveKeyword}
                       />
                     ))}
-                    {formData.additional_keywords.length === 0 && (
+                    {(formData.additional_keywords || []).length === 0 && (
                       <p className='text-sm italic text-muted'>
                         {t('settings.noKeywordsAdded')}
                       </p>
@@ -865,14 +867,14 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
                 </div>
                 <div className='flex flex-col w-full gap-0.5'>
                   <div className='flex flex-wrap gap-1.5 min-h-6 max-h-28 overflow-y-auto overflow-x-hidden py-2'>
-                    {formData.friends.map((friend) => (
+                    {(formData.friends || []).map((friend) => (
                       <Friend
                         key={friend}
                         friend={friend}
                         removeFriend={handleRemoveFriend}
                       />
                     ))}
-                    {formData.friends.length === 0 && (
+                    {(formData.friends || []).length === 0 && (
                       <p className='text-sm italic text-muted'>
                         {t('settings.noFriendsAdded')}
                       </p>
@@ -1036,13 +1038,24 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
               </div>
             </div>
           )}
+
+          {activeTab === 'admin' && isAdmin && (
+            <div
+              id='settings-panel-admin'
+              role='tabpanel'
+              aria-labelledby='settings-tab-admin'
+              className='flex flex-col gap-6'
+            >
+              <AdminPanel currentUserEmail={email} />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Pied de page toujours visible : mentions + actions principales. */}
       <div className='shrink-0 flex flex-row items-center justify-between gap-3 pt-3 border-t border-hairline'>
         <a
-          href='https://kyutai.org/privacy-policy'
+          href='/privacy'
           target='_blank'
           rel='noopener noreferrer'
           className='text-sm underline text-blue hover:text-blue-600 transition-colors'

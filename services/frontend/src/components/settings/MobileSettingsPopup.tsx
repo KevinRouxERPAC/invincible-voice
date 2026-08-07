@@ -6,6 +6,7 @@ import { useTranslations } from '@/i18n';
 import { updateUserSettings } from '@/utils/userData';
 import type { UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
+import AdminPanel from './AdminPanel';
 import EmailField from './EmailField';
 import NameField from './NameField';
 import SettingsHeader from './SettingsHeader';
@@ -14,6 +15,7 @@ import SpeechRateSlider from './SpeechRateSlider';
 interface MobileSettingsPopupProps {
   userSettings: UserSettings;
   email: string;
+  isAdmin?: boolean;
   onSave: (settings: UserSettings) => void;
   onCancel: () => void;
 }
@@ -21,6 +23,7 @@ interface MobileSettingsPopupProps {
 const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
   userSettings,
   email,
+  isAdmin = false,
   onSave,
   onCancel,
 }) => {
@@ -30,39 +33,85 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
   const [learnStyle, setLearnStyle] = useState(
     userSettings.learn_style ?? true,
   );
+  // Empty string = "let the STT guess" (auto). Persisted as null, like desktop.
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+
+  const [language, setLanguage] = useState(
+    userSettings.expected_transcription_language || '',
+  );
 
   const handleSave = useCallback(async () => {
     const updatedSettings: UserSettings = {
       ...userSettings,
       name,
       learn_style: learnStyle,
+      expected_transcription_language: language || null,
     };
     const result = await updateUserSettings(updatedSettings);
 
     if (!result.error) {
       onSave(updatedSettings);
     }
-  }, [name, learnStyle, userSettings, onSave]);
+  }, [name, learnStyle, language, userSettings, onSave]);
 
   const handleSignOut = useCallback(() => {
     signOut();
     onCancel();
   }, [signOut, onCancel]);
 
-  return (
-    <div className='flex flex-col w-full h-full text-ink p-4'>
-      <SettingsHeader
-        title={t('settings.changeSettings')}
-        onCancel={onCancel}
-      />
+  if (showAdminPanel && isAdmin) {
+    return (
+      <div className='flex flex-col w-full h-full min-h-0 text-ink'>
+        <div className='shrink-0 px-4 pt-4'>
+          <SettingsHeader
+            title={t('admin.tabTitle')}
+            onCancel={() => setShowAdminPanel(false)}
+          />
+        </div>
+        <div className='flex-1 min-h-0 overflow-y-auto px-4 pb-4'>
+          <AdminPanel currentUserEmail={email} />
+        </div>
+      </div>
+    );
+  }
 
-      <div className='flex flex-col gap-4 flex-1'>
+  return (
+    <div className='flex flex-col w-full h-full min-h-0 text-ink'>
+      <div className='shrink-0 px-4 pt-4'>
+        <SettingsHeader
+          title={t('settings.changeSettings')}
+          onCancel={onCancel}
+        />
+      </div>
+
+      <div className='flex flex-col gap-4 flex-1 min-h-0 overflow-y-auto px-4 py-4'>
         <EmailField email={email} />
         <NameField
           value={name}
           onChange={setName}
           placeholder={t('settings.yourNamePlaceholder')}
         />
+        <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl flex flex-col gap-2'>
+          <label
+            htmlFor='mobile-settings-language-select'
+            className='text-sm font-medium text-ink'
+          >
+            {t('settings.expectedTranscriptionLanguage')}
+          </label>
+          <select
+            id='mobile-settings-language-select'
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            className='w-full px-4 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+          >
+            <option value=''>{t('settings.letSpeechToTextGuess')}</option>
+            <option value='en'>English</option>
+            <option value='fr'>Français</option>
+            <option value='de'>Deutsch</option>
+            <option value='es'>Español</option>
+            <option value='pt'>Português</option>
+          </select>
+        </div>
         <div className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl'>
           <SpeechRateSlider />
         </div>
@@ -99,12 +148,21 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
         <p className='text-xs text-muted text-center mt-1'>
           {t('settings.moreSettingsAvailable')}
         </p>
+        {isAdmin && (
+          <button
+            type='button'
+            onClick={() => setShowAdminPanel(true)}
+            className='w-full px-4 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-3xl text-sm font-medium text-blue'
+          >
+            {t('admin.openPanel')}
+          </button>
+        )}
       </div>
 
-      <div className='flex flex-col gap-3 mt-6 pb-[calc(env(safe-area-inset-bottom,0px)+1.5rem)]'>
+      <div className='shrink-0 flex flex-col gap-3 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] border-t border-hairline bg-surface'>
         <div className='w-full flex justify-center'>
           <a
-            href='https://kyutai.org/privacy-policy'
+            href='/privacy'
             target='_blank'
             rel='noopener noreferrer'
             className='text-sm underline text-blue hover:text-blue-600 transition-colors'

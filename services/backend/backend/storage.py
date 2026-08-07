@@ -18,7 +18,7 @@ from backend.app_types import (
     WriterMessage,
 )
 from backend.kyutai_constants import NB_RESPONSES
-from backend.llm.system_prompt import BASE_SYSTEM_PROMPT
+from backend.llm.system_prompt import BASE_SYSTEM_PROMPT, build_language_directive
 from backend.memory import (
     MAX_DOCUMENT_CHARS_IN_PROMPT,
     UserMemory,
@@ -52,6 +52,8 @@ class UserData(pydantic.BaseModel):
     email: str
     hashed_password: str | None
     google_sub: str | None
+    is_admin: bool = False
+    admin_bootstrap_locked: bool = False
 
     user_settings: UserSettings
     conversations: list[Conversation]
@@ -68,7 +70,7 @@ class UserData(pydantic.BaseModel):
         self.conversations = prune_conversations(self.conversations)
         user_data_path = get_user_data_path(self.email)
         user_data_path.parent.mkdir(parents=True, exist_ok=True)
-        with user_data_path.open("w") as f:
+        with user_data_path.open("w", encoding="utf-8") as f:
             f.write(self.model_dump_json(indent=4))
         logger.info(f"User data saved to {user_data_path}")
 
@@ -84,6 +86,12 @@ class UserData(pydantic.BaseModel):
 
         prompt = BASE_SYSTEM_PROMPT + "\n"
         prompt += "\n"
+        # Verrou de langue prioritaire quand l'utilisateur en a choisi une : une
+        # détection STT erronée ne doit pas dérouter les suggestions dans une
+        # langue qu'il ne peut pas corriger à la voix (chaîne vide si "auto").
+        prompt += build_language_directive(
+            self.user_settings.expected_transcription_language
+        )
         prompt += "## Nom de l'utilisateur\n"
         prompt += f"L'utilisateur est {self.user_settings.name}.\n\n"
         prompt += "## Prompt de l'utilisateur\n"
@@ -306,7 +314,7 @@ def get_user_data_from_storage(user_email: str) -> UserData:
     if not user_data_path.exists():
         raise UserDataNotFoundError(f"No user data found for email: {user_email}")
     else:
-        return UserData.model_validate_json(user_data_path.read_text())
+        return UserData.model_validate_json(user_data_path.read_text(encoding="utf-8"))
 
 
 ANONYMOUS_EMAIL = "anonymous@invincible-voice.local"

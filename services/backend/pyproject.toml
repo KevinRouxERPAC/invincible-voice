@@ -22,7 +22,7 @@ dependencies = [
     "pwdlib[argon2]",
     "google-auth",
     "av==14.0.1",
-    "cloudpathlib[s3]>=0.23.0",
+    "cloudpathlib[gs]>=0.23.0",
 ]
 
 [project.optional-dependencies]
@@ -64,7 +64,11 @@ ignore = [
 pydocstyle.convention = "google" # Google docstring style
 
 [tool.pytest.ini_options]
+testpaths = ["tests"]
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/create_user.py" = ["E402"]
 
 
 [dependency-groups]

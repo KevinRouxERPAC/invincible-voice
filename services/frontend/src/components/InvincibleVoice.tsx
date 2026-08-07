@@ -643,11 +643,15 @@ const InvincibleVoice = () => {
           }),
         );
       }
+      // Online (native or web) uses the cloned Gradium voice; offline the
+      // native app falls back to the phone's engine. Same online/offline
+      // signal as the suggestions' TTS.
       playQuickPhrase({
         text: phraseText,
         voiceName: userData?.user_settings?.voice,
         lang:
           userData?.user_settings?.expected_transcription_language ?? undefined,
+        preferLocal: useNativeVoice,
       }).catch(console.error);
     },
     [
@@ -657,6 +661,7 @@ const InvincibleVoice = () => {
       shouldConnect,
       userData?.user_settings?.voice,
       userData?.user_settings?.expected_transcription_language,
+      useNativeVoice,
     ],
   );
   const handleWordBubbleClick = useCallback(

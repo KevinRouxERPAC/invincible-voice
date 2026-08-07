@@ -250,6 +250,8 @@ export interface NativeSpeakOptions {
   messageId: string;
   /** Speech rate multiplier, 1.0 = normal. */
   rate?: number;
+  /** Speech pitch multiplier, 1.0 = normal. */
+  pitch?: number;
   /** BCP-47 tag, e.g. 'fr-FR'. Defaults to the device language. */
   lang?: string;
 }
@@ -262,7 +264,7 @@ export interface NativeSpeakOptions {
  * transcribe our own voice.
  */
 export async function speakNative(options: NativeSpeakOptions): Promise<void> {
-  const { text, messageId, rate, lang } = options;
+  const { text, messageId, rate, pitch, lang } = options;
 
   const listening = activeListening;
   if (listening) {
@@ -283,12 +285,35 @@ export async function speakNative(options: NativeSpeakOptions): Promise<void> {
   }
 
   try {
-    await TextToSpeech.speak({
+    const speakOptions: Record<string, unknown> = {
       text,
       lang: lang ?? toBcp47(null),
       rate: rate ?? 1.0,
+      pitch: pitch ?? 1.0,
       queueStrategy: QueueStrategy.Flush,
-    });
+    };
+
+    try {
+      const { voices } = await TextToSpeech.getSupportedVoices();
+      // Enforce male voices in the selected language.
+      // Google TTS on Android often includes 'male', 'frb', 'frd', 'frc' (which are male variants)
+      const targetLang = String(speakOptions.lang).toLowerCase();
+      const maleVoice = voices.find(
+        (v) =>
+          v.lang.toLowerCase().startsWith(targetLang.split('-')[0]) &&
+          (v.name.toLowerCase().includes('male') ||
+            v.name.toLowerCase().includes('-x-frb-') ||
+            v.name.toLowerCase().includes('-x-frd-')),
+      );
+      if (maleVoice) {
+        speakOptions.voice = maleVoice.voiceURI;
+      }
+    } catch {
+      // Ignore failure to find voices
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await TextToSpeech.speak(speakOptions as any);
   } finally {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(

@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useLocale } from '../i18n/I18nContext';
 import type { UserData } from '../types/user';
-import { apiUrl } from '../utils/backend';
+import { apiUrl, fetchWithTimeout } from '../utils/backend';
 import { isLocalOnlyMode } from '../utils/localMode';
 import {
   addAuthHeaders,
@@ -31,13 +31,13 @@ export type AuthStatus = (typeof AUTH_STATUSES)[AuthStatusKeys];
 
 interface AuthContextInterface {
   authStatus: AuthStatus;
-  authError: boolean;
+  authError: 'invalid' | 'not_provisioned' | false;
   allowPassword: boolean;
   googleClientId: string;
   userData: UserData | null;
-  register: (email: string, password: string) => void;
   signIn: (email: string, password: string) => void;
   googleSignIn: (googleToken: string) => void;
+  setAuthError: (error: 'invalid' | 'not_provisioned' | false) => void;
   signOut: () => void;
   acceptTermsOfServices: () => Promise<void>;
   fetchUserData: () => Promise<void>;
@@ -49,9 +49,9 @@ export const AuthContext = createContext<AuthContextInterface>({
   allowPassword: true,
   googleClientId: '',
   userData: null,
-  register: () => {},
   signIn: () => {},
   googleSignIn: () => {},
+  setAuthError: () => {},
   signOut: () => {},
   acceptTermsOfServices: async () => {},
   fetchUserData: async () => {},
@@ -73,7 +73,9 @@ const getCachedGoogleClientId = (): string => {
 };
 
 const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
-  const [authError, setAuthError] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<
+    'invalid' | 'not_provisioned' | false
+  >(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(
     AUTH_STATUSES.NOT_CHECKED,
   );
@@ -91,7 +93,7 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       if (!bearerToken) {
         return;
       }
-      const response = await fetch(apiUrl(`/v1/user/`), {
+      const response = await fetchWithTimeout(apiUrl(`/v1/user/`), {
         method: 'GET',
         headers: addAuthHeaders({
           Authorization: `Bearer ${bearerToken}`,
@@ -152,10 +154,10 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
         } else {
-          setAuthError(true);
+          setAuthError('invalid');
         }
       } catch {
-        setAuthError(true);
+        setAuthError('invalid');
       }
     },
     [fetchUserData],
@@ -176,39 +178,25 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
           setBearerToken(data.access_token);
           setAuthStatus(AUTH_STATUSES.LOGGED);
           await fetchUserData();
+        } else if (response.status === 403) {
+          setAuthError('not_provisioned');
         } else {
-          setAuthError(true);
+          setAuthError('invalid');
         }
       } catch {
-        setAuthError(true);
+        setAuthError('invalid');
       } finally {
-        router.replace('/');
+        // Web OAuth returns with #id_token=… in the hash; clear it so a refresh
+        // does not replay the token. Native Capacitor sign-in has no hash.
+        if (
+          typeof window !== 'undefined' &&
+          window.location.hash.includes('id_token=')
+        ) {
+          router.replace('/');
+        }
       }
     },
     [router, locale, fetchUserData],
-  );
-  const register = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const body = new FormData();
-        body.append('username', email);
-        body.append('password', password);
-        const response = await fetch(
-          apiUrl(`/auth/register?language=${locale}`),
-          {
-            method: 'POST',
-            body,
-          },
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setBearerToken(data.access_token);
-          setAuthStatus(AUTH_STATUSES.LOGGED);
-          await fetchUserData();
-        }
-      } catch {}
-    },
-    [locale, fetchUserData],
   );
   const memoizedValue = useMemo(
     () => ({
@@ -219,8 +207,8 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       userData,
       signIn,
       googleSignIn,
+      setAuthError,
       signOut,
-      register,
       acceptTermsOfServices,
       fetchUserData,
     }),
@@ -232,8 +220,8 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       userData,
       signIn,
       googleSignIn,
+      setAuthError,
       signOut,
-      register,
       acceptTermsOfServices,
       fetchUserData,
     ],
@@ -244,8 +232,25 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
     // and consider the user logged in so the app renders straight away.
     if (isLocalOnlyMode()) {
       setAuthStatus(AUTH_STATUSES.LOGGED);
-      return;
+      return undefined;
     }
+
+    // Bounded so a hung request can never leave the app stuck on "Loading…":
+    // AuthWrapper blocks all rendering while authStatus is NOT_CHECKED, so this
+    // check MUST always resolve. On a flaky mobile network (5G handover) or a
+    // Cloud Run cold start, a plain fetch can hang forever — the timeout turns
+    // that into a normal error we can recover from.
+    const AUTH_CHECK_TIMEOUT_MS = 10000;
+    // A cold start can take tens of seconds. If the first check times out we
+    // render in degraded mode immediately (below) but keep re-checking in the
+    // background so the app upgrades itself to full mode once the backend wakes
+    // up, without the user having to relaunch.
+    const AUTH_CHECK_RETRY_MS = 5000;
+    const AUTH_CHECK_MAX_RETRIES = 3;
+
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
 
     async function checkAuthStatus() {
       const bearerToken = getBearerToken();
@@ -256,13 +261,20 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
       }
 
       try {
-        const response = await fetch(apiUrl(`/v1/user/`), {
-          method: 'GET',
-          headers: addAuthHeaders({
-            Authorization: `Bearer ${bearerToken}`,
-            'Content-Type': 'application/json',
-          }),
-        });
+        const response = await fetchWithTimeout(
+          apiUrl(`/v1/user/`),
+          {
+            method: 'GET',
+            headers: addAuthHeaders({
+              Authorization: `Bearer ${bearerToken}`,
+              'Content-Type': 'application/json',
+            }),
+          },
+          AUTH_CHECK_TIMEOUT_MS,
+        );
+        if (cancelled) {
+          return;
+        }
         if (!response.ok) {
           // The backend rejected the token: sign out for real
           clearBearerToken();
@@ -270,18 +282,39 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
           setUserData(null);
           return;
         }
+        // Reuse this response instead of firing a second /v1/user/ request.
+        const data: UserData = await response.json();
+        if (cancelled) {
+          return;
+        }
+        setUserData(data);
         setAuthStatus(AUTH_STATUSES.LOGGED);
-        await fetchUserData();
       } catch {
-        // Network error (offline, backend down): keep the token and let the
-        // app render its degraded mode instead of locking the user out on
-        // a login screen that cannot work without the backend.
+        if (cancelled) {
+          return;
+        }
+        // Timeout or network error (offline, backend down/cold): keep the token
+        // and let the app render its degraded mode instead of locking the user
+        // out on a login screen that cannot work without the backend. Then keep
+        // retrying in the background so a slow cold start self-heals into full
+        // mode.
         setAuthStatus(AUTH_STATUSES.LOGGED);
+        if (attempts < AUTH_CHECK_MAX_RETRIES) {
+          attempts += 1;
+          retryTimer = setTimeout(checkAuthStatus, AUTH_CHECK_RETRY_MS);
+        }
       }
     }
 
     checkAuthStatus();
-  }, [fetchUserData]);
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (isLocalOnlyMode()) {

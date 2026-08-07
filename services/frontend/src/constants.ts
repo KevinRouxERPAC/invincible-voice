@@ -23,14 +23,14 @@ export type UnmuteConfig = {
   isCustomInstructions: boolean;
 };
 
-// Hardcoded Olivier voice from voices.yaml
+// Default Unmute voice config
 export const DEFAULT_UNMUTE_CONFIG: UnmuteConfig = {
   instructions: {
     type: 'invincible_voice',
     language: 'fr',
   },
   voice: 'unmute-prod-website/developer-1.mp3',
-  voiceName: 'Olivier',
+  voiceName: 'Default Male',
   isCustomInstructions: false,
 };
 

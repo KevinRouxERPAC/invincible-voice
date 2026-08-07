@@ -128,6 +128,53 @@ export function appendLocalConversation(conversation: Conversation): void {
 }
 
 /**
+ * Return a copy of `conversations` with `conversation` inserted, or replacing an
+ * existing entry that shares the same non-empty `start_time`. `start_time` is
+ * assigned once per session, so this makes persisting an in-progress
+ * conversation idempotent: the hook can write after every message (so an OS
+ * process kill can't lose the session) and each write overwrites the previous
+ * snapshot instead of piling up duplicates of the same conversation.
+ */
+export function upsertConversation(
+  conversations: Conversation[],
+  conversation: Conversation,
+): Conversation[] {
+  const key = conversation.start_time;
+  if (key) {
+    const index = conversations.findIndex((c) => c.start_time === key);
+    if (index !== -1) {
+      const next = [...conversations];
+      next[index] = conversation;
+      return next;
+    }
+  }
+  return [...conversations, conversation];
+}
+
+/**
+ * Upsert an in-progress (or finished) conversation into the stored history,
+ * keyed by `start_time`. Unlike `appendLocalConversation`, calling this
+ * repeatedly for the same session overwrites the previous snapshot instead of
+ * duplicating it, so the conversation hook can persist after every message —
+ * surviving an OS process kill — without cluttering the history. Empty
+ * conversations are ignored so a session with no exchange leaves no trace.
+ *
+ * Like `appendLocalConversation`, this does NOT fold the conversation into the
+ * durable memory; the finalizing caller runs the style pass once at end of
+ * session (see the on-device conversation hook).
+ */
+export function upsertLocalConversation(conversation: Conversation): void {
+  if (!conversation.messages.length) {
+    return;
+  }
+  const base = loadLocalUserData() ?? EMPTY_LOCAL_USER_DATA;
+  saveLocalUserData({
+    ...base,
+    conversations: upsertConversation(base.conversations, conversation),
+  });
+}
+
+/**
  * Delete one stored conversation by its index in the (unsorted) history.
  *
  * This is the offline equivalent of the backend `DELETE

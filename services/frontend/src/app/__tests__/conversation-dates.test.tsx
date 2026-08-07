@@ -44,12 +44,13 @@ describe('ConversationHistory Date Display', () => {
     expect(screen.getByText('Hello from yesterday')).toBeInTheDocument();
     expect(screen.getByText('Hello from last week')).toBeInTheDocument();
 
-    // Check that "Yesterday" appears for the yesterday conversation
-    expect(screen.getByText('Yesterday')).toBeInTheDocument();
+    // "Yesterday" appears twice: as the day-group header and as the
+    // conversation row's relative date (visual uppercase is CSS-only).
+    expect(screen.getAllByText('Yesterday')).toHaveLength(2);
 
     // Check that today shows time, formatted the same way as the component
     // (locale-dependent, e.g. "02:30 PM" or "14:30")
-    const expectedTime = new Date(todayStartTime).toLocaleTimeString([], {
+    const expectedTime = new Date(todayStartTime).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });

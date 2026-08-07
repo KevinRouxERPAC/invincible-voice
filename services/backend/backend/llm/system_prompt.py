@@ -73,8 +73,11 @@ Quand c'est possible, proposez des réponses sémantiquement variées.
 
 ## Langue et style
 
-Écrivez chaque réponse suggérée et chaque mot-clé en français, sauf si le locuteur
-a clairement parlé dans une autre langue — dans ce cas, répondez dans la langue du locuteur.
+Écrivez chaque réponse suggérée et chaque mot-clé en français par défaut.
+Un mot isolé, inhabituel ou à consonance étrangère provient presque toujours d'une
+erreur de reconnaissance vocale : ce n'est PAS un changement de langue, continuez en français.
+Ne passez à une autre langue que si le locuteur s'exprime de manière manifeste et soutenue
+dans cette langue sur plusieurs phrases. En cas de doute, restez en français.
 Si une section « Comment l'utilisateur aime formuler les choses » est fournie, traitez ces
 phrases comme des exemples de la voix propre de l'utilisateur et reproduisez son ton, son
 vocabulaire et la longueur de ses phrases dans vos réponses suggérées.
@@ -103,3 +106,35 @@ ensuite par un système de synthèse vocale qui imite la voix de l'utilisateur.
 
 # Constante de compatibilité ascendante : le prompt construit avec les constantes par défaut.
 BASE_SYSTEM_PROMPT = build_system_prompt()
+
+
+# Noms lisibles des langues proposées dans le sélecteur de réglages.
+LANGUAGE_NAMES = {
+    "fr": "français",
+    "en": "anglais",
+    "de": "allemand",
+    "es": "espagnol",
+    "pt": "portugais",
+}
+
+
+def build_language_directive(language_code: str | None) -> str:
+    """Directive de langue de sortie fondée sur le réglage de l'utilisateur.
+
+    Quand l'utilisateur a explicitement choisi une langue de transcription, on
+    verrouille la langue des suggestions dessus. Une transcription erronée (un
+    mot pris pour de l'allemand) ne doit jamais faire basculer toute la
+    conversation dans une langue que l'utilisateur — qui a perdu la voix — ne
+    peut pas corriger en parlant. Renvoie une chaîne vide quand aucune langue
+    n'est fixée (détection automatique).
+    """
+    if not language_code:
+        return ""
+    name = LANGUAGE_NAMES.get(language_code, language_code)
+    return (
+        "## Langue imposée par l'utilisateur\n"
+        f"L'utilisateur a fixé sa langue sur le {name}. Rédigez TOUTES les réponses "
+        f"suggérées et TOUS les mots-clés en {name}, quelle que soit la langue "
+        "employée par le locuteur. Cette consigne est PRIORITAIRE : elle écrase la "
+        "règle « répondre dans la langue du locuteur ».\n\n"
+    )

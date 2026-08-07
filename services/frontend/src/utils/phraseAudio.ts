@@ -192,6 +192,18 @@ export interface PlayQuickPhraseOptions {
   voiceName?: string | null;
   /** BCP-47 hint for the browser-synthesis fallback, e.g. 'fr' */
   lang?: string;
+  /**
+   * When true, skip the backend entirely and speak with the phone's TTS engine
+   * (native app only). This is the offline path: instant, free, no network.
+   * When false in the native app, the backend's cloned Gradium voice is used
+   * instead — better quality — with the phone's engine as a fallback if the
+   * request fails. Defaults to true so callers that never see the network
+   * (emergency, offline screen) keep their safe, instant behaviour.
+   */
+  preferLocal?: boolean;
+  /** Used when preferLocal is true to tweak the native TTS voice */
+  pitch?: number;
+  rate?: number;
 }
 
 export type QuickPhrasePlayback =
@@ -202,24 +214,34 @@ export type QuickPhrasePlayback =
 
 /**
  * Speak a quick phrase as fast as possible: persisted audio first, then the
- * backend TTS (caching the result), then browser speech synthesis when
- * everything else is unreachable. Resolves with the path that was used.
+ * backend TTS (caching the result), then a last-resort local voice. Resolves
+ * with the path that was used.
  *
- * In the native app, the phone's TTS engine is used directly: free, instant
- * and offline.
+ * Native app: offline (`preferLocal`) speaks with the phone's TTS engine
+ * directly (free, instant). Online, it uses the backend's cloned Gradium voice
+ * like the web — falling back to the phone's engine if the backend is
+ * unreachable, so the user is never left mute.
  */
 export async function playQuickPhrase(
   options: PlayQuickPhraseOptions,
 ): Promise<QuickPhrasePlayback> {
-  const { text, voiceName, lang } = options;
+  const { text, voiceName, lang, preferLocal = true, pitch, rate } = options;
+  const native = isNativeApp();
 
-  if (isNativeApp()) {
+  const speakOnDevice = async (): Promise<QuickPhrasePlayback> => {
     await speakNative({
       text,
       messageId: crypto.randomUUID(),
       lang: toBcp47(lang ?? null),
+      pitch,
+      rate,
     });
     return 'native';
+  };
+
+  // Native app, offline: the phone's engine, instantly and for free.
+  if (native && preferLocal) {
+    return speakOnDevice();
   }
 
   const stored = await getStoredPhraseAudio(phraseCacheKey(text, voiceName));
@@ -233,6 +255,11 @@ export async function playQuickPhrase(
     playPcm(audio);
     return 'network';
   } catch {
+    // Backend unreachable: fall back to the phone's engine in the native app,
+    // or browser synthesis on the web.
+    if (native) {
+      return speakOnDevice();
+    }
     speakWithBrowserSynthesis(text, lang);
     return 'browser-synthesis';
   }
@@ -247,12 +274,6 @@ export async function prefetchQuickPhrases(
   phrases: QuickPhrase[],
   voiceName?: string | null,
 ): Promise<void> {
-  // Native app speaks with the phone's TTS engine: nothing to prefetch, and
-  // we avoid pointless (paid) backend TTS calls.
-  if (isNativeApp()) {
-    return;
-  }
-
   // eslint-disable-next-line no-restricted-syntax
   for (const phrase of phrases) {
     const key = phraseCacheKey(phrase.text, voiceName);

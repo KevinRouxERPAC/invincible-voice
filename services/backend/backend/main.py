@@ -23,7 +23,13 @@ from backend.libs.files import LimitUploadSizeForPath
 from backend.libs.health import get_health
 from backend.libs.redis_metrics import RedisMetricsBackgroundTask
 from backend.libs.storage_metrics import StorageMetricsBackgroundTask
-from backend.routes import auth_router, tts_router, user_router, voices_router
+from backend.routes import (
+    admin_router,
+    auth_router,
+    tts_router,
+    user_router,
+    voices_router,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -88,6 +94,7 @@ app.add_middleware(
 )
 
 app.include_router(user_router)
+app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(tts_router)
 app.include_router(voices_router)
@@ -148,5 +155,8 @@ async def general_exception_handler(request: Request, exc: Exception):
 if __name__ == "__main__":
     import sys
 
-    print(f"Run this via:\nfastapi dev {sys.argv[0]}")
-    exit(1)
+    print(
+        "Do not run the backend on your PC. Deploy to Cloud Run — see DEPLOYMENT.md.\n"
+        f"(Entry module: {sys.argv[0]})"
+    )
+    raise SystemExit(1)

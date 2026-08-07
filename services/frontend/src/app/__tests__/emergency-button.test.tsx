@@ -54,4 +54,38 @@ describe('EmergencyButton', () => {
       expect.objectContaining({ text: 'I need help, please come!' }),
     );
   });
+
+  test('uses the latest snapshot after voice and language change', async () => {
+    saveSettingsSnapshot({
+      ...SETTINGS,
+      voice: 'old-voice',
+      expected_transcription_language: 'en',
+    });
+    const user = userEvent.setup();
+    const { unmount } = render(<EmergencyButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+    expect(playQuickPhrase).toHaveBeenLastCalledWith({
+      text: 'I need help, please come!',
+      voiceName: 'old-voice',
+      lang: 'en',
+    });
+
+    unmount();
+    jest.clearAllMocks();
+
+    saveSettingsSnapshot({
+      ...SETTINGS,
+      voice: 'new-voice',
+      expected_transcription_language: 'fr',
+    });
+    render(<EmergencyButton />);
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+
+    expect(playQuickPhrase).toHaveBeenLastCalledWith({
+      text: 'I need help, please come!',
+      voiceName: 'new-voice',
+      lang: 'fr',
+    });
+  });
 });

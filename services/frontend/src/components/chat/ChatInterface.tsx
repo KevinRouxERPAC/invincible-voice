@@ -119,7 +119,7 @@ const ChatInterface: FC<ChatInterfaceProps> = ({
 
   return (
     <div
-      className='flex flex-col grow gap-2 overflow-y-auto'
+      className='flex flex-col grow gap-2 overflow-y-auto overscroll-contain'
       ref={chatContainerRef}
     >
       {processedMessages.length === 0 && !isViewingPastConversation && (

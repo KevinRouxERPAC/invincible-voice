@@ -37,16 +37,13 @@ const VoiceSelector: FC<VoiceSelectorProps> = ({
 
         {availableVoices &&
           Object.entries(availableVoices)
-            .sort(([, langA], [, langB]) => langA.localeCompare(langB))
-            .map(([voiceName, language]) => (
+            .sort(([, nameA], [, nameB]) => nameA.localeCompare(nameB))
+            .map(([voiceId, voiceName]) => (
               <option
-                key={voiceName}
-                value={voiceName}
+                key={voiceId}
+                value={voiceId}
               >
-                {voiceName.includes('/')
-                  ? voiceName.substring(voiceName.indexOf('/') + 1)
-                  : voiceName}
-                ({language})
+                {voiceName || voiceId}
               </option>
             ))}
       </select>

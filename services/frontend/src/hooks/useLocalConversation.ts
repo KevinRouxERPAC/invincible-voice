@@ -23,9 +23,10 @@ import { ReadyState } from 'react-use-websocket';
 import { ResponseSize } from '@/constants';
 import { getLocalLlm } from '@/utils/localLlm';
 import {
-  appendLocalConversation,
   loadLocalUserData,
   saveLocalUserData,
+  upsertConversation,
+  upsertLocalConversation,
 } from '@/utils/localUserData';
 import {
   normalizeUserMemory,
@@ -90,6 +91,11 @@ export function useLocalConversation({
   // re-creating callbacks or causing re-renders.
   const onMessageRef = useRef(onMessage);
   const userDataRef = useRef(userData);
+  // Mirrors `connected` for the sendMessage callback: a real closed WebSocket
+  // drops writes, so the config events InvincibleVoice fires on mount
+  // (desired length, keywords) must not trigger an on-device generation while
+  // the user is still on the idle home screen.
+  const connectedRef = useRef(connected);
   const messagesRef = useRef<ConversationMessage[]>([]);
   const keywordsRef = useRef<string | null>(null);
   const intentRef = useRef<string | null>(null);
@@ -217,9 +223,22 @@ export function useLocalConversation({
     }, 350);
   }, [generate]);
 
+  // Persist the in-progress conversation after every turn so an OS process kill
+  // (crash, swipe-away, activity destroyed by BACK) can't lose it — the cleanup
+  // that folds it into memory only runs on a clean unmount. Keyed by
+  // startTimeRef so each write overwrites the same session's snapshot (no
+  // duplicate row), and the memory pass still runs exactly once at cleanup.
+  const persistProgress = useCallback(() => {
+    if (messagesRef.current.length === 0) return;
+    upsertLocalConversation({
+      messages: messagesRef.current,
+      start_time: startTimeRef.current || new Date().toISOString(),
+    });
+  }, []);
+
   const sendMessage = useCallback(
     (message: string) => {
-      if (!enabled) return;
+      if (!enabled || !connectedRef.current) return;
       let event: OutgoingEvent;
       try {
         event = JSON.parse(message) as OutgoingEvent;
@@ -235,13 +254,20 @@ export function useLocalConversation({
             ...messagesRef.current,
             { speaker: 'Unknown speaker', content: text },
           ];
+          persistProgress();
           scheduleGenerate();
           break;
         }
         case 'current.keywords': {
           keywordsRef.current = event.keywords ?? null;
           intentRef.current = event.intent ?? null;
-          scheduleGenerate();
+          // Only (re)generate when there is an actual guiding keyword/intent.
+          // Selecting a suggestion clears the keywords (sends null/null); that
+          // must NOT trigger a new generation — the user's own reply is not a
+          // cue to answer. Mirrors the backend `add_keywords` guard.
+          if (keywordsRef.current !== null || intentRef.current !== null) {
+            scheduleGenerate();
+          }
           break;
         }
         case 'desired.responses.length': {
@@ -262,6 +288,7 @@ export function useLocalConversation({
               ...messagesRef.current,
               { content: text, messageId: event.id ?? crypto.randomUUID() },
             ];
+            persistProgress();
           }
           // Once the user has spoken an opener, go back to reactive mode.
           initiatingRef.current = false;
@@ -272,8 +299,12 @@ export function useLocalConversation({
           break;
       }
     },
-    [enabled, scheduleGenerate],
+    [enabled, scheduleGenerate, persistProgress],
   );
+
+  useEffect(() => {
+    connectedRef.current = connected;
+  }, [connected]);
 
   // Start each conversation from a clean slate (new "socket").
   useEffect(() => {
@@ -301,13 +332,16 @@ export function useLocalConversation({
         if (base) {
           const memory = normalizeUserMemory(base.memory);
           updateMemoryFromConversation(memory, finished);
+          // Upsert (not append): incremental persistProgress() writes already
+          // stored this session under the same start_time, so a blind append
+          // here would duplicate it in the history.
           saveLocalUserData({
             ...base,
-            conversations: [...base.conversations, finished],
+            conversations: upsertConversation(base.conversations, finished),
             memory,
           });
         } else {
-          appendLocalConversation(finished);
+          upsertLocalConversation(finished);
         }
       }
       abortRef.current?.abort();

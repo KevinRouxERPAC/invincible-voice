@@ -120,15 +120,15 @@ cd services/frontend
 pnpm install
 ```
 
-Construire en pointant vers l'URL du backend (PowerShell) :
+Construire en pointant vers l'URL du backend :
 
-```powershell
-$env:NEXT_OUTPUT='export'
-$env:NEXT_PUBLIC_BACKEND_URL='https://invincible-backend-xxxx.run.app'
-pnpm build
+```bash
+cd services/frontend
+cp .env.production.example .env.production.local   # puis vérifiez l'URL Cloud Run
+pnpm build:pwa
 ```
 
-(En bash : `NEXT_OUTPUT=export NEXT_PUBLIC_BACKEND_URL=https://… pnpm build`.)
+(PowerShell équivalent : copiez `.env.production.example` → `.env.production.local`.)
 
 Cela génère le dossier `out/`. Renseignez votre projet dans
 [`.firebaserc`](services/frontend/.firebaserc) puis déployez :
@@ -150,18 +150,45 @@ service Cloud Run :
 
 ```bash
 gcloud run services update invincible-backend --region europe-west1 \
-  --update-env-vars "CORS_ALLOW_ORIGINS=https://VOTRE-PROJET.web.app,https://VOTRE-PROJET.firebaseapp.com"
+  --update-env-vars "CORS_ALLOW_ORIGINS=https://VOTRE-PROJET.web.app,https://VOTRE-PROJET.firebaseapp.com,https://localhost"
 ```
+
+`https://localhost` est requis pour l'**app Android Capacitor** (origine de la WebView).
 
 ---
 
 ## 5. Créer le compte de l'utilisateur
 
-Ouvrez `https://VOTRE-PROJET.web.app`, créez un compte (e-mail + mot de passe),
-puis dans les réglages : renseignez son nom, ses amis, et **clonez sa voix**.
+L'inscription libre est désactivée : les comptes sont créés par un administrateur.
 
-Sur Android : ouvrez le site dans Chrome → menu → « Ajouter à l'écran
-d'accueil » → l'application s'installe avec une icône, en plein écran.
+**Premier compte (vous)** — depuis `services/backend`, avec accès au bucket
+Cloud Storage monté sur Cloud Run (`user_settings_and_history/`) :
+
+```bash
+# Créer le fichier localement puis l'uploader dans le bucket :
+uv run python scripts/create_user.py tuto.krdu18@gmail.com \
+  --google-only --admin --language fr
+
+gcloud storage cp \
+  CHEMIN_VERS/user_settings_and_history/tuto.krdu18@gmail.com.json \
+  gs://VOTRE-BUCKET/user_settings_and_history/
+```
+
+Ensuite : ouvrez la PWA ou l'app Android, connectez-vous avec Google.
+Les comptes suivants se gèrent dans **Paramètres → Administration**.
+
+Sur Android (APK) : construire avec le backend Cloud Run (voir
+`services/frontend/.env.production.local`) puis installer l'APK.
+
+Pour une distribution limitée avec mises à jour automatiques via le Play Store,
+suivez le guide complet dans
+[`services/frontend/android/README.md`](services/frontend/android/README.md)
+(section « Publication Google Play »). En résumé :
+
+1. Créer un keystore de release et `android/keystore.properties`.
+2. Configurer OAuth Google (SHA-1 du keystore + `GOOGLE_CLIENT_ID` sur Cloud Run).
+3. `pnpm build:android:release` → uploader l'AAB sur une piste **Test fermé**.
+4. Provisionner chaque utilisateur côté backend **et** l'ajouter comme testeur Play.
 
 ---
 
@@ -185,11 +212,14 @@ d'accueil » → l'application s'installe avec une icône, en plein écran.
 | `AUTH_RATE_LIMIT_PER_MINUTE` | `10` *(optionnel)* | Limite des tentatives d'auth par IP |
 | `ALLOW_ANONYMOUS_USER` | `0` **(recommandé en public)** | `0` ferme `GET /v1/user/anonymous` et le WebSocket sans jeton : le compte anonyme partagé expose sinon profil + historique de conversations sans authentification |
 | `MAX_PAST_CONVERSATIONS_IN_PROMPT` | `10` *(optionnel)* | Conversations passées injectées au LLM |
-| `GOOGLE_CLIENT_ID` | *(vide)* | Masque le login Google |
-| `CORS_ALLOW_ORIGINS` | `https://VOTRE-PROJET.web.app,…` | Autorise la PWA |
-| `TTS_VOICE_ID` | `vMYQUSzm6GRkJX6d` *(Olivier, fr masculin)* | Voix par défaut |
+| `GOOGLE_CLIENT_ID` | *(Client ID OAuth Web)* | Connexion Google (requis pour l'app Android Play Store) |
+| `CORS_ALLOW_ORIGINS` | `https://VOTRE-PROJET.web.app,…,https://localhost` | Autorise la PWA et l'app Android |
+| `TTS_VOICE_ID` | `d5HyIvCEW_x4BkDk` *(Voix masculine par défaut)* | Voix par défaut |
 
 ## Mettre à jour l'application plus tard
 
 - **Backend** : relancez la commande `gcloud run deploy` de l'étape 2.
-- **Frontend** : refaites l'étape 3 (`pnpm build` + `firebase deploy`).
+- **Frontend PWA** : refaites l'étape 3 (`pnpm build:pwa` + `firebase deploy`).
+- **App Android (Play Store)** : incrémentez `versionCode` dans
+  `services/frontend/android/version.properties`, puis
+  `pnpm build:android:release` et uploadez le nouvel AAB sur Play Console.

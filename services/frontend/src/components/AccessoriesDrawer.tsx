@@ -74,7 +74,7 @@ const AccessoriesDrawer: FC<AccessoriesDrawerProps> = ({
           'fixed top-0 right-0 z-40 h-dvh w-[88vw] max-w-sm',
           'bg-surface border-l border-hairline shadow-[var(--sh-lg)]',
           'flex flex-col overflow-y-auto p-4 gap-4',
-          'transition-transform duration-300 ease-out',
+          'transition-transform duration-300 ease-out will-change-transform',
           open ? 'translate-x-0' : 'translate-x-full',
           // On wide screens the drawer is a pinned third column (always visible,
           // never translated off-screen, never display:none so content stays in

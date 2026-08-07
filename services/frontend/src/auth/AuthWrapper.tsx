@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import React, {
   ChangeEvent,
   FC,
@@ -11,6 +10,7 @@ import React, {
   useState,
 } from 'react';
 import TermsOfServiceModal from '@/components/TermsOfServiceModal';
+import BrandLogos from '@/components/ui/BrandLogos';
 import { useTranslations } from '@/i18n';
 import { isLocalOnlyMode } from '@/utils/localMode';
 import Google from './Google';
@@ -21,16 +21,11 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
     authStatus,
     authError,
     signIn,
-    register,
     allowPassword,
     userData,
     signOut,
     acceptTermsOfServices,
   } = useAuthContext();
-  const [displayRegisterScreen, setDisplayRegisterScreen] = useState(false);
-  const toggleRegisterScreen = useCallback(() => {
-    setDisplayRegisterScreen((prev) => !prev);
-  }, []);
 
   const handleAcceptTerms = useCallback(async () => {
     await acceptTermsOfServices();
@@ -71,21 +66,11 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
   if (authStatus === AUTH_STATUSES.NOT_LOGGED) {
     return (
       <div className='flex flex-col items-center justify-center w-full'>
-        {!displayRegisterScreen && (
-          <SignInScreen
-            authError={authError}
-            allowPassword={allowPassword}
-            onSignIn={signIn}
-            onSwitchToRegister={toggleRegisterScreen}
-          />
-        )}
-        {displayRegisterScreen && (
-          <RegisterScreen
-            allowPassword={allowPassword}
-            onRegister={register}
-            onSwitchToSignIn={toggleRegisterScreen}
-          />
-        )}
+        <SignInScreen
+          authError={authError}
+          allowPassword={allowPassword}
+          onSignIn={signIn}
+        />
       </div>
     );
   }
@@ -105,17 +90,15 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
 export default AuthWrapper;
 
 interface SignInScreenProps {
-  authError: boolean;
+  authError: 'invalid' | 'not_provisioned' | false;
   allowPassword: boolean;
   onSignIn: (email: string, password: string) => void;
-  onSwitchToRegister: () => void;
 }
 
 const SignInScreen: FC<SignInScreenProps> = ({
   authError,
   allowPassword,
   onSignIn,
-  onSwitchToRegister,
 }) => {
   const t = useTranslations();
   const { googleClientId } = useAuthContext();
@@ -142,31 +125,37 @@ const SignInScreen: FC<SignInScreenProps> = ({
     [setFormData],
   );
 
+  const errorMessage = (() => {
+    if (authError === 'not_provisioned') {
+      return t('common.accountNotProvisioned');
+    }
+    if (authError === 'invalid') {
+      return t('common.emailOrPasswordIncorrect');
+    }
+    return '';
+  })();
+
   return (
     <div className='flex flex-col gap-3 max-w-md w-[90%] my-16'>
       <form
         className='flex flex-col gap-4 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl'
         onSubmit={onSubmit}
       >
-        <div className='flex flex-row items-center justify-center shrink gap-2 pb-2 text-xs'>
-          <Image
-            src='/logo_invincible.png'
-            alt='Invincible Logo'
-            width={185}
-            height={22}
-          />
-          by
-          <Image
-            src='/logo_kyutai.svg'
-            alt='Kyutai Logo'
-            width={53}
-            height={22}
-            className='logo-themed'
-          />
-        </div>
+        <BrandLogos
+          showBy
+          className='pb-2 text-xs'
+        />
         <h1 className='text-center text-xl font-bold mb-9'>
           {t('common.signIn')}
         </h1>
+        {errorMessage && (
+          <p
+            role='alert'
+            className='text-sm text-red text-center leading-snug px-2'
+          >
+            {errorMessage}
+          </p>
+        )}
         {allowPassword && (
           <React.Fragment>
             <div className='flex flex-col gap-1'>
@@ -180,8 +169,8 @@ const SignInScreen: FC<SignInScreenProps> = ({
                 id='auth-email-input'
                 type='email'
                 onChange={onChangeEmail}
-                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder='prenom.nom@exemple.com'
+                className='w-full px-4 py-3 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+                placeholder={t('common.emailPlaceholder')}
               />
             </div>
             <div className='flex flex-col gap-1'>
@@ -199,9 +188,6 @@ const SignInScreen: FC<SignInScreenProps> = ({
                 placeholder='*********'
               />
             </div>
-            <p className='block h-4 italic text-xs'>
-              {authError ? t('common.emailOrPasswordIncorrect') : ''}
-            </p>
             <button
               type='submit'
               className='shrink-0 mt-4 h-14 flex items-center justify-center px-8 text-sm font-bold cursor-pointer pointer-events-auto text-white bg-blue hover:bg-blue-600 transition-colors rounded-2xl'
@@ -215,178 +201,10 @@ const SignInScreen: FC<SignInScreenProps> = ({
         )}
         <Google />
       </form>
-      <div className='flex flex-col gap-2 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl font-bold'>
-        <p className='mb-4 font-bold text-sm text-center'>
-          {t('common.noAccount')}
+      <div className='w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl'>
+        <p className='text-sm text-center text-ink-2 leading-relaxed'>
+          {t('common.adminProvisionedOnly')}
         </p>
-        <button
-          onClick={onSwitchToRegister}
-          className='shrink-0 h-14 flex items-center justify-center px-8 text-sm cursor-pointer pointer-events-auto text-ink-2 bg-surface border border-hairline-2 hover:bg-paper transition-colors rounded-2xl'
-        >
-          {t('common.createAccount')}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-interface RegisterScreenProps {
-  allowPassword: boolean;
-  onRegister: (email: string, password: string) => void;
-  onSwitchToSignIn: () => void;
-}
-
-const RegisterScreen: FC<RegisterScreenProps> = ({
-  allowPassword,
-  onRegister,
-  onSwitchToSignIn,
-}) => {
-  const t = useTranslations();
-  const { googleClientId } = useAuthContext();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-  const [error, setError] = useState('');
-  const onSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      if (
-        formData.email &&
-        formData.password &&
-        formData.confirmPassword === formData.password
-      ) {
-        onRegister(formData.email, formData.password);
-      }
-    },
-    [formData, onRegister],
-  );
-  const onChangeEmail = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, email: event.target.value }));
-    },
-    [setFormData],
-  );
-  const onChangePassword = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, password: event.target.value }));
-      if (formData.confirmPassword !== event.target.value) {
-        setError(t('common.passwordMismatch'));
-      } else {
-        setError('');
-      }
-    },
-    [formData, setFormData, setError, t],
-  );
-  const onChangeConfirmPassword = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setFormData((prev) => ({ ...prev, confirmPassword: event.target.value }));
-      if (formData.password !== event.target.value) {
-        setError(t('common.passwordMismatch'));
-      } else {
-        setError('');
-      }
-    },
-    [formData, setFormData, setError, t],
-  );
-
-  return (
-    <div className='flex flex-col gap-3 max-w-md w-[90%] my-16'>
-      <form
-        className='flex flex-col gap-4 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl'
-        onSubmit={onSubmit}
-      >
-        <div className='flex flex-row items-center justify-center shrink-0 gap-2 pb-2 text-xs'>
-          <Image
-            src='/logo_invincible.png'
-            alt='Invincible Logo'
-            width={185}
-            height={22}
-          />
-          by
-          <Image
-            src='/logo_kyutai.svg'
-            alt='Kyutai Logo'
-            width={53}
-            height={22}
-            className='logo-themed'
-          />
-        </div>
-        <h1 className='text-center text-xl font-bold mb-9'>
-          {t('common.createYourAccount')}
-        </h1>
-        {allowPassword && (
-          <React.Fragment>
-            <div className='flex flex-col gap-1'>
-              <label
-                htmlFor='register-email-input'
-                className='block mb-1 text-sm font-medium'
-              >
-                {t('common.yourEmail')}
-              </label>
-              <input
-                id='register-email-input'
-                type='email'
-                onChange={onChangeEmail}
-                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder='Email'
-              />
-            </div>
-            <div className='flex flex-col gap-1'>
-              <label
-                htmlFor='register-password-input'
-                className='block mb-1 text-sm font-medium'
-              >
-                {t('common.createYourPassword')}
-              </label>
-              <input
-                id='register-password-input'
-                type='password'
-                onChange={onChangePassword}
-                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder='*********'
-              />
-            </div>
-            <div className='flex flex-col gap-1'>
-              <label
-                htmlFor='register-confirm-password-input'
-                className='block mb-1 text-sm font-medium'
-              >
-                {t('common.confirmPassword')}
-              </label>
-              <input
-                id='register-confirm-password-input'
-                type='password'
-                onChange={onChangeConfirmPassword}
-                className='w-full px-6 py-3 text-base text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder='*********'
-              />
-              <span className='block h-4 italic text-xs'>{error}</span>
-            </div>
-            <button
-              type='submit'
-              className='shrink-0 h-14 flex items-center justify-center px-8 text-sm font-bold cursor-pointer pointer-events-auto text-white bg-blue hover:bg-blue-600 transition-colors rounded-2xl'
-            >
-              {t('common.signUp')}
-            </button>
-            {googleClientId && (
-              <p className='font-bold text-sm text-center'>{t('common.or')}</p>
-            )}
-          </React.Fragment>
-        )}
-        <Google />
-      </form>
-      <div className='flex flex-col gap-2 w-full bg-surface border border-hairline shadow-[var(--sh-md)] px-11 py-9 rounded-4xl font-bold'>
-        <p className='mb-4 font-bold text-sm text-center'>
-          {t('common.alreadyHaveAccount')}
-        </p>
-        <button
-          onClick={onSwitchToSignIn}
-          className='shrink-0 h-14 flex items-center justify-center px-8 text-sm cursor-pointer pointer-events-auto text-ink-2 bg-surface border border-hairline-2 hover:bg-paper transition-colors rounded-2xl'
-        >
-          {t('common.signIn')}
-        </button>
       </div>
     </div>
   );

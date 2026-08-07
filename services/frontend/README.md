@@ -7,7 +7,7 @@ This is the main frontend application for InvincibleVoice, built with Next.js 15
 - **Real-time WebSocket communication** for voice streaming
 - **Speech-to-text transcription** display
 - **Multiple LLM response options** (3 choices + 6 keywords generated per conversation turn)
-- **Text-to-speech audio playback** with voice selection (Gradium Olivier by default, or cloned voice)
+- **Text-to-speech audio playback** with voice selection (Default male voice by default, or cloned voice)
 - **Conversation history** tracking
 - **Keyboard shortcuts** for quick response selection
 - **Voice configuration** and personalization (including voice cloning via Gradium)
@@ -106,26 +106,20 @@ pnpm test:coverage
 
 Test files are located in `src/app/__tests__/` and alongside components with `.test.tsx` or `.test.ts` extensions.
 
-## Docker Development
-
-The frontend can be run in Docker with hot reloading:
-
-```bash
-# From project root
-docker-compose up frontend
-
-# With rebuild
-docker-compose up --build frontend
-```
-
 ## Environment Variables
 
-The frontend uses these environment variables:
+The frontend talks to **Cloud Run** only (no local API):
 
-- `NEXT_PUBLIC_BACKEND_URL` - Backend URL (Cloud Run in production, `/api` same-origin in Docker)
+- `NEXT_PUBLIC_BACKEND_URL` — Cloud Run URL (no `/api` suffix), e.g. in `.env.local`
 - `NEXT_PUBLIC_LOCAL_MODE` - Set to `1` for 100% on-device mode (no backend, no auth)
 - `NEXT_PUBLIC_LOCAL_STUB` - Set to `1` to use the stub local LLM (testing)
 - `NEXT_PUBLIC_LOCAL_MODEL_URL` - Override the GGUF model download URL
+
+```bash
+cd services/frontend
+pnpm install
+pnpm dev
+```
 
 ## Browser Requirements
 

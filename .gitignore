@@ -16,6 +16,7 @@ recordings/
 .env*
 # ...but the template is safe to commit (no secrets, only placeholders).
 !.env.example
+!services/frontend/.env.production.example
 
 # Deploiement : secrets et caches a ne jamais committer
 API keys.txt
@@ -43,6 +44,17 @@ iv_screen.png
 # Local test/debug screenshots at the repo root (throwaway artifacts)
 /screenshot_test_app_*.png
 /ui_*.png
+/screen-*.png
+/screen-app.png
+/*Wireframes*.html
+
+# Local user data created by scripts/create_user.py outside Docker
+services/backend/.local-users-data/
+services/backend/data/
+services/backend/logs.txt
+
+# Local Android QA / APK extract artifacts
+.android-qa-screenshots/
 
 # AI agent files
 CLAUDE.md

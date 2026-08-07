@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from '@/i18n';
 import { isNativeApp } from '@/utils/platform';
 import { useAuthContext } from './authContext';
@@ -7,7 +7,7 @@ import { useAuthContext } from './authContext';
 const GoogleButtonContent = () => {
   const t = useTranslations();
   return (
-    <div className='h-full w-full flex flex-row bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] text-ink items-center justify-center gap-2 rounded-2xl text-sm px-8'>
+    <div className='h-full w-full flex flex-row bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] text-ink items-center justify-center gap-2 rounded-2xl text-sm px-4 whitespace-nowrap'>
       <Image
         src='/google-icon.webp'
         alt='Google Logo'
@@ -21,7 +21,9 @@ const GoogleButtonContent = () => {
 };
 
 const Google = () => {
-  const { googleSignIn, googleClientId } = useAuthContext();
+  const t = useTranslations();
+  const { googleSignIn, googleClientId, setAuthError } = useAuthContext();
+  const [isSigningIn, setIsSigningIn] = useState(false);
   const clientID = googleClientId;
   const redirect = window.location.origin;
   const response = 'id_token';
@@ -47,6 +49,11 @@ const Google = () => {
   // native Google Sign-In (Credential Manager) instead and post the resulting
   // id_token to the same /auth/google backend endpoint.
   const handleNativeSignIn = useCallback(async () => {
+    if (isSigningIn) {
+      return;
+    }
+    setIsSigningIn(true);
+    setAuthError(false);
     try {
       const { SocialLogin } = await import('@capgo/capacitor-social-login');
       await SocialLogin.initialize({
@@ -57,14 +64,18 @@ const Google = () => {
         options: { scopes: ['profile', 'email'] },
       });
       if (result.responseType === 'online' && result.idToken) {
-        googleSignIn(result.idToken);
+        await googleSignIn(result.idToken);
       } else {
         console.error('Native Google sign-in returned no id token');
+        setAuthError('invalid');
       }
     } catch (e) {
       console.error('Native Google sign-in failed:', e);
+      setAuthError('invalid');
+    } finally {
+      setIsSigningIn(false);
     }
-  }, [clientID, googleSignIn]);
+  }, [clientID, googleSignIn, isSigningIn, setAuthError]);
 
   // No OAuth client configured on the backend (GOOGLE_CLIENT_ID empty): hide the
   // button entirely. Showing it would send `client_id=` (empty) to Google and
@@ -80,9 +91,21 @@ const Google = () => {
       <button
         type='button'
         onClick={handleNativeSignIn}
-        className='shrink-0 p-px cursor-pointer pointer-events-auto rounded-2xl h-14'
+        disabled={isSigningIn}
+        className='shrink-0 p-px cursor-pointer pointer-events-auto rounded-2xl h-14 disabled:opacity-60'
       >
-        <GoogleButtonContent />
+        <div className='h-full w-full flex flex-row bg-surface border border-hairline-2 text-ink items-center justify-center gap-2 rounded-2xl text-sm px-4 whitespace-nowrap'>
+          {!isSigningIn && (
+            <Image
+              src='/google-icon.webp'
+              alt='Google Logo'
+              width={16}
+              height={16}
+              className='mr-2'
+            />
+          )}
+          {isSigningIn ? t('common.signingIn') : t('common.googleSignIn')}
+        </div>
       </button>
     );
   }

@@ -25,6 +25,28 @@ const MAX_DOCUMENTS = 3;
 const MAX_DOCUMENT_CHARS = 500;
 const MAX_STYLE_EXAMPLES = 8; // backend uses 12
 const MAX_MESSAGES_PER_PAST_CONVERSATION = 12;
+const MAX_MESSAGES_CURRENT_CONVERSATION = 12;
+/** Hard cap for one replayed line: a runaway ambient-STT transcript must never
+ *  eat the context window on its own. */
+export const MAX_CHARS_PER_MESSAGE = 200;
+/**
+ * Ceiling for the assembled prompt, in characters (~1720 tokens at ±3.6 chars
+ * per token of mixed English/French text). The on-device context is 2048
+ * tokens and generation needs 200 more; llama_decode with an oversized prompt
+ * aborts the whole process. Past conversations are dropped (oldest first)
+ * until the prompt fits.
+ */
+export const PROMPT_CHAR_BUDGET = 6200;
+/** Reserved for the tail sections (desired length + keyword directives). */
+const PROMPT_TAIL_RESERVE = 500;
+
+/** Trim + cap a single replayed line. */
+function clip(text: string): string {
+  const t = text.trim();
+  return t.length > MAX_CHARS_PER_MESSAGE
+    ? `${t.slice(0, MAX_CHARS_PER_MESSAGE - 1)}…`
+    : t;
+}
 
 const LENGTH_TO_NB_WORDS: Record<ResponseSize, [number, number]> = {
   XS: [1, 5],
@@ -66,9 +88,11 @@ Example: guiding keyword "eau" → good answers are natural sentences like
 
 ## Language and style
 
-Write every suggested answer and every keyword in French, unless the Speaker clearly spoke
-another language — in that case reply in the Speaker's language. Keep everything concise, simple
-and natural to say aloud. If a "How the user likes to phrase things" section is provided,
+Write every suggested answer and every keyword in French by default. A single unusual or
+foreign-looking word almost always comes from a speech-recognition error — that is NOT a language
+switch, keep replying in French. Only switch languages if the Speaker is clearly and consistently
+speaking another language across several sentences; when in doubt, stay in French. Keep everything
+concise, simple and natural to say aloud. If a "How the user likes to phrase things" section is provided,
 mirror that tone and sentence length. An "Initiating mode" section means the user is opening
 the conversation: suggest openers, not replies.
 
@@ -77,6 +101,32 @@ the conversation: suggest openers, not replies.
 Speaker lines come from speech recognition and may contain small transcription errors —
 interpret them charitably. The answer the user picks is read aloud by the app.
 `.trim();
+}
+
+/** Readable names for the languages offered in the settings selector. */
+const LANGUAGE_NAMES: Record<string, string> = {
+  fr: 'French',
+  en: 'English',
+  de: 'German',
+  es: 'Spanish',
+  pt: 'Portuguese',
+};
+
+/**
+ * Priority output-language lock when the user has explicitly chosen a language.
+ * A mis-detected STT word must never derail the suggestions into a language the
+ * user — who has lost their voice — cannot correct by speaking. Returns null
+ * when no language is set (auto-detection).
+ */
+function languageDirective(code: string | null | undefined): string | null {
+  if (!code) return null;
+  const name = LANGUAGE_NAMES[code] ?? code;
+  return (
+    "## User's enforced language\n" +
+    `The user locked their language to ${name}. Write EVERY suggested answer and every ` +
+    `keyword in ${name}, whatever language the Speaker uses. This instruction takes ` +
+    `PRIORITY: it overrides the "reply in the Speaker's language" rule.`
+  );
 }
 
 export interface PromptParams {
@@ -123,9 +173,9 @@ function renderConversation(
     : conversation.messages;
   messages.forEach((message) => {
     if (isSpeakerMessage(message)) {
-      parts.push(`* Speaker: ${message.content.trim()}`);
+      parts.push(`* Speaker: ${clip(message.content)}`);
     } else {
-      parts.push(`* ${userName} says: ${message.content.trim()}`);
+      parts.push(`* ${userName} says: ${clip(message.content)}`);
     }
   });
 }
@@ -141,6 +191,12 @@ export function buildSystemPrompt(
 ): string {
   const s = userData.user_settings;
   const parts: string[] = [baseSystemPrompt(), ''];
+
+  // Priority language lock (empty when the user left detection on "auto").
+  const langDirective = languageDirective(s.expected_transcription_language);
+  if (langDirective) {
+    parts.push(langDirective, '');
+  }
 
   parts.push("## User's name", `The user is ${s.name}.`, '');
   if (s.prompt?.trim()) {
@@ -181,7 +237,7 @@ export function buildSystemPrompt(
       '## What you durably know about the user',
       'These facts were extracted from past conversations and stay true from one session to the next. Use them so your answers reflect who the user is:',
     );
-    memory.facts.forEach((fact) => parts.push(`* ${fact.text}`));
+    memory.facts.forEach((fact) => parts.push(`* ${clip(fact.text)}`));
     parts.push('');
   }
 
@@ -208,7 +264,7 @@ export function buildSystemPrompt(
       );
       exchanges.forEach((ex) =>
         parts.push(
-          `* Speaker: "${ex.speaker_turn}" -> ${s.name}: "${ex.user_reply}"`,
+          `* Speaker: "${clip(ex.speaker_turn)}" -> ${s.name}: "${clip(ex.user_reply)}"`,
         ),
       );
       parts.push('');
@@ -219,35 +275,64 @@ export function buildSystemPrompt(
           '## How the user likes to phrase things',
           'Sentences the user actually chose before. Match their tone, vocabulary and length without copying verbatim:',
         );
-        examples.forEach((ex) => parts.push(`* ${ex}`));
+        examples.forEach((ex) => parts.push(`* ${clip(ex)}`));
         parts.push('');
       }
     }
   }
 
   // Bounded window of previous conversations + the current one (always last).
+  // The current conversation is non-negotiable; past ones are appended newest
+  // first only while the whole prompt stays under PROMPT_CHAR_BUDGET, so the
+  // assembled text can never outgrow the native 2048-token context.
   const recent = userData.conversations.slice(-(MAX_PAST_CONVERSATIONS + 1));
   const current = userData.conversations[userData.conversations.length - 1];
-  let hasPastHeader = false;
-  recent.forEach((conversation) => {
-    if (conversation.messages.length === 0) return;
-    if (conversation === current) {
-      parts.push('## Current conversation with the user', '');
-      renderConversation(parts, conversation, s.name);
-    } else {
-      if (!hasPastHeader) {
-        parts.push('## Past conversations', '');
-        hasPastHeader = true;
-      }
+
+  const currentBlock: string[] = [];
+  if (current && current.messages.length > 0) {
+    currentBlock.push('## Current conversation with the user', '');
+    renderConversation(
+      currentBlock,
+      current,
+      s.name,
+      MAX_MESSAGES_CURRENT_CONVERSATION,
+    );
+    currentBlock.push('');
+  }
+
+  const pastBlocks = recent
+    .filter((c) => c !== current && c.messages.length > 0)
+    .map((conversation) => {
+      const block: string[] = [];
       renderConversation(
-        parts,
+        block,
         conversation,
         s.name,
         MAX_MESSAGES_PER_PAST_CONVERSATION,
       );
-    }
-    parts.push('');
+      block.push('');
+      return block;
+    });
+
+  let used =
+    parts.join('\n').length +
+    currentBlock.join('\n').length +
+    PROMPT_TAIL_RESERVE;
+  const keptPast: string[][] = [];
+  // .some() gives break semantics: once the budget is hit, older (and thus
+  // less relevant) conversations are all dropped too.
+  [...pastBlocks].reverse().some((block) => {
+    const len = block.join('\n').length;
+    if (used + len > PROMPT_CHAR_BUDGET) return true;
+    used += len;
+    keptPast.unshift(block); // restore chronological order
+    return false;
   });
+  if (keptPast.length) {
+    parts.push('## Past conversations', '');
+    keptPast.forEach((block) => parts.push(...block));
+  }
+  parts.push(...currentBlock);
 
   const [lo, hi] = LENGTH_TO_NB_WORDS[params.desiredLength];
   parts.push(

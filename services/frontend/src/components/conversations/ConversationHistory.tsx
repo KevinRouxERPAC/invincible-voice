@@ -6,17 +6,21 @@ import {
   MessageSquare,
   X,
 } from 'lucide-react';
-import Image from 'next/image';
 import { Fragment, useCallback, useMemo, useState } from 'react';
 import ChatBubble from '@/components/icons/ChatBubble';
 import NewConversation from '@/components/icons/NewConversation';
-import { useTranslations } from '@/i18n';
+import { useLocale, useTranslations } from '@/i18n';
+import type { Locale } from '@/i18n/config';
 import { cn } from '@/utils/cn';
 import {
-  Conversation,
-  isSpeakerMessage,
-  isWriterMessage,
-} from '@/utils/userData';
+  DAY_GROUP_ORDER,
+  formatConversationDate,
+  formatConversationPreview,
+  getDayGroup,
+  getDayGroupLabel,
+  type DayGroupKey,
+} from '@/utils/conversationUtils';
+import { Conversation } from '@/utils/userData';
 
 interface ConversationHistoryProps {
   conversations: Conversation[];
@@ -27,81 +31,10 @@ interface ConversationHistoryProps {
   onArchiveConversation: (index: number, archived: boolean) => void;
 }
 
-const formatConversationPreview = (
-  conversation: Conversation,
-  t: (key: string) => string,
-): string => {
-  if (conversation.messages.length === 0) {
-    return t('conversation.emptyConversation');
-  }
-
-  const firstMessage = conversation.messages[0];
-  if (
-    (isSpeakerMessage(firstMessage) || isWriterMessage(firstMessage)) &&
-    firstMessage.content
-  ) {
-    return firstMessage.content;
-  }
-
-  return t('conversation.newChat');
-};
-
 const getConversationMessageCount = (conversation: Conversation): string => {
   return conversation.messages.length > 99
     ? '99+'
     : conversation.messages.length.toString();
-};
-
-const formatConversationDate = (
-  conversation: Conversation,
-  t: (key: string) => string,
-): string => {
-  if (!conversation.start_time) {
-    return '';
-  }
-
-  try {
-    const date = new Date(conversation.start_time);
-
-    if (Number.isNaN(date.getTime())) {
-      console.warn(
-        'Failed to parse conversation start_time:',
-        conversation.start_time,
-      );
-      return '';
-    }
-
-    const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-
-    if (diffInDays === 0) {
-      return date.toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-    }
-    if (diffInDays === 1) {
-      return t('conversation.yesterday');
-    }
-    if (diffInDays < 7) {
-      return date.toLocaleDateString([], { weekday: 'short' });
-    }
-    if (diffInDays < 365) {
-      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-    return date.toLocaleDateString([], {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  } catch {
-    console.warn(
-      'Failed to parse conversation start_time:',
-      conversation.start_time,
-    );
-    return '';
-  }
 };
 
 const ConversationHistory = ({
@@ -113,6 +46,7 @@ const ConversationHistory = ({
   onArchiveConversation,
 }: ConversationHistoryProps) => {
   const t = useTranslations();
+  const locale = useLocale();
   const [showArchived, setShowArchived] = useState(false);
 
   const byRecency = useCallback(
@@ -135,6 +69,24 @@ const ConversationHistory = ({
     [byRecency, conversations],
   );
 
+  // Group active conversations by day (wireframe 2a: Aujourd'hui / Hier / …)
+  const groupedActive = useMemo(() => {
+    const groups = DAY_GROUP_ORDER.reduce(
+      (acc, key) => {
+        acc[key] = [];
+        return acc;
+      },
+      {} as Record<DayGroupKey, Conversation[]>,
+    );
+    activeConversations.forEach((conv) => {
+      const key = getDayGroup(conv);
+      groups[key].push(conv);
+    });
+    return DAY_GROUP_ORDER.filter((key) => groups[key].length > 0).map(
+      (key) => ({ key, items: groups[key] }),
+    );
+  }, [activeConversations]);
+
   // `keyPrefix` keeps keys unique across the active and archived lists (both
   // render into the same container, so a shared "0" key would clash).
   const renderCard = (
@@ -151,28 +103,13 @@ const ConversationHistory = ({
       onSelectConversation={onConversationSelect}
       selectedConversationIndex={selectedConversationIndex}
       t={t}
+      locale={locale}
     />
   );
 
   return (
-    <div className='relative flex flex-col shrink-0 h-full pt-4 w-80'>
-      <div className='flex flex-row items-center justify-center shrink-0 gap-2 pb-2'>
-        <Image
-          src='/logo_invincible.png'
-          alt='Invincible Logo'
-          width={185}
-          height={22}
-          className='logo-themed'
-        />
-        <Image
-          src='/logo_kyutai.svg'
-          alt='Kyutai Logo'
-          width={53}
-          height={22}
-          className='logo-themed'
-        />
-      </div>
-      <div className='flex flex-col flex-1 gap-2 px-6 pt-2 pb-10 overflow-y-auto scrollbar-hidden'>
+    <div className='relative flex flex-col shrink-0 h-full w-80'>
+      <div className='flex flex-col flex-1 gap-2 px-6 pt-6 pb-10 overflow-y-auto overscroll-contain scrollbar-hidden'>
         {activeConversations.length === 0 &&
         archivedConversations.length === 0 ? (
           <div className='p-4 text-center text-muted'>
@@ -187,9 +124,16 @@ const ConversationHistory = ({
           </div>
         ) : (
           <Fragment>
-            {activeConversations.map((conversation, i) =>
-              renderCard(conversation, i, 'active'),
-            )}
+            {groupedActive.map(({ key, items }) => (
+              <Fragment key={key}>
+                <div className='mt-2 first:mt-0 text-[11px] font-bold uppercase tracking-wide text-muted px-1'>
+                  {getDayGroupLabel(key, t)}
+                </div>
+                {items.map((conversation, i) =>
+                  renderCard(conversation, i, `active-${key}`),
+                )}
+              </Fragment>
+            ))}
 
             {archivedConversations.length > 0 && (
               <Fragment>
@@ -242,6 +186,7 @@ interface ConversationCardProps {
   onSelectConversation: (index: number) => void;
   selectedConversationIndex: number | null;
   t: (key: string) => string;
+  locale: Locale;
 }
 
 const ConversationCard = ({
@@ -252,6 +197,7 @@ const ConversationCard = ({
   onSelectConversation,
   selectedConversationIndex,
   t,
+  locale,
 }: ConversationCardProps) => {
   const originalIndex = useMemo(() => {
     return conversations.findIndex(
@@ -304,7 +250,7 @@ const ConversationCard = ({
               </span>
             </div>
             <div className='text-sm text-muted'>
-              {formatConversationDate(conversation, t)}
+              {formatConversationDate(conversation, t, locale)}
             </div>
           </div>
           <div className='px-5 text-sm font-medium line-clamp-2'>

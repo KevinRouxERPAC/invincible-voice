@@ -168,7 +168,10 @@ describe('TTS Utility', () => {
           });
         }
         if (url.includes('/v1/tts/')) {
-          return Promise.resolve({ ok: true, body: { getReader: () => ({ read }) } });
+          return Promise.resolve({
+            ok: true,
+            body: { getReader: () => ({ read }) },
+          });
         }
         return Promise.reject(new Error('Unknown URL'));
       });
@@ -176,6 +179,47 @@ describe('TTS Utility', () => {
       await expect(
         playTTSStream({ text: 'odd chunks', messageId: 'm-odd' }),
       ).resolves.toBeDefined();
+    });
+
+    test('applies getSpeechRate() to the AudioBufferSourceNode playbackRate', async () => {
+      const { setSpeechRate } = await import('../../utils/speechRate');
+      setSpeechRate(1.25);
+
+      const playbackRates: number[] = [];
+      global.AudioContext = jest.fn().mockImplementation(() => ({
+        createBuffer: jest.fn(() => ({
+          copyToChannel: jest.fn(),
+          duration: 0.1,
+        })),
+        createBufferSource: jest.fn(() => {
+          const playbackRate = {} as { value: number };
+          Object.defineProperty(playbackRate, 'value', {
+            get: () => playbackRates[playbackRates.length - 1] ?? 1,
+            set: (v: number) => {
+              playbackRates.push(v);
+            },
+            configurable: true,
+          });
+          return {
+            connect: jest.fn(),
+            start: jest.fn(),
+            buffer: null,
+            playbackRate,
+          };
+        }),
+        destination: {},
+        currentTime: 0,
+      })) as unknown as typeof AudioContext;
+
+      global.fetch = mockFetchForTTS({ frames: 4 });
+
+      await playTTSStream({
+        text: 'Hello world',
+        messageId: 'msg-rate',
+        cacheType: 'temporary',
+      });
+
+      expect(playbackRates).toContain(1.25);
     });
   });
 });

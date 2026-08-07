@@ -4,6 +4,12 @@ project(llamajni CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Android 15+ requires native libs to be aligned on 16 KB pages; without this
+# flag the system shows a blocking compatibility dialog on every cold start.
+if(ANDROID)
+    add_link_options(-Wl,-z,max-page-size=16384)
+endif()
+
 # Build llama.cpp with the CPU backend compiled in (GGML_BACKEND_DL OFF), so the
 # whole engine ends up in a single shared lib and we don't rely on the fragile
 # runtime dlopen of ggml-cpu-*.so on Android.

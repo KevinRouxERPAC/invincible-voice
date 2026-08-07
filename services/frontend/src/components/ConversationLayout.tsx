@@ -3,8 +3,10 @@
 import {
   ArrowLeft,
   Compass,
+  Keyboard,
+  List,
   Megaphone,
-  Pause,
+  Play,
   Settings,
   X,
 } from 'lucide-react';
@@ -26,9 +28,11 @@ import type { PendingResponse } from '@/components/chat/ChatInterface';
 import ConversationHistory from '@/components/conversations/ConversationHistory';
 import ChatPanel from '@/components/mobile/ChatPanel';
 import HistoryPanel from '@/components/mobile/HistoryPanel';
+import QuickPhrasesSheet from '@/components/mobile/QuickPhrasesSheet';
 import ResponsePanel from '@/components/mobile/ResponsePanel';
 import MobileSettingsPopup from '@/components/settings/MobileSettingsPopup';
 import SettingsPopup from '@/components/settings/SettingsPopup';
+import BrandLogos from '@/components/ui/BrandLogos';
 import ErrorMessages, { type ErrorItem } from '@/components/ui/ErrorMessages';
 import { RESPONSES_SIZES, type ResponseSize } from '@/constants';
 import useKeyboardShortcuts from '@/hooks/useKeyboardShortcuts';
@@ -40,6 +44,7 @@ import {
   getStaticContextOption,
   getStaticRepeatOption,
 } from '@/utils/conversationUtils';
+import { triggerHapticFeedback } from '@/utils/haptics';
 import { isNativeApp } from '@/utils/platform';
 import type { UserData, UserSettings } from '@/utils/userData';
 
@@ -147,6 +152,8 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isDirectiveOpen, setIsDirectiveOpen] = useState(false);
+  const [isQuickPhrasesOpen, setIsQuickPhrasesOpen] = useState(false);
+  const [isWriteExpanded, setIsWriteExpanded] = useState(false);
   const [activePanel, setActivePanel] = useState<ActivePanel>(
     isShowingHistoryFromIdle && !isViewingPastConversation ? 'history' : 'chat',
   );
@@ -158,6 +165,10 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
 
   const isHistoryMode = isShowingHistoryFromIdle || isViewingPastConversation;
   const isSplitView = shouldConnect && !isHistoryMode;
+  const isFocusedMobileSession = isMobile && isSplitView;
+  const isHistoryListOnly =
+    isMobile && isShowingHistoryFromIdle && !isViewingPastConversation;
+  const quickPhrases = userData?.user_settings?.quick_phrases ?? [];
 
   useEffect(() => {
     if (isViewingPastConversation) {
@@ -172,6 +183,13 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
       directiveInputRef.current?.focus();
     }
   }, [isDirectiveOpen]);
+
+  useEffect(() => {
+    if (!shouldConnect) {
+      setIsWriteExpanded(false);
+      setIsQuickPhrasesOpen(false);
+    }
+  }, [shouldConnect]);
 
   // During a session the 4 medium cards are visible (M); history browsing uses XS.
   useEffect(() => {
@@ -197,6 +215,17 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   const handleEditResponse = useCallback(
     (text: string) => {
       onTextInputChange(text);
+      if (isFocusedMobileSession) {
+        setIsWriteExpanded(true);
+        setTimeout(() => {
+          const el = textareaRef.current;
+          if (el) {
+            el.focus();
+            el.setSelectionRange(el.value.length, el.value.length);
+          }
+        }, 0);
+        return;
+      }
       setActivePanel('chat');
       setTimeout(() => {
         const el = textareaRef.current;
@@ -206,7 +235,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
         }
       }, 0);
     },
-    [onTextInputChange],
+    [onTextInputChange, isFocusedMobileSession],
   );
 
   const pastConversation =
@@ -214,6 +243,67 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     userData?.conversations[selectedConversationIndex]
       ? userData.conversations[selectedConversationIndex]
       : undefined;
+
+  const renderIdleContent = () => (
+    <div className='flex-1 min-h-0 flex flex-col items-center px-4 pb-3 max-w-md mx-auto w-full overflow-y-auto overscroll-contain'>
+      {/* my-auto splits the leftover space evenly above and below this block,
+          so the content stays visually centered instead of leaving one big
+          void before the history link (wireframe 2a). */}
+      <div className='my-auto w-full flex flex-col items-center py-4'>
+        {/* On mobile the header shows the SOS button, so the brand mark
+            belongs here. On desktop the sidebar + header already show it,
+            so we skip a third copy to avoid visual redundancy. */}
+        {isMobile && (
+          <img
+            src='/logo_invincible.png'
+            alt='Invincible Voice'
+            className='logo-themed h-9 mb-8'
+          />
+        )}
+        <button
+          onClick={onConnectButtonPress}
+          data-scan-item
+          className='w-full min-h-[70px] flex items-center justify-center gap-2 px-4 bg-ink text-paper rounded-lg text-lg font-bold hover:opacity-90 transition-opacity'
+        >
+          <Play
+            size={20}
+            className='shrink-0'
+            fill='currentColor'
+          />
+          {t('conversation.startChatting')}
+        </button>
+        <p className='mt-6 mb-2.5 self-start text-[11px] font-bold uppercase tracking-wide text-muted'>
+          {t('conversation.quickPhrasesInstant')}
+        </p>
+        <QuickPhrases
+          phrases={quickPhrases}
+          onSelect={onQuickPhraseSelect}
+          grid
+          maxItems={5}
+          onEdit={onSettingsOpen}
+        />
+      </div>
+      {isMobile && (
+        <button
+          className='shrink-0 py-3 text-sm font-bold text-blue hover:text-blue-600 transition-colors'
+          onClick={onShowHistoryFromIdle}
+        >
+          {t('conversation.viewHistory')}
+        </button>
+      )}
+      {!isNativeApp() && (
+        <p className='shrink-0 pt-2 text-xs text-muted text-center'>
+          {t('common.textToSpeechProvider')}
+          <br />
+          <img
+            src='/gradium.svg'
+            alt='Gradium'
+            className='h-6 mt-1 inline-block'
+          />
+        </p>
+      )}
+    </div>
+  );
 
   // --- Idle: no session, no history browsing ---
   const showIdle =
@@ -224,13 +314,13 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
       return (
         <button
           aria-label={t('conversation.stopConversationAriaLabel')}
-          className='min-w-0 shrink mr-auto h-11 px-4 cursor-pointer bg-terra-tint border border-terra text-terra rounded-2xl flex flex-row items-center justify-center gap-2 text-sm'
+          className='min-w-0 shrink mr-auto h-11 px-3.5 cursor-pointer bg-surface border border-[#c69a6a] text-[#a06a2f] rounded-2xl flex flex-row items-center justify-center gap-1.5 text-sm font-bold'
           onClick={onConnectButtonPress}
           title={t('conversation.stopConversationAriaLabel')}
         >
-          <Pause
-            width={24}
-            height={24}
+          <X
+            width={18}
+            height={18}
             className='shrink-0'
           />
           <span className='truncate'>{t('conversation.stopConversation')}</span>
@@ -256,14 +346,160 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     }
     return (
       <div className='flex items-center gap-2 mr-auto'>
-        <img
-          src='/logo_invincible.png'
-          alt='InvincibleVoice'
-          className='logo-themed h-8'
-        />
+        {isMobile ? (
+          <EmergencyButton labeled />
+        ) : (
+          <BrandLogos className='h-8' />
+        )}
       </div>
     );
   };
+
+  const renderFocusedMobileFooter = () => {
+    if (isWriteExpanded) {
+      return (
+        <div className='flex gap-2 pb-1 items-end'>
+          <textarea
+            ref={textareaRef}
+            className='flex-1 p-2.5 bg-surface-2 border-2 border-hairline-2 rounded-sm text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
+            placeholder={t('conversation.typeMessagePlaceholder')}
+            rows={1}
+            value={textInput}
+            onChange={onChangeTextInput}
+            onKeyDown={onTextInputKeyDown}
+          />
+          <button
+            className='px-3 py-2 bg-blue-tint border-2 border-blue text-blue-600 rounded-md hover:bg-blue-tint-2 transition-colors disabled:opacity-50 text-sm font-bold min-w-[56px] min-h-[44px]'
+            onClick={() => {
+              triggerHapticFeedback();
+              onSendMessage();
+            }}
+            disabled={!textInput.trim()}
+          >
+            {t('conversation.sendMessage')}
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className='flex gap-2 pb-1'>
+        <button
+          data-scan-item
+          className='flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 bg-surface border-2 border-hairline-2 rounded-md text-sm font-bold text-ink-2'
+          onClick={() => setIsQuickPhrasesOpen(true)}
+        >
+          <List size={16} />
+          {t('conversation.quickPhrases')}
+        </button>
+        <button
+          data-scan-item
+          className='min-h-[44px] flex items-center justify-center gap-2 px-4 bg-blue-tint border-2 border-blue text-blue-600 rounded-md text-sm font-bold'
+          onClick={() => {
+            setIsWriteExpanded(true);
+            setTimeout(() => textareaRef.current?.focus(), 0);
+          }}
+        >
+          <Keyboard size={16} />
+          {t('conversation.writeMessage')}
+        </button>
+      </div>
+    );
+  };
+
+  const renderStandardFooter = () => (
+    <Fragment>
+      {!isHistoryMode && quickPhrases.length > 0 && (
+        <div className='mb-2 landscape:hidden'>
+          <QuickPhrases
+            phrases={quickPhrases}
+            onSelect={onQuickPhraseSelect}
+            compact
+          />
+        </div>
+      )}
+
+      {isDirectiveOpen && (
+        <div className='flex flex-row gap-2 mb-2'>
+          <input
+            className='grow px-4 py-3 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
+            placeholder={t('conversation.aiPilotPlaceholder')}
+            value={directiveInput}
+            onChange={(e) => onDirectiveInputChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                onDirectiveSubmit();
+                setIsDirectiveOpen(false);
+              }
+            }}
+            ref={directiveInputRef}
+          />
+          <button
+            onClick={() => {
+              onDirectiveSubmit();
+              setIsDirectiveOpen(false);
+            }}
+            className='px-4 py-3 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue cursor-pointer'
+            disabled={!directiveInput.trim()}
+          >
+            {t('conversation.aiPilotButton')}
+          </button>
+        </div>
+      )}
+
+      {shouldConnect && !isHistoryMode && !isMobile && (
+        <div className='flex flex-row gap-2 mb-2'>
+          <button
+            data-scan-item
+            onClick={() => onResponseSelect(staticContextOption.id)}
+            className='flex-1 min-h-[40px] px-3 py-2 text-xs leading-tight italic text-ink-2 bg-surface-2 border border-dashed border-hairline-2 rounded-2xl hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50 transition-all text-left'
+          >
+            {staticContextOption.text}
+          </button>
+          <button
+            data-scan-item
+            onClick={() => onResponseSelect(staticRepeatOption.id)}
+            className='flex-1 min-h-[40px] px-3 py-2 text-xs leading-tight italic text-ink-2 bg-surface-2 border border-dashed border-hairline-2 rounded-2xl hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50 transition-all text-left'
+          >
+            {staticRepeatOption.text}
+          </button>
+        </div>
+      )}
+
+      <div className='flex gap-2 pb-1 items-end'>
+        {shouldConnect && !isHistoryMode && isMobile && (
+          <button
+            className='shrink-0 h-11 w-11 flex items-center justify-center bg-surface border border-hairline-2 rounded-lg text-ink-2 hover:bg-paper transition-colors'
+            onClick={() => setIsDrawerOpen((v) => !v)}
+            aria-label={t('conversation.keywords')}
+            title={t('conversation.keywords')}
+          >
+            {isDrawerOpen ? <X size={20} /> : <Compass size={20} />}
+          </button>
+        )}
+        <textarea
+          ref={textareaRef}
+          className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
+          placeholder={t('conversation.typeMessagePlaceholder')}
+          rows={1}
+          value={textInput}
+          onChange={onChangeTextInput}
+          onKeyDown={onTextInputKeyDown}
+        />
+        <button
+          className='px-3 py-2 bg-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 text-sm min-w-[56px] min-h-[44px]'
+          onClick={() => {
+            triggerHapticFeedback();
+            onSendMessage();
+          }}
+          disabled={!textInput.trim()}
+        >
+          {t('conversation.sendMessage')}
+        </button>
+      </div>
+    </Fragment>
+  );
 
   return (
     <div
@@ -299,10 +535,11 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
               aria-label={t('conversation.takeFloor')}
               title={t('conversation.takeFloorHint')}
               className={cn(
-                'min-w-0 shrink h-11 px-3 rounded-2xl text-xs font-medium border transition-colors flex flex-row items-center justify-center gap-2',
+                'shrink-0 size-11 rounded-sm text-xs font-medium border transition-colors flex items-center justify-center',
                 isInitiating
                   ? 'bg-sage text-white border-sage'
                   : 'bg-surface text-ink-2 border-hairline-2',
+                !isMobile && 'min-w-0 h-11 px-3 flex-row gap-2',
               )}
             >
               <Megaphone
@@ -310,19 +547,23 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
                 height={18}
                 className='shrink-0'
               />
-              <span className='truncate lg:hidden'>
-                {t('conversation.takeFloor')}
-              </span>
+              {!isMobile && (
+                <span className='truncate'>{t('conversation.takeFloor')}</span>
+              )}
             </button>
           )}
-          <EmergencyButton compact />
-          <button
-            className='shrink-0 h-11 px-3 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-2xl flex flex-row items-center justify-center text-ink-2'
-            onClick={onSettingsOpen}
-            title={t('settings.changeSettings')}
-          >
-            <Settings size={20} />
-          </button>
+          {/* SOS: compact in session/history; labelled variant lives in the idle header left */}
+          {!showIdle && <EmergencyButton compact />}
+          {/* Settings: hidden during an active session on mobile (wireframe 2a) */}
+          {(!shouldConnect || !isMobile) && (
+            <button
+              className='shrink-0 size-11 cursor-pointer bg-surface border border-hairline-2 hover:bg-paper transition-colors shadow-[var(--sh-sm)] rounded-sm flex items-center justify-center text-ink-2'
+              onClick={onSettingsOpen}
+              title={t('settings.changeSettings')}
+            >
+              <Settings size={20} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -352,91 +593,82 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
         )}
 
         {showIdle ? (
-          <div className='flex-1 flex flex-col items-center justify-center gap-4'>
-            <button
-              onClick={onConnectButtonPress}
-              className='px-8 py-4 bg-blue text-white rounded-2xl text-lg font-medium hover:bg-blue-600 transition-colors'
-            >
-              {t('conversation.startChatting')}
-            </button>
-            {isMobile && (userData?.conversations ?? []).length > 0 && (
-              <button
-                className='flex items-center gap-2 px-6 min-h-[44px] bg-surface border border-hairline-2 rounded-2xl text-sm text-ink-2 hover:bg-paper transition-colors'
-                onClick={onShowHistoryFromIdle}
-              >
-                {t('conversation.history')}
-              </button>
-            )}
-            {/* Native app uses the phone's own STT/TTS, not Gradium — only
-                credit Gradium on the web build that actually uses it. */}
-            {!isNativeApp() && (
-              <p className='text-xs text-muted text-center'>
-                {t('common.textToSpeechProvider')}
-                <br />
-                <img
-                  src='/gradium.svg'
-                  alt='Gradium'
-                  className='h-6 mt-1 inline-block'
-                />
-              </p>
-            )}
-          </div>
+          renderIdleContent()
         ) : (
           <Fragment>
             {/* Main: chat + responses (split) or tabs */}
             {isSplitView ? (
-              <div className='flex-1 min-h-0 flex flex-col landscape:flex-row'>
-                <div className='flex flex-col flex-1 min-h-0 landscape:basis-1/2'>
+              <div
+                className={cn(
+                  'flex-1 min-h-0 flex flex-col',
+                  !isFocusedMobileSession && 'landscape:flex-row',
+                )}
+              >
+                {/* Message bubbles fill the top in every layout; during a
+                    focused mobile session the suggestions sit below them as
+                    full-width stacked rows. */}
+                <div
+                  className={cn(
+                    'flex flex-col flex-1 min-h-0',
+                    !isFocusedMobileSession && 'landscape:basis-1/2',
+                  )}
+                >
                   <ChatPanel
                     chatHistory={chatHistory}
                     isConnected={shouldConnect}
                     currentSpeakerMessage={currentSpeakerMessage}
                   />
                 </div>
-                {/* landscape:basis-1/2 matters: the chat column keeps flex-1
-                    (grow) + basis-1/2, so without a matching basis here the
-                    responses column started from 0% and ended up at ~25% —
-                    cards wrapped one character per line. */}
-                <div className='flex flex-col shrink-0 h-[42%] min-h-[190px] border-t border-hairline landscape:h-auto landscape:min-h-0 landscape:flex-1 landscape:basis-1/2 landscape:border-t-0 landscape:border-l'>
+                <div
+                  className={cn(
+                    'flex flex-col min-h-0 border-t border-hairline',
+                    isFocusedMobileSession
+                      ? 'shrink-0 h-[42%] min-h-[236px]'
+                      : 'shrink-0 h-[42%] min-h-[190px] landscape:h-auto landscape:flex-1 landscape:basis-1/2 landscape:border-t-0 landscape:border-l',
+                  )}
+                >
                   <ResponsePanel
                     frozenResponses={frozenResponses}
                     pendingResponses={pendingResponses}
                     onResponseEdit={onResponseEdit}
                     onResponseSelect={onResponseSelect}
                     onEditResponseInChat={handleEditResponse}
+                    large
                   />
                 </div>
               </div>
             ) : (
               <div className='flex-1 min-h-0 flex flex-col'>
-                {/* Tabs: chat / history (mobile + desktop when browsing history) */}
-                <div className='flex border-b border-hairline shrink-0'>
-                  <button
-                    className={cn(
-                      'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
-                      activePanel === 'chat'
-                        ? 'text-blue-600 border-b-2 border-blue'
-                        : 'text-muted hover:text-ink',
-                    )}
-                    onClick={() => setActivePanel('chat')}
-                  >
-                    {t('conversation.chat')}
-                  </button>
-                  <button
-                    className={cn(
-                      'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
-                      activePanel === 'history'
-                        ? 'text-blue-600 border-b-2 border-blue'
-                        : 'text-muted hover:text-ink',
-                    )}
-                    onClick={() => setActivePanel('history')}
-                  >
-                    {t('conversation.history')}
-                  </button>
-                </div>
+                {/* History list from idle: no tabs (wireframe 2a) */}
+                {!isHistoryListOnly && (
+                  <div className='flex border-b border-hairline shrink-0'>
+                    <button
+                      className={cn(
+                        'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
+                        activePanel === 'chat'
+                          ? 'text-blue-600 border-b-2 border-blue'
+                          : 'text-muted hover:text-ink',
+                      )}
+                      onClick={() => setActivePanel('chat')}
+                    >
+                      {t('conversation.chat')}
+                    </button>
+                    <button
+                      className={cn(
+                        'flex-1 py-3 landscape:py-1 min-h-[44px] text-sm font-medium transition-colors',
+                        activePanel === 'history'
+                          ? 'text-blue-600 border-b-2 border-blue'
+                          : 'text-muted hover:text-ink',
+                      )}
+                      onClick={() => setActivePanel('history')}
+                    >
+                      {t('conversation.history')}
+                    </button>
+                  </div>
+                )}
                 <div
                   className={cn(
-                    activePanel === 'chat'
+                    activePanel === 'chat' && !isHistoryListOnly
                       ? 'flex flex-col flex-1 min-h-0'
                       : 'hidden',
                   )}
@@ -451,7 +683,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
                 </div>
                 <div
                   className={cn(
-                    activePanel === 'history'
+                    activePanel === 'history' || isHistoryListOnly
                       ? 'flex flex-col flex-1 min-h-0'
                       : 'hidden',
                   )}
@@ -494,102 +726,22 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
         )}
       </div>
 
-      {/* === Footer: textarea + send === */}
-      {!showIdle && (
-        <div className='px-4 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-hairline shrink-0'>
-          {/* Quick phrases (mobile only) */}
-          {!isHistoryMode &&
-            (userData?.user_settings?.quick_phrases ?? []).length > 0 && (
-              <div className='mb-2 landscape:hidden'>
-                <QuickPhrases
-                  phrases={userData?.user_settings?.quick_phrases ?? []}
-                  onSelect={onQuickPhraseSelect}
-                  compact
-                />
-              </div>
-            )}
-
-          {/* Directive popover */}
-          {isDirectiveOpen && (
-            <div className='flex flex-row gap-2 mb-2'>
-              <input
-                className='grow px-4 py-3 text-sm text-ink bg-surface-2 border border-hairline-2 rounded-2xl focus:outline-none focus:border-blue'
-                placeholder={t('conversation.aiPilotPlaceholder')}
-                value={directiveInput}
-                onChange={(e) => onDirectiveInputChange(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    onDirectiveSubmit();
-                    setIsDirectiveOpen(false);
-                  }
-                }}
-                ref={directiveInputRef}
-              />
-              <button
-                onClick={() => {
-                  onDirectiveSubmit();
-                  setIsDirectiveOpen(false);
-                }}
-                className='px-4 py-3 text-sm font-bold text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper disabled:opacity-50 transition-colors focus:outline-none focus:border-blue cursor-pointer'
-                disabled={!directiveInput.trim()}
-              >
-                {t('conversation.aiPilotButton')}
-              </button>
-            </div>
-          )}
-
-          {/* Compact quick questions */}
-          {shouldConnect && !isHistoryMode && (
-            <div className='flex flex-row gap-2 mb-2'>
-              <button
-                data-scan-item
-                onClick={() => onResponseSelect(staticContextOption.id)}
-                className='flex-1 min-h-[40px] px-3 py-2 text-xs leading-tight italic text-ink-2 bg-surface-2 border border-dashed border-hairline-2 rounded-2xl hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50 transition-all text-left'
-              >
-                {staticContextOption.text}
-              </button>
-              <button
-                data-scan-item
-                onClick={() => onResponseSelect(staticRepeatOption.id)}
-                className='flex-1 min-h-[40px] px-3 py-2 text-xs leading-tight italic text-ink-2 bg-surface-2 border border-dashed border-hairline-2 rounded-2xl hover:border-hairline focus:outline-none focus:ring-2 focus:ring-blue focus:ring-opacity-50 transition-all text-left'
-              >
-                {staticRepeatOption.text}
-              </button>
-            </div>
-          )}
-
-          {/* Textarea + actions */}
-          <div className='flex gap-2 pb-1 items-end'>
-            {/* Drawer toggle (mobile only — on desktop the drawer is pinned) */}
-            {shouldConnect && !isHistoryMode && isMobile && (
-              <button
-                className='shrink-0 h-11 w-11 flex items-center justify-center bg-surface border border-hairline-2 rounded-lg text-ink-2 hover:bg-paper transition-colors'
-                onClick={() => setIsDrawerOpen((v) => !v)}
-                aria-label={t('conversation.keywords')}
-                title={t('conversation.keywords')}
-              >
-                {isDrawerOpen ? <X size={20} /> : <Compass size={20} />}
-              </button>
-            )}
-            <textarea
-              ref={textareaRef}
-              className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
-              placeholder={t('conversation.typeMessagePlaceholder')}
-              rows={1}
-              value={textInput}
-              onChange={onChangeTextInput}
-              onKeyDown={onTextInputKeyDown}
-            />
-            <button
-              className='px-3 py-2 bg-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 text-sm min-w-[56px] min-h-[44px]'
-              onClick={onSendMessage}
-              disabled={!textInput.trim()}
-            >
-              {t('conversation.sendMessage')}
-            </button>
-          </div>
+      {/* === Footer: ribbon (mobile session) or full input === */}
+      {!showIdle && !isHistoryListOnly && (
+        <div className='px-3 pt-2 pb-1 landscape:pt-1 landscape:pb-0 border-t border-hairline shrink-0'>
+          {isFocusedMobileSession
+            ? renderFocusedMobileFooter()
+            : renderStandardFooter()}
         </div>
+      )}
+
+      {isQuickPhrasesOpen && (
+        <QuickPhrasesSheet
+          phrases={quickPhrases}
+          onSelect={onQuickPhraseSelect}
+          onClose={() => setIsQuickPhrasesOpen(false)}
+          onEdit={onSettingsOpen}
+        />
       )}
 
       {/* Safe area spacer */}
@@ -620,12 +772,13 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
             role='dialog'
             aria-modal='true'
             aria-label={t('settings.title')}
-            className='w-full h-full max-w-md max-h-full p-4 overflow-y-auto border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl lg:max-w-7xl lg:rounded-[40px] lg:shadow-custom lg:px-12 lg:pt-6 lg:pb-8'
+            className='w-full h-full max-w-md max-h-full flex flex-col overflow-hidden border bg-surface border-hairline shadow-[var(--sh-lg)] rounded-3xl lg:max-w-7xl lg:rounded-xl lg:shadow-custom lg:px-12 lg:pt-6 lg:pb-8'
           >
             {isMobile ? (
               <MobileSettingsPopup
                 userSettings={userData.user_settings}
                 email={userData.email}
+                isAdmin={Boolean(userData.is_admin)}
                 onSave={onSettingsSave}
                 onCancel={onSettingsCancel}
               />
@@ -633,6 +786,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
               <SettingsPopup
                 userSettings={userData.user_settings}
                 email={userData.email}
+                isAdmin={Boolean(userData.is_admin)}
                 onSave={onSettingsSave}
                 onCancel={onSettingsCancel}
               />

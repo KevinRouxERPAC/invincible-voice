@@ -5,6 +5,8 @@ import {
   saveLocalUserData,
   saveLocalUserSettings,
   setLocalConversationArchived,
+  upsertConversation,
+  upsertLocalConversation,
 } from '../localUserData';
 import type { Conversation, UserData, UserSettings } from '../userData';
 
@@ -124,6 +126,79 @@ describe('appendLocalConversation', () => {
     const stored = loadLocalUserData();
     expect(stored?.user_id).toBe('local');
     expect(stored?.conversations).toHaveLength(1);
+  });
+});
+
+describe('upsertLocalConversation (incremental in-progress save)', () => {
+  function turn(marker: string, startTime: string): Conversation {
+    return {
+      messages: [{ content: marker, messageId: `id-${marker}` }],
+      start_time: startTime,
+    };
+  }
+
+  test('appends a new session (no existing start_time match)', () => {
+    saveLocalUserData(USER_DATA);
+    upsertLocalConversation(turn('NEW', '2026-07-12T10:00:00.000Z'));
+
+    const stored = loadLocalUserData();
+    expect(stored?.conversations).toHaveLength(2);
+    expect(stored?.conversations[1].messages[0].content).toBe('NEW');
+  });
+
+  test('overwrites the same session instead of duplicating it', () => {
+    const start = '2026-07-12T10:00:00.000Z';
+    saveLocalUserData(USER_DATA);
+
+    // Simulate the hook persisting after each message of one session.
+    upsertLocalConversation({
+      messages: [{ speaker: 'Marie', content: 'Salut' }],
+      start_time: start,
+    });
+    upsertLocalConversation({
+      messages: [
+        { speaker: 'Marie', content: 'Salut' },
+        { content: 'Bonjour Marie', messageId: 'w1' },
+      ],
+      start_time: start,
+    });
+
+    const stored = loadLocalUserData();
+    // One original + exactly one row for the in-progress session (no dup).
+    expect(stored?.conversations).toHaveLength(2);
+    expect(stored?.conversations[1].messages).toHaveLength(2);
+  });
+
+  test('ignores an empty conversation (a session with no exchange)', () => {
+    saveLocalUserData(USER_DATA);
+    upsertLocalConversation({
+      messages: [],
+      start_time: '2026-07-12T10:00:00.000Z',
+    });
+    expect(loadLocalUserData()?.conversations).toHaveLength(1);
+  });
+
+  test('seeds a profile when persisting before any settings were stored', () => {
+    upsertLocalConversation(turn('FIRST', '2026-07-12T10:00:00.000Z'));
+    const stored = loadLocalUserData();
+    expect(stored?.user_id).toBe('local');
+    expect(stored?.conversations).toHaveLength(1);
+  });
+
+  test('upsertConversation replaces by start_time and appends otherwise', () => {
+    const existing = [turn('A', '2026-07-10T00:00:00.000Z')];
+    const replaced = upsertConversation(
+      existing,
+      turn('A2', '2026-07-10T00:00:00.000Z'),
+    );
+    expect(replaced).toHaveLength(1);
+    expect(replaced[0].messages[0].content).toBe('A2');
+
+    const appended = upsertConversation(
+      existing,
+      turn('B', '2026-07-11T00:00:00.000Z'),
+    );
+    expect(appended).toHaveLength(2);
   });
 });
 

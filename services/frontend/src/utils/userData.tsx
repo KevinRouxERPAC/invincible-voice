@@ -97,6 +97,7 @@ export interface UserSettings {
 export interface UserData {
   email: string;
   user_id: string; // UUID as string in TypeScript
+  is_admin?: boolean;
   user_settings: UserSettings;
   conversations: Conversation[];
   /**
@@ -579,4 +580,102 @@ export async function deleteVoice(
       status: 0,
     };
   }
+}
+
+export interface AdminUserSummary {
+  email: string;
+  is_admin: boolean;
+  has_password: boolean;
+  has_google: boolean;
+  display_name: string;
+}
+
+export interface AdminCreateUserInput {
+  email: string;
+  password?: string;
+  google_only?: boolean;
+  language?: string;
+  is_admin?: boolean;
+}
+
+export interface AdminUpdateUserInput {
+  is_admin?: boolean;
+  password?: string;
+}
+
+async function adminFetch<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<ApiResponse<T>> {
+  try {
+    const response = await fetch(apiUrl(path), {
+      ...init,
+      headers: addAuthHeaders({
+        'Content-Type': 'application/json',
+        ...(init.headers as Record<string, string> | undefined),
+      }),
+    });
+
+    if (!response.ok) {
+      let detail = response.statusText;
+      try {
+        const body = (await response.json()) as { detail?: string };
+        if (body.detail) {
+          detail = body.detail;
+        }
+      } catch {
+        // ignore JSON parse errors
+      }
+      return { error: detail, status: response.status };
+    }
+
+    if (response.status === 204) {
+      return { status: response.status };
+    }
+
+    const data = (await response.json()) as T;
+    return { data, status: response.status };
+  } catch (error) {
+    return {
+      error: `Network error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      status: 0,
+    };
+  }
+}
+
+export async function listAdminUsers(): Promise<
+  ApiResponse<AdminUserSummary[]>
+> {
+  return adminFetch<AdminUserSummary[]>('/v1/admin/users');
+}
+
+export async function createAdminUser(
+  input: AdminCreateUserInput,
+): Promise<ApiResponse<AdminUserSummary>> {
+  return adminFetch<AdminUserSummary>('/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateAdminUser(
+  email: string,
+  input: AdminUpdateUserInput,
+): Promise<ApiResponse<AdminUserSummary>> {
+  return adminFetch<AdminUserSummary>(
+    `/v1/admin/users/${encodeURIComponent(email)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    },
+  );
+}
+
+export async function deleteAdminUser(
+  email: string,
+): Promise<ApiResponse<{ status: string }>> {
+  return adminFetch<{ status: string }>(
+    `/v1/admin/users/${encodeURIComponent(email)}`,
+    { method: 'DELETE' },
+  );
 }

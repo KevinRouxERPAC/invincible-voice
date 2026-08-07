@@ -21,3 +21,25 @@ export const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_URL ?? '').replace(
  */
 export const apiUrl = (path: string): string =>
   BACKEND_BASE ? `${BACKEND_BASE}${path}` : `/api${path}`;
+
+/**
+ * fetch() with a hard timeout. A plain fetch can hang indefinitely on a flaky
+ * mobile network — e.g. a Wi-Fi→5G handover mid-request, or a Cloud Run backend
+ * still cold-starting — which would leave the app stuck forever on a blocking
+ * gate (the "Loading…" screen). The AbortController guarantees the promise
+ * always settles: on timeout it rejects with an AbortError, so callers fall
+ * into their existing network-error branch instead of never resolving.
+ */
+export const fetchWithTimeout = async (
+  input: string,
+  init: RequestInit = {},
+  timeoutMs = 10000,
+): Promise<Response> => {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+};
