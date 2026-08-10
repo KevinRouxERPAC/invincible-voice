@@ -1,21 +1,26 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# ProGuard / R8 rules for Capacitor (InvincibleVoice)
+# Keep stack traces readable in Play Console crash reports.
+-keepattributes SourceFile,LineNumberTable,Signature,*Annotation*,InnerClasses,EnclosingMethod
+-renamesourcefileattribute SourceFile
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Capacitor core + plugins discovered via reflection / annotations
+-keep class com.getcapacitor.** { *; }
+-keep class com.capacitorjs.** { *; }
+-keep class org.apache.cordova.** { *; }
+-keep public class * extends com.getcapacitor.Plugin
+-keepclassmembers class * {
+    @com.getcapacitor.annotation.CapacitorPlugin *;
+    @com.getcapacitor.PluginMethod *;
+}
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Community / Capgo plugins used by this app
+-keep class com.getcapacitor.community.** { *; }
+-keep class ee.forgr.capacitor.social.login.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# App entry + any JS bridges
+-keep class com.invinciblevoice.app.** { *; }
+
+# Google / AndroidX bits sometimes touched by Social Login
+-keep class com.google.android.gms.auth.** { *; }
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.api.**

@@ -1,0 +1,31 @@
+{
+  "local": {
+    "email": "tuto.krdu18@gmail.com",
+    "name": "Nouvel utilisateur",
+    "learn_style": true,
+    "facts_count": 0,
+    "facts_sample": [],
+    "style_exchanges_count": 0,
+    "style_exchanges_sample": [],
+    "tone_summary": null,
+    "tone_updated_at": null,
+    "conversations_count": 24,
+    "processed_conversations": 22,
+    "conversations_since_tone_refresh": 0
+  },
+  "server": {
+    "email": "tuto.krdu18@gmail.com",
+    "name": "Nouvel utilisateur",
+    "learn_style": true,
+    "facts_count": 0,
+    "facts_sample": [],
+    "style_exchanges_count": 0,
+    "style_exchanges_sample": [],
+    "tone_summary": null,
+    "tone_updated_at": null,
+    "conversations_count": 24,
+    "processed_conversations": 22,
+    "conversations_since_tone_refresh": 0
+  },
+  "serverErr": null
+}

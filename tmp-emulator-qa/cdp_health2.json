@@ -1,0 +1,10 @@
+{
+  "ok": true,
+  "status": 200,
+  "base": "https://invincible-backend-789604937344.europe-west1.run.app",
+  "health": {
+    "stt_up": true,
+    "llm_up": true,
+    "ok": true
+  }
+}

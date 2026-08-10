@@ -1,0 +1,22 @@
+{
+  "capacitor": true,
+  "isNative": true,
+  "platform": "android",
+  "plugins": [
+    "SpeechRecognition",
+    "LlamaCpp",
+    "SystemBars",
+    "SocialLogin",
+    "Haptics",
+    "CapacitorCookies",
+    "WebView",
+    "TextToSpeech",
+    "Filesystem",
+    "CapacitorHttp"
+  ],
+  "hasLlama": true,
+  "hasSpeech": true,
+  "hasTts": true,
+  "hasHaptics": true,
+  "hasSocial": true
+}

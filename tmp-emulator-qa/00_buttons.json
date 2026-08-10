@@ -1,0 +1,52 @@
+[
+  {
+    "t": "Urgence",
+    "aria": "À l'aide",
+    "disabled": false
+  },
+  {
+    "t": "Démarrer la conversation",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "J'ai besoin d'aide, s'il te plaît.",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "J'ai soif.",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "J'ai faim.",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "Peux-tu m'installer plus confortablement ?",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "Merci beaucoup !",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "+ Éditer",
+    "aria": "Phrases rapides",
+    "disabled": false
+  },
+  {
+    "t": "Éditer les phrases rapides",
+    "aria": "",
+    "disabled": false
+  },
+  {
+    "t": "Voir l'historique",
+    "aria": "",
+    "disabled": false
+  }
+]

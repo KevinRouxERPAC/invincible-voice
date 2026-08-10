@@ -1,0 +1,147 @@
+[
+  {
+    "name": "Home idle (logged in)",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim."
+  },
+  {
+    "name": "Emergency CTA on home",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Quick phrases on home",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "History entry on home",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "No offline LLM UI on home",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Capacitor Android native",
+    "ok": true,
+    "detail": "{\"capacitor\":true,\"isNative\":true,\"platform\":\"android\",\"plugins\":[\"SpeechRecognition\",\"SystemBars\",\"SocialLogin\",\"Haptics\",\"CapacitorCookies\",\"WebView\",\"TextToSpeech\",\"CapacitorHttp\"],\"hasSpeech\":true,\"hasTts\":true,\"hasHaptics\":true,\"hasSocial\":true,\"hasLlama\":false}"
+  },
+  {
+    "name": "Plugin SpeechRecognition",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin TextToSpeech",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin Haptics",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin SocialLogin",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "No LlamaCpp plugin (removed)",
+    "ok": true,
+    "detail": "[\"SpeechRecognition\",\"SystemBars\",\"SocialLogin\",\"Haptics\",\"CapacitorCookies\",\"WebView\",\"TextToSpeech\",\"CapacitorHttp\"]"
+  },
+  {
+    "name": "Backend /v1/health from WebView",
+    "ok": true,
+    "detail": "{\"ok\":true,\"status\":200,\"base\":\"https://invincible-backend-789604937344.europe-west1.run.app\",\"health\":{\"stt_up\":true,\"llm_up\":true,\"ok\":true}}"
+  },
+  {
+    "name": "Tap quick phrase J'ai soif",
+    "ok": true,
+    "detail": "{\"ok\":true,\"text\":\"|J'ai soif.\"}"
+  },
+  {
+    "name": "Still on home after phrase",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Tap Emergency",
+    "ok": true,
+    "detail": "{\"ok\":true,\"text\":\"À l'aide|Urgence\"}"
+  },
+  {
+    "name": "Emergency interaction (no crash)",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim. | Peux-tu m'installer plus confortablement ? | Merci beaucoup !"
+  },
+  {
+    "name": "Open quick phrases editor",
+    "ok": true,
+    "detail": "nav={\"ok\":true,\"text\":\"|Éditer les phrases rapides\"}"
+  },
+  {
+    "name": "Re-open phrases editor (nav sync)",
+    "ok": true,
+    "detail": "{\"ok\":true,\"text\":\"|Éditer les phrases rapides\"}"
+  },
+  {
+    "name": "Open conversation history",
+    "ok": true,
+    "detail": "Retour | Nouvelle discussion | AUJOURD'HUI | Conversation vide | 12:03 | Conversation vide | 11:30 | Bonjour"
+  },
+  {
+    "name": "Open settings",
+    "ok": true,
+    "detail": "labeled"
+  },
+  {
+    "name": "Settings modal content",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim. | Peux-tu m'installer plus confortablement ? | Merci beaucoup ! | + Éditer | Éditer les phrases rapides"
+  },
+  {
+    "name": "Settings has NO offline LLM toggle",
+    "ok": true,
+    "detail": "absent (ok)"
+  },
+  {
+    "name": "Mobile settings editable fields present",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim. | Peux-tu m'installer plus confortablement ? | Merci beaucoup ! | + Éditer | Éditer les phrases rapides | Voir l'historique | Changer les paramètres"
+  },
+  {
+    "name": "Desktop-only settings hint (or limited mobile surface)",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Edit phrases entry reachable from settings",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Tap start conversation",
+    "ok": true,
+    "detail": "{\"ok\":true,\"text\":\"|Démarrer la conversation\"}"
+  },
+  {
+    "name": "Cloud session started",
+    "ok": true,
+    "detail": "Fin | Prêt à discuter | Commencez à parler et votre voix sera transcrite. InvincibleVoice suggérera des réponses pour aider à communiquer. | Bonjour, ça va ? | Salut, comment vas‑tu ? | Bonjour, je suis là | Mots-clés | manger | ⋯ | dormir | ⋯ | sortir"
+  },
+  {
+    "name": "Settings during conversation (blocked or toast)",
+    "ok": true,
+    "detail": "open=gear | Fin | Prêt à discuter | Commencez à parler et votre voix sera transcrite. InvincibleVoice suggérera des réponses pour aider à communiquer. | Bonjour, comment vas‑tu ? | Salut, quels sont tes plans ? | Bonjour, envie de discuter cinéma ? | Mots-clés | manger"
+  },
+  {
+    "name": "Return home after session",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim."
+  }
+]

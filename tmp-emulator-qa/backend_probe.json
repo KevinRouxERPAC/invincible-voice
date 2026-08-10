@@ -1,0 +1,25 @@
+{
+  "urls": [],
+  "probe": [
+    {
+      "base": "https://invincible-backend-789604937344.europe-west1.run.app",
+      "ok": true,
+      "status": 200,
+      "health": {
+        "stt_up": true,
+        "llm_up": true,
+        "ok": true
+      }
+    },
+    {
+      "base": "https://invincible-backend-s2y5qx44wa-ew.a.run.app",
+      "ok": true,
+      "status": 200,
+      "health": {
+        "stt_up": true,
+        "llm_up": true,
+        "ok": true
+      }
+    }
+  ]
+}

@@ -83,6 +83,15 @@ const aab = join(
   'release',
   'app-release.aab',
 );
+const mapping = join(
+  androidDir,
+  'app',
+  'build',
+  'outputs',
+  'mapping',
+  'release',
+  'mapping.txt',
+);
 
 console.log(
   [
@@ -90,7 +99,10 @@ console.log(
     'Release AAB built successfully:',
     `  ${aab}`,
     '',
-    'Upload this file to Google Play Console (closed testing track).',
+    'R8 deobfuscation mapping (upload to Play Console with the AAB):',
+    `  ${mapping}`,
+    '',
+    'Play Console → version → Fichiers de désobscurcissement → mapping.txt',
     'Increment versionCode in android/version.properties before each upload.',
     '',
   ].join('\n'),

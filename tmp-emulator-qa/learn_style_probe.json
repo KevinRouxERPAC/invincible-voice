@@ -1,0 +1,31 @@
+{
+  "relevantKeys": [
+    "bearerToken",
+    "invincible-voice-local-userdata",
+    "invincible-voice-google-client-id",
+    "invincible-voice-settings-snapshot"
+  ],
+  "parsed": null,
+  "endpoints": [
+    {
+      "path": "/v1/user",
+      "error": "TypeError: Failed to fetch"
+    },
+    {
+      "path": "/v1/user/",
+      "status": 401,
+      "body": "{\"detail\":\"Not authenticated\"}"
+    },
+    {
+      "path": "/v1/health",
+      "status": 200,
+      "body": "{\"stt_up\":true,\"llm_up\":true,\"ok\":true}"
+    }
+  ],
+  "snapPreview": {
+    "bearerToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0dXRvLmtyZHUxOEBnbWFpbC5jb20iLCJleHAiOjE3OTM4NjcyMjJ9.9SaS-vHgVhtKWNZfVqKNQTq2kUfV5rR95YsDCIn9WyU",
+    "invincible-voice-local-userdata": "{\"user_id\":\"8f082f09-c012-4ba1-8f69-43d457b610d0\",\"email\":\"tuto.krdu18@gmail.com\",\"hashed_password\":\"\",\"google_sub\":\"114379177704789726284\",\"is_admin\":true,\"admin_bootstrap_locked\":false,\"user_settings\":{\"name\":\"Nouvel utilisateur\",\"prompt\":\"\",\"additional_keywords\":[\"manger\",\"dormir\",\"sortir\",\"discuter\",\"réfléchir\",\"cinéma\",\"théâtre\",\"oui\",\"non\",\"bonjour\",\"au revoir\"],\"friends\":[],\"documents\":[],\"quick_phrases\":[{\"text\":\"J'ai besoin d'aide, s'il te plaît.\",\"category\":\"Besoins\"},{\"text\":\"J'ai soi",
+    "invincible-voice-google-client-id": "789604937344-k6sbh33vv5kr4d7899eptt0fukpidaft.apps.googleusercontent.com",
+    "invincible-voice-settings-snapshot": "{\"quick_phrases\":[{\"text\":\"J'ai besoin d'aide, s'il te plaît.\",\"category\":\"Besoins\"},{\"text\":\"J'ai soif.\",\"category\":\"Besoins\"},{\"text\":\"J'ai faim.\",\"category\":\"Besoins\"},{\"text\":\"Peux-tu m'installer plus confortablement ?\",\"category\":\"Confort\"},{\"text\":\"Merci beaucoup !\",\"category\":\"Social\"},{\"text\":\"Ça va, ne t'inquiète pas.\",\"category\":\"Social\"}],\"voice\":null,\"expected_transcription_language\":null}"
+  }
+}

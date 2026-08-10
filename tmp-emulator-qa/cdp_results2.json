@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Open settings",
+    "ok": true,
+    "detail": "labeled"
+  },
+  {
+    "name": "Settings modal content",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim. | Peux-tu m'installer plus confortablement ? | Merci beaucoup !"
+  },
+  {
+    "name": "Offline mode toggle in mobile settings",
+    "ok": true,
+    "detail": "Mode hors ligne"
+  },
+  {
+    "name": "Edit phrases entry in settings",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Backend /v1/health from WebView",
+    "ok": true,
+    "detail": "{\"ok\":true,\"status\":200,\"base\":\"https://invincible-backend-789604937344.europe-west1.run.app\",\"health\":{\"stt_up\":true,\"llm_up\":true,\"ok\":true}}"
+  },
+  {
+    "name": "Quick phrase tap",
+    "ok": true,
+    "detail": "J'ai soif."
+  }
+]

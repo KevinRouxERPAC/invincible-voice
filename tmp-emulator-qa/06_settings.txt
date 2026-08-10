@@ -1,0 +1,58 @@
+URGENCE
+Démarrer la conversation
+PHRASES RAPIDES · VOIX IMMÉDIATE
+J'ai besoin d'aide, s'il te plaît.
+J'ai soif.
+J'ai faim.
+Peux-tu m'installer plus confortablement ?
+Merci beaucoup !
++ Éditer
+Éditer les phrases rapides
+Voir l'historique
+Changer les paramètres
+Votre email
+Votre nom
+Langue de transcription attendue
+Laisser la reconnaissance vocale deviner
+English
+Français
+Deutsch
+Español
+Português
+Vitesse de la parole
+100%
+
+Réglez la vitesse à laquelle les suggestions sont lues à voix haute.
+
+Adapter les suggestions à mon style
+L'assistant s'appuie sur les phrases que vous avez déjà choisies pour coller à votre ton et vos formulations.
+Accessibilité motrice
+Mode d'accès
+Désactivé
+Balayage auto
+Balayage par pas
+Survol (dwell)
+Cibles plus grandes
+Affichage & Disposition
+Taille du texte
+A
+A
+A
+A
+Thème visuel
+Clair
+Sombre
+Contraste
+Normal
+Élevé
+Raccourcis clavier (réponses)
+AZERTY (A-Z-Q-S)
+QWERTY (A-S-D-F)
+
+Plus de paramètres sont disponibles sur la version ordinateur ou tablette d'Invincible Voice
+
+Gérer les accès
++ Éditer
+Conditions d'utilisation
+Se déconnecter
+Sauvegarder

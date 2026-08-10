@@ -1,0 +1,77 @@
+[
+  {
+    "name": "Settings modal open",
+    "ok": false,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim."
+  },
+  {
+    "name": "Offline toggle visible in mobile settings",
+    "ok": false,
+    "detail": "not found in first snapshot"
+  },
+  {
+    "name": "Return to idle home",
+    "ok": true,
+    "detail": "URGENCE | Démarrer la conversation | PHRASES RAPIDES · VOIX IMMÉDIATE | J'ai besoin d'aide, s'il te plaît. | J'ai soif. | J'ai faim. | Peux-tu m'installer plus confortablement ? | Merci beaucoup !"
+  },
+  {
+    "name": "Open quick phrases editor",
+    "ok": true,
+    "detail": "click=+ Éditer"
+  },
+  {
+    "name": "Re-open phrases editor after Back (nav sync)",
+    "ok": true,
+    "detail": "nav=home-edit"
+  },
+  {
+    "name": "Open conversation history",
+    "ok": true,
+    "detail": "click=Voir l'historique | Retour\nNouvelle discussion\nAUJOURD'HUI\n\nBonjour\n\n09:54\n\nBonjour\n\n09:51\n\nBonjour\n\n09:48\n\nBonjour\n\n09:44\n\nBonjour\n\n09:41\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:41\n\nBonjour\n\n09:34\n\nBonjour\n\n09:28\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:28\n\nNouvelle discussion\n\n09:19\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:19\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:19\n\nNouvelle discussion\n\n09:13\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:13\n\nNouvelle discussion\n\n09:09\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:09\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:08\n\nBonjour, comment vas-tu aujourd'hui ?\n\n09:08\n\nConversation vide\n\n08:33\n\nConversation vide\n\n08:33"
+  },
+  {
+    "name": "Start conversation (cloud session)",
+    "ok": true,
+    "detail": "Fin | Prêt à discuter | Commencez à parler et votre voix sera transcrite. InvincibleVoice suggérera des réponses pour aider à communiquer. | Bonjour, ça va bien | Bonjour, comment allez‑vous | Bonjour, je suis prêt | Mots-clés | manger | ⋯ | dormir"
+  },
+  {
+    "name": "Backend health from WebView",
+    "ok": false,
+    "detail": "{\"ok\":false,\"error\":\"no-backend-url-in-page\"}"
+  },
+  {
+    "name": "Emergency button present",
+    "ok": true,
+    "detail": "Urgence"
+  },
+  {
+    "name": "Capacitor native platform",
+    "ok": true,
+    "detail": "{\"capacitor\":true,\"isNative\":true,\"platform\":\"android\",\"plugins\":[\"SpeechRecognition\",\"LlamaCpp\",\"SystemBars\",\"SocialLogin\",\"Haptics\",\"CapacitorCookies\",\"WebView\",\"TextToSpeech\",\"Filesystem\",\"CapacitorHttp\"],\"hasLlama\":true,\"hasSpeech\":true,\"hasTts\":true,\"hasHaptics\":true,\"hasSocial\":true}"
+  },
+  {
+    "name": "Plugin SpeechRecognition",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin TextToSpeech",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin Haptics",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "Plugin LlamaCpp registered",
+    "ok": true,
+    "detail": ""
+  },
+  {
+    "name": "LlamaCpp graceful on emulator (not crashing)",
+    "ok": true,
+    "detail": "{\"present\":true,\"loaded\":false,\"nativeAvailable\":false}"
+  }
+]

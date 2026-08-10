@@ -126,6 +126,12 @@ Le fichier à uploader est :
 
 `android/app/build/outputs/bundle/release/app-release.aab`
 
+Avec R8 activé, joignez aussi le fichier de désobscurcissement :
+
+`android/app/build/outputs/mapping/release/mapping.txt`
+
+(Play Console → la version → **Fichiers de désobscurcissement**.)
+
 Avant chaque nouvelle version Play Store, incrémentez `versionCode` dans
 `android/version.properties` (entier strictement croissant).
 
