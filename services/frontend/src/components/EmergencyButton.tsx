@@ -35,10 +35,23 @@ const EmergencyButton: FC<EmergencyButtonProps> = ({
       text: t('conversation.emergencyPhrase'),
       voiceName: snapshot?.voice,
       lang: snapshot?.expected_transcription_language ?? undefined,
-      preferLocal: true, // Force local for emergency
+      // Cloned voice from the prefetched cache (instant, offline-proof via
+      // IndexedDB); the phone's local engine stays the safety net when the
+      // cached audio is missing (first run before prefetch completed).
+      preferLocal: false,
       pitch: 0.8, // Slightly deeper for authority/masculine tone
       rate: 1.1, // Slightly faster for urgency
-    }).catch(console.error);
+    }).catch(() => {
+      // Absolute last resort — never leave the user mute on an emergency.
+      playQuickPhrase({
+        text: t('conversation.emergencyPhrase'),
+        voiceName: snapshot?.voice,
+        lang: snapshot?.expected_transcription_language ?? undefined,
+        preferLocal: true,
+        pitch: 0.8,
+        rate: 1.1,
+      }).catch(console.error);
+    });
   }, [t]);
 
   const renderButtonContent = () => {

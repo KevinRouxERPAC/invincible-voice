@@ -41,7 +41,7 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'my-voice',
       lang: 'fr',
-      preferLocal: true,
+      preferLocal: false,
       pitch: 0.8,
       rate: 1.1,
     });
@@ -55,6 +55,22 @@ describe('EmergencyButton', () => {
 
     expect(playQuickPhrase).toHaveBeenCalledWith(
       expect.objectContaining({ text: 'I need help, please come!' }),
+    );
+  });
+
+  test('falls back to the local engine when the cached/backend path fails', async () => {
+    (playQuickPhrase as jest.Mock)
+      .mockImplementationOnce(() => Promise.reject(new Error('offline')))
+      .mockImplementationOnce(() => Promise.resolve('native'));
+    saveSettingsSnapshot(SETTINGS);
+    const user = userEvent.setup();
+    render(<EmergencyButton />);
+
+    await user.click(screen.getByRole('button', { name: 'Help' }));
+
+    expect(playQuickPhrase).toHaveBeenCalledTimes(2);
+    expect(playQuickPhrase).toHaveBeenLastCalledWith(
+      expect.objectContaining({ preferLocal: true }),
     );
   });
 
@@ -72,7 +88,7 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'old-voice',
       lang: 'en',
-      preferLocal: true,
+      preferLocal: false,
       pitch: 0.8,
       rate: 1.1,
     });
@@ -92,7 +108,7 @@ describe('EmergencyButton', () => {
       text: 'I need help, please come!',
       voiceName: 'new-voice',
       lang: 'fr',
-      preferLocal: true,
+      preferLocal: false,
       pitch: 0.8,
       rate: 1.1,
     });
