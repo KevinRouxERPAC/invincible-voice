@@ -16,6 +16,7 @@
     "passwordMismatch": "Passwords do not match",
     "emailOrPasswordIncorrect": "Email or password is incorrect",
     "accountNotProvisioned": "This account is not authorized yet. Contact your administrator.",
+    "accountHasPassword": "This account uses a password. Sign in with your email, or ask your administrator to link Google.",
     "adminProvisionedOnly": "Access is limited to administrator-provisioned accounts. Contact your administrator to request access.",
     "or": "or",
     "add": "Add",

@@ -16,6 +16,7 @@
     "passwordMismatch": "As senhas não coincidem",
     "emailOrPasswordIncorrect": "E-mail ou senha incorretos",
     "accountNotProvisioned": "Esta conta ainda não está autorizada. Contacte o seu administrador.",
+    "accountHasPassword": "Esta conta usa uma senha. Entre com seu e-mail ou peça ao administrador para vincular o Google.",
     "adminProvisionedOnly": "O acesso é limitado a contas criadas pelo administrador. Contacte o seu administrador para solicitar acesso.",
     "or": "ou",
     "add": "Adicionar",

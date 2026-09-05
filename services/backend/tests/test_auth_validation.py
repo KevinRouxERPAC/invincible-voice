@@ -143,6 +143,64 @@ def test_google_login_links_first_sign_in_for_google_only_user(
 
 @patch("backend.routes.auth.GOOGLE_CLIENT_ID", "test-google-client-id")
 @patch("backend.routes.auth.verify_google_token")
+def test_google_login_links_verified_email_password_account(
+    mock_verify_google_token, client: TestClient
+):
+    """A Google-verified email proves ownership: a password account links and keeps its password."""
+    email = "password-user@example.com"
+    user = get_new_user(email, "en", hashed_password=hash_password("super-secret-pw"))
+    user.save()
+
+    mock_verify_google_token.return_value = {
+        "email": email,
+        "sub": "google-sub-linked",
+        "email_verified": True,
+    }
+    response = client.post(
+        "/auth/google",
+        json={"token": "fake-token", "language": "en"},
+    )
+    assert response.status_code == 200
+    assert response.json()["access_token"]
+
+    saved = get_user_data_from_storage(email)
+    assert saved.google_sub == "google-sub-linked"
+    # Password is preserved: password login still works after the link.
+    login = client.post(
+        "/auth/login",
+        data={"username": email, "password": "super-secret-pw"},
+    )
+    assert login.status_code == 200
+
+
+@patch("backend.routes.auth.GOOGLE_CLIENT_ID", "test-google-client-id")
+@patch("backend.routes.auth.verify_google_token")
+def test_google_login_rejects_unverified_email_password_account(
+    mock_verify_google_token, client: TestClient
+):
+    """Without the verified-email claim a password account is not linkable (409)."""
+    email = "unverified-user@example.com"
+    user = get_new_user(email, "en", hashed_password=hash_password("super-secret-pw"))
+    user.save()
+
+    mock_verify_google_token.return_value = {
+        "email": email,
+        "sub": "google-sub-unverified",
+        "email_verified": False,
+    }
+    response = client.post(
+        "/auth/google",
+        json={"token": "fake-token", "language": "en"},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Account exists, login with password"
+
+    saved = get_user_data_from_storage(email)
+    assert saved.google_sub is None
+
+
+@patch("backend.routes.auth.GOOGLE_CLIENT_ID", "test-google-client-id")
+@patch("backend.routes.auth.verify_google_token")
 def test_google_login_applies_google_display_name(
     mock_verify_google_token, client: TestClient
 ):

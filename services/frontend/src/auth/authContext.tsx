@@ -30,13 +30,13 @@ export type AuthStatus = (typeof AUTH_STATUSES)[AuthStatusKeys];
 
 interface AuthContextInterface {
   authStatus: AuthStatus;
-  authError: 'invalid' | 'not_provisioned' | false;
+  authError: 'invalid' | 'not_provisioned' | 'password_conflict' | false;
   allowPassword: boolean;
   googleClientId: string;
   userData: UserData | null;
   signIn: (email: string, password: string) => void;
   googleSignIn: (googleToken: string) => void;
-  setAuthError: (error: 'invalid' | 'not_provisioned' | false) => void;
+  setAuthError: (error: 'invalid' | 'not_provisioned' | 'password_conflict' | false) => void;
   signOut: () => void;
   acceptTermsOfServices: () => Promise<void>;
   fetchUserData: () => Promise<void>;
@@ -73,7 +73,7 @@ const getCachedGoogleClientId = (): string => {
 
 const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
   const [authError, setAuthError] = useState<
-    'invalid' | 'not_provisioned' | false
+    'invalid' | 'not_provisioned' | 'password_conflict' | false
   >(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(
     AUTH_STATUSES.NOT_CHECKED,
@@ -179,6 +179,8 @@ const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
           await fetchUserData();
         } else if (response.status === 403) {
           setAuthError('not_provisioned');
+        } else if (response.status === 409) {
+          setAuthError('password_conflict');
         } else {
           setAuthError('invalid');
         }

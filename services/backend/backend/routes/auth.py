@@ -105,9 +105,18 @@ def google_login(
         ) from None
 
     if user.google_sub is None:
-        if user.hashed_password:
+        # First Google sign-in links the provisioned account. A Google-verified
+        # email is proof of ownership (same trust model as Firebase/Auth0
+        # account linking), so password accounts can link too — users who were
+        # provisioned with a password keep it and gain Google sign-in. Without
+        # the verified-email claim we keep the conservative legacy behavior:
+        # only passwordless (google-only) accounts auto-link.
+        if (
+            google_user.get("email_verified") is not True
+            and user.hashed_password
+        ):
             raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
+                status_code=status.HTTP_409_CONFLICT,
                 detail="Account exists, login with password",
             )
         # Google-only account provisioned by an operator: link on first sign-in.

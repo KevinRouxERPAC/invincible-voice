@@ -16,6 +16,7 @@
     "passwordMismatch": "Passwörter stimmen nicht überein",
     "emailOrPasswordIncorrect": "E-Mail oder Passwort ist falsch",
     "accountNotProvisioned": "Dieses Konto ist noch nicht autorisiert. Wenden Sie sich an Ihren Administrator.",
+    "accountHasPassword": "Dieses Konto verwendet ein Passwort. Melde dich mit deiner E-Mail an oder bitte deinen Administrator, Google zu verknüpfen.",
     "adminProvisionedOnly": "Der Zugang ist auf vom Administrator erstellte Konten beschränkt. Wenden Sie sich an Ihren Administrator, um Zugang zu erhalten.",
     "or": "oder",
     "add": "Hinzufügen",

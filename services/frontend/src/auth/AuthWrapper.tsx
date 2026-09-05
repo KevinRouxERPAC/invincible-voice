@@ -82,7 +82,7 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
 export default AuthWrapper;
 
 interface SignInScreenProps {
-  authError: 'invalid' | 'not_provisioned' | false;
+  authError: 'invalid' | 'not_provisioned' | 'password_conflict' | false;
   allowPassword: boolean;
   onSignIn: (email: string, password: string) => void;
 }
@@ -120,6 +120,9 @@ const SignInScreen: FC<SignInScreenProps> = ({
   const errorMessage = (() => {
     if (authError === 'not_provisioned') {
       return t('common.accountNotProvisioned');
+    }
+    if (authError === 'password_conflict') {
+      return t('common.accountHasPassword');
     }
     if (authError === 'invalid') {
       return t('common.emailOrPasswordIncorrect');
