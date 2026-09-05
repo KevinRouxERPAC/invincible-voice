@@ -36,7 +36,9 @@ interface AuthContextInterface {
   userData: UserData | null;
   signIn: (email: string, password: string) => void;
   googleSignIn: (googleToken: string) => void;
-  setAuthError: (error: 'invalid' | 'not_provisioned' | 'password_conflict' | false) => void;
+  setAuthError: (
+    error: 'invalid' | 'not_provisioned' | 'password_conflict' | false,
+  ) => void;
   signOut: () => void;
   acceptTermsOfServices: () => Promise<void>;
   fetchUserData: () => Promise<void>;
