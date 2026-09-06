@@ -220,6 +220,9 @@
   },
   "connection": {
     "couldNotConnect": "Konnte nicht verbinden :(",
+    "wakingTitle": "Der Server startet…",
+    "wakingHelp": "Der Server war im Ruhezustand, um Ressourcen zu sparen. Der Start kann bis zu einer Minute dauern — diese Seite aktualisiert sich von selbst.",
+    "wakingAttempt": "Versuch {attempt} von {total}",
     "serviceStatus": "Dienststatus:",
     "backend": "Backend",
     "stt": "STT",

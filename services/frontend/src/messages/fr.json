@@ -220,6 +220,9 @@
   },
   "connection": {
     "couldNotConnect": "Connexion impossible :(",
+    "wakingTitle": "Le serveur démarre…",
+    "wakingHelp": "Le serveur était en veille pour économiser les ressources. Son démarrage peut prendre jusqu'à une minute — cette page se mettra à jour toute seule.",
+    "wakingAttempt": "Tentative {attempt} sur {total}",
     "serviceStatus": "État du service :",
     "backend": "Backend",
     "stt": "STT",

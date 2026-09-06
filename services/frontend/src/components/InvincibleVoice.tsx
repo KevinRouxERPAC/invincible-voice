@@ -12,6 +12,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
 import ConversationLayout from '@/components/ConversationLayout';
 import OfflineFallback from '@/components/OfflineFallback';
+import ServerWaking from '@/components/ServerWaking';
 import type { PendingResponse } from '@/components/chat/ChatInterface';
 import ConfirmationDialog from '@/components/conversations/ConfirmationDialog';
 import type { MobileSettingsPanel } from '@/components/settings/MobileSettingsPopup';
@@ -55,6 +56,16 @@ interface PendingKeyword {
   text: string;
   isComplete: boolean;
 }
+
+// Spaced health-check retry schedule, absorbing a ~70 s Cloud Run cold start
+// (instance idle → container boot + Gradium/LLM init). Attempts run at
+// t=0, 12, 25, 40, 55, 70, 85, 100 s: the last calls land past the measured
+// wake time even in the worst case, while each individual wait stays short
+// so the user is never stuck long after the server is actually up.
+const WAKE_RETRY_TOTAL = 8;
+const WAKE_RETRY_DELAYS_MS = [
+  0, 12_000, 13_000, 15_000, 15_000, 15_000, 15_000, 15_000,
+];
 
 const InvincibleVoice = () => {
   const t = useTranslations();
@@ -127,6 +138,13 @@ const InvincibleVoice = () => {
   const [isInitiating, setIsInitiating] = useState(false);
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
+  // Server waking state: while a Cloud Run cold start is in progress (spaced
+  // health-check retries), show the dedicated "server starting" screen
+  // instead of the failure fallback. attempt/total drive the status line.
+  const [waking, setWaking] = useState<{
+    attempt: number;
+    total: number;
+  } | null>(null);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const bearerToken = useMemo(() => getBearerToken(), []);
 
@@ -928,15 +946,24 @@ const InvincibleVoice = () => {
           ...(isNativeApp() ? { backend_url: backendHealthUrl } : {}),
         };
         setHealthStatus(nextStatus);
+        setWaking(null);
         return nextStatus;
       } catch {
         // Cloud Run cold start: the first request after idle time pays container
-        // startup and can exceed the timeout even though the backend is fine.
-        // Retry once immediately — by the second attempt the instance is usually
-        // up, and the user never sees a false "backend unreachable" screen.
-        if (attempt < 2) {
+        // startup (measured ~70 s when fully idle) and exceeds the timeout even
+        // though the backend is fine. Retry with increasing delays while showing
+        // the "server starting" screen; only give up after the full schedule.
+        if (attempt < WAKE_RETRY_TOTAL) {
+          setWaking({ attempt: attempt + 1, total: WAKE_RETRY_TOTAL });
+          const delay = WAKE_RETRY_DELAYS_MS[attempt] ?? 15_000;
+          if (delay > 0) {
+            await new Promise((resolve) => {
+              setTimeout(resolve, delay);
+            });
+          }
           return checkHealth(attempt + 1);
         }
+        setWaking(null);
         const nextStatus: HealthStatus = {
           connected: 'no',
           ok: false,
@@ -1339,6 +1366,18 @@ const InvincibleVoice = () => {
       <div className='flex flex-col items-center justify-center min-h-screen gap-4'>
         <h1 className='mb-4 text-xl'>{t('common.loading')}</h1>
       </div>
+    );
+  }
+
+  // Cloud Run cold start in progress: show the dedicated waking screen instead
+  // of the failure fallback, so the user knows the server is starting (not
+  // broken) and the page recovers by itself once it answers.
+  if (waking) {
+    return (
+      <ServerWaking
+        attempt={waking.attempt}
+        total={waking.total}
+      />
     );
   }
 

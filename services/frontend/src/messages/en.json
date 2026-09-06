@@ -220,6 +220,9 @@
   },
   "connection": {
     "couldNotConnect": "Couldn't connect :(",
+    "wakingTitle": "The server is starting…",
+    "wakingHelp": "The server was sleeping to save resources. Starting it can take up to a minute — this page will update by itself.",
+    "wakingAttempt": "Attempt {attempt} of {total}",
     "serviceStatus": "Service status:",
     "backend": "Backend",
     "stt": "STT",

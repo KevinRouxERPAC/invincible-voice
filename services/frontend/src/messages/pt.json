@@ -220,6 +220,9 @@
   },
   "connection": {
     "couldNotConnect": "Não foi possível conectar :(",
+    "wakingTitle": "O servidor está a arrancar…",
+    "wakingHelp": "O servidor estava adormecido para poupar recursos. O arranque pode levar até um minuto — esta página atualiza-se sozinha.",
+    "wakingAttempt": "Tentativa {attempt} de {total}",
     "serviceStatus": "Status do serviço:",
     "backend": "Backend",
     "stt": "STT",
