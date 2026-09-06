@@ -40,14 +40,17 @@ l'audio est ambigu. Les suggestions ont rebasculé en français aussitôt.
 **Parade lundi** : tester dans une pièce calme, ou vérifier Réglages → Langue = Français
 (c'est déjà le cas sur le compte démo). Ne pas présenter l'app devant une TV allumée.
 
-### 2. Cold start Cloud Run : 41 s mesurées (MOYEN — voir recommandation)
-Premier appel après idle : 41 s (l'instance charge le modèle). L'app abandonne son
-health check après 6 s → « Impossible de se connecter » si l'instance est endormie.
-Le fix `retry-once` poussé aujourd'hui (commit eef8c8b) absorbe les cold starts courts
-(< 12 s) mais PAS un cold start de 41 s.
-**Recommandation pour lundi** : 5 minutes avant la démo, ouvrir l'app une première fois
-(réveil de l'instance) OU me demander de réveiller le backend à distance. Solution
-durable : min-instances=1 (~250-350 €/mois, à décider) ou un 2e/3e retry espacé.
+### 2. Cold start Cloud Run : 70 s mesurées (MOYEN — voir recommandation)
+Premier appel après idle : **69,7 s** (test propre : 16 min d'extinction, puis un appel).
+L'app abandonne son health check après 6 s → « Impossible de se connecter » si
+l'instance est endormie.
+**Fix déployé (commit 4fb9cd5, PWA redéployée)** : écran dédié « Le serveur démarre… »
+avec 8 retries espacés (t=0 → 100 s). L'utilisateur voit que le serveur se réveille
+et la page bascule toute seule une fois le serveur up. L'APK v0.1.4 embarque
+l'ancien code — le fix sera actif sur Android au prochain build sur ta machine.
+**Recommandation pour lundi (APK actuel)** : 2 min avant la démo, ouvrir l'app une
+première fois (réveil de l'instance) OU me demander de réveiller le backend à distance.
+Solution durable : min-instances=1 (coût idle permanent, à chiffrer) ou rebuild APK.
 
 ### 3. Erreur transitoire « Le serveur a rencontré une erreur » (FAIBLE)
 Affichée 1 fois pendant les tests, l'app a continué sans crash. Le retry a fonctionné.
