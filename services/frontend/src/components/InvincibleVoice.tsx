@@ -885,30 +885,63 @@ const InvincibleVoice = () => {
     },
     [textInput, sendMessage, sendCurrentKeywords, clearResponses],
   );
-  const checkHealth = useCallback(async (): Promise<HealthStatus> => {
-    const backendHealthUrl = apiUrl(`/v1/health`);
-    const internetUp = hasInternetConnectivity();
+  const checkHealth = useCallback(
+    async (attempt = 1): Promise<HealthStatus> => {
+      const backendHealthUrl = apiUrl(`/v1/health`);
+      const internetUp = hasInternetConnectivity();
 
-    try {
-      const controller = new AbortController();
-      // On native Android we may need a bit more time because /v1/health now
-      // also checks LLM reachability (quick network call). Keep UX responsive
-      // but avoid false negatives due to an overly short abort.
-      const timeoutMs = isNativeApp() ? 6000 : 3000;
-      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const controller = new AbortController();
+        // On native Android we may need a bit more time because /v1/health now
+        // also checks LLM reachability (quick network call). Keep UX responsive
+        // but avoid false negatives due to an overly short abort.
+        const timeoutMs = isNativeApp() ? 6000 : 3000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const response = await fetch(backendHealthUrl, {
-        signal: controller.signal,
-        headers: addAuthHeaders(),
-      });
+        const response = await fetch(backendHealthUrl, {
+          signal: controller.signal,
+          headers: addAuthHeaders(),
+        });
 
-      clearTimeout(timeoutId);
-      if (!response.ok) {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+          const nextStatus: HealthStatus = {
+            connected: 'yes_request_fail',
+            ok: false,
+            internet_up: true,
+            backend_up: true,
+            backend_url: backendHealthUrl,
+            ...(isNativeApp()
+              ? { stt_up: true, tts_up: true, llm_up: false }
+              : {}),
+          };
+          setHealthStatus(nextStatus);
+          return nextStatus;
+        }
+        const data = await response.json();
         const nextStatus: HealthStatus = {
-          connected: 'yes_request_fail',
-          ok: false,
+          ...data,
+          connected: 'yes_request_ok',
+          mode: 'cloud',
           internet_up: true,
           backend_up: true,
+          ...(isNativeApp() ? { backend_url: backendHealthUrl } : {}),
+        };
+        setHealthStatus(nextStatus);
+        return nextStatus;
+      } catch {
+        // Cloud Run cold start: the first request after idle time pays container
+        // startup and can exceed the timeout even though the backend is fine.
+        // Retry once immediately — by the second attempt the instance is usually
+        // up, and the user never sees a false "backend unreachable" screen.
+        if (attempt < 2) {
+          return checkHealth(attempt + 1);
+        }
+        const nextStatus: HealthStatus = {
+          connected: 'no',
+          ok: false,
+          internet_up: internetUp,
+          backend_up: false,
           backend_url: backendHealthUrl,
           ...(isNativeApp()
             ? { stt_up: true, tts_up: true, llm_up: false }
@@ -917,30 +950,9 @@ const InvincibleVoice = () => {
         setHealthStatus(nextStatus);
         return nextStatus;
       }
-      const data = await response.json();
-      const nextStatus: HealthStatus = {
-        ...data,
-        connected: 'yes_request_ok',
-        mode: 'cloud',
-        internet_up: true,
-        backend_up: true,
-        ...(isNativeApp() ? { backend_url: backendHealthUrl } : {}),
-      };
-      setHealthStatus(nextStatus);
-      return nextStatus;
-    } catch {
-      const nextStatus: HealthStatus = {
-        connected: 'no',
-        ok: false,
-        internet_up: internetUp,
-        backend_up: false,
-        backend_url: backendHealthUrl,
-        ...(isNativeApp() ? { stt_up: true, tts_up: true, llm_up: false } : {}),
-      };
-      setHealthStatus(nextStatus);
-      return nextStatus;
-    }
-  }, []);
+    },
+    [],
+  );
 
   const onConnectButtonPress = useCallback(async () => {
     // Don't allow connecting when viewing a past conversation
@@ -1334,7 +1346,9 @@ const InvincibleVoice = () => {
     return (
       <OfflineFallback
         healthStatus={healthStatus}
-        onRetry={checkHealth}
+        // Wrapped: checkHealth's optional `attempt` parameter must not receive
+        // the click event (a truthy event would skip the first real attempt).
+        onRetry={() => checkHealth()}
       />
     );
   }
