@@ -32,7 +32,10 @@ def main() -> None:
         for row in rows:
             if row["Question ID (machine readable)"] != question_id:
                 continue
-            if response_id == "" or row["Response ID (machine readable)"] == response_id:
+            if (
+                response_id == ""
+                or row["Response ID (machine readable)"] == response_id
+            ):
                 row["Response value"] = value
                 return
         raise KeyError(f"Missing row: {question_id} / {response_id!r}")
@@ -108,7 +111,10 @@ def main() -> None:
         set_mc(prefix + "DATA_USAGE_USER_CONTROL", {control})
         set_mc(prefix + "DATA_USAGE_COLLECTION_PURPOSE", set(purposes))
         for row in rows:
-            if row["Question ID (machine readable)"] == prefix + "DATA_USAGE_SHARING_PURPOSE":
+            if (
+                row["Question ID (machine readable)"]
+                == prefix + "DATA_USAGE_SHARING_PURPOSE"
+            ):
                 row["Response value"] = ""
 
     fill_data_type(

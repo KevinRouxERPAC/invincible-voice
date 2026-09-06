@@ -409,9 +409,7 @@ async def await_memory_consolidation(
     """
     import asyncio
 
-    deadline = (
-        MEMORY_CONSOLIDATION_TIMEOUT_SECONDS if timeout is None else timeout
-    )
+    deadline = MEMORY_CONSOLIDATION_TIMEOUT_SECONDS if timeout is None else timeout
     try:
         await asyncio.wait_for(
             consolidate_memory_for_user(user_email),
@@ -426,7 +424,6 @@ async def await_memory_consolidation(
         )
     except Exception:
         logger.exception(
-            "Memory consolidation failed for %s; the existing memory is "
-            "unchanged.",
+            "Memory consolidation failed for %s; the existing memory is unchanged.",
             user_email,
         )

@@ -69,7 +69,7 @@ export default function RootLayout({
                 var params = new URLSearchParams(window.location.search);
                 var demoMode = params.get('demo');
                 if (demoMode !== '1' && demoMode !== 'login') return;
-                
+
                 // demo=1 → logged in; demo=login → shows login screen (no token)
                 if (demoMode === '1') {
                   try {

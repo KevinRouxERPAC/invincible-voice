@@ -488,6 +488,7 @@ async def test_tone_profile_refreshes_after_enough_conversations():
     # Counter reset so the profile isn't regenerated every single session.
     assert user.memory.conversations_since_tone_refresh == 0
 
+
 @pytest.mark.asyncio
 async def test_consolidate_persists_markers_when_no_new_facts():
     """Fact markers / tone counter must flip `changed` even with empty facts."""

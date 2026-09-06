@@ -1,6 +1,6 @@
 # Checklist QA — InvincibleVoice
 
-Checklist exécutable pour vérifier toute l’app (desktop PWA + Android si disponible).  
+Checklist exécutable pour vérifier toute l’app (desktop PWA + Android si disponible).
 Cocher : `[x]` OK · `[ ]` à faire · `N/A` non applicable.
 
 **Prérequis**
@@ -9,7 +9,7 @@ Cocher : `[x]` OK · `[ ]` à faire · `N/A` non applicable.
 - [ ] `services/frontend/.env.local` avec `NEXT_PUBLIC_BACKEND_URL=https://….run.app`
 - [ ] Compte admin (panneau Admin ou `create_user.py` + `KYUTAI_USERS_DATA_PATH=gs://…`)
 
-**Dernière exécution** : 2026-07-17  
+**Dernière exécution** : 2026-07-17
 **Environnement** :
 
 - Suites auto : Frontend Jest **225 passed**, Backend pytest **74 passed**

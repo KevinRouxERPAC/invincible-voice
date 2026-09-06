@@ -111,10 +111,7 @@ def google_login(
         # provisioned with a password keep it and gain Google sign-in. Without
         # the verified-email claim we keep the conservative legacy behavior:
         # only passwordless (google-only) accounts auto-link.
-        if (
-            google_user.get("email_verified") is not True
-            and user.hashed_password
-        ):
+        if google_user.get("email_verified") is not True and user.hashed_password:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Account exists, login with password",

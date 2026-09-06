@@ -252,9 +252,7 @@ def extract_style_exchanges_from_conversation(
                 if pending_speaker_lines
                 else INITIATIVE_SPEAKER_TURN
             )
-            exchanges.append(
-                StyleExchange(speaker_turn=speaker_turn, user_reply=reply)
-            )
+            exchanges.append(StyleExchange(speaker_turn=speaker_turn, user_reply=reply))
             pending_speaker_lines.clear()
 
     return exchanges

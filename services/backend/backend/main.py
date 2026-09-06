@@ -47,9 +47,7 @@ ClientEventAdapter = TypeAdapter(
 
 # Background metrics tasks
 redis_metrics_task = (
-    RedisMetricsBackgroundTask(REDIS_URL)
-    if os.getenv("REDIS_URL")
-    else None
+    RedisMetricsBackgroundTask(REDIS_URL) if os.getenv("REDIS_URL") else None
 )
 storage_metrics_task = StorageMetricsBackgroundTask(USERS_SETTINGS_AND_HISTORY_DIR)
 
