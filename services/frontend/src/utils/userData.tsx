@@ -4,8 +4,11 @@ import { isNativeApp } from '@/utils/platform';
 import { apiUrl } from './backend';
 import { loadSettingsSnapshot } from './localSettingsCache';
 import {
+  clearPendingSettings,
   deleteLocalConversation,
   loadLocalUserData,
+  loadPendingSettings,
+  queuePendingSettings,
   saveLocalUserData,
   saveLocalUserSettings,
   setLocalConversationArchived,
@@ -234,10 +237,16 @@ export async function getUserData(): Promise<ApiResponse<UserData>> {
       memory: normalizeUserMemory(data.memory),
     };
 
-    // On native, mirror the freshly-fetched profile so SOS / OfflineFallback
-    // can still use the latest settings and phrases when the backend is down.
+    // On native, re-POST any settings edited offline first, then mirror.
+    // Without this, a successful fetch would overwrite the local mirror
+    // with the stale server profile and silently drop offline edits.
     if (isNativeApp()) {
-      saveLocalUserData(dataWithMemory);
+      const merged = await flushPendingSettings(dataWithMemory);
+      saveLocalUserData(merged);
+      return {
+        data: merged,
+        status: response.status,
+      };
     }
 
     return {
@@ -292,6 +301,7 @@ export async function updateUserSettings(
       // sync fails (offline, 5xx, etc.). Auth errors still surface so the
       // UI can prompt a re-login.
       if (isNativeApp() && response.status !== 401 && response.status !== 403) {
+        queuePendingSettings(settings);
         return { status: response.status };
       }
       return {
@@ -304,8 +314,12 @@ export async function updateUserSettings(
       status: response.status,
     };
   } catch (error) {
-    // Offline on native: local mirror above is the source of truth.
+    // Offline on native: local mirror above is the source of truth, and the
+    // edit is queued so the next successful backend contact re-POSTs it
+    // (otherwise the next getUserData() would mirror the stale server
+    // profile and silently drop the offline edit).
     if (isNativeApp()) {
+      queuePendingSettings(settings);
       return { status: 0 };
     }
     return {
@@ -313,6 +327,58 @@ export async function updateUserSettings(
       status: 0,
     };
   }
+}
+
+/**
+ * Re-POST settings edited offline once the backend is reachable again.
+ *
+ * Called after every successful getUserData() on native. When the upload
+ * succeeds the queue is cleared and the fresh server profile (which now
+ * includes the synced edit) is mirrored; when it fails, the queue is kept
+ * for the next opportunity and the caller's server profile is merged with
+ * the queued settings so the local mirror never loses the offline edit.
+ *
+ * Returns the (possibly merged) server profile to mirror.
+ */
+export async function flushPendingSettings(
+  serverData: UserData,
+): Promise<UserData> {
+  if (!isNativeApp()) {
+    return serverData;
+  }
+  const pending = loadPendingSettings();
+  if (!pending) {
+    return serverData;
+  }
+  try {
+    const url = apiUrl(`/v1/user/settings`);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: addAuthHeaders({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify(pending.settings),
+    });
+    if (response.ok) {
+      // Uploaded: the next getUserData() (or a re-fetch) reflects the edit.
+      clearPendingSettings();
+      return serverData;
+    }
+    if (response.status === 401 || response.status === 403) {
+      // Auth expired: drop the queue — the user must re-login first, and
+      // keeping it would loop on an unauthenticated endpoint.
+      clearPendingSettings();
+      return serverData;
+    }
+  } catch {
+    // Still offline: fall through to the merge below.
+  }
+  // Upload failed: keep the queue and fold the pending settings into the
+  // server profile so the mirror keeps serving the offline edit.
+  return {
+    ...serverData,
+    user_settings: pending.settings,
+  };
 }
 
 /**

@@ -93,6 +93,74 @@ export function saveLocalUserSettings(settings: UserSettings): void {
   saveLocalUserData({ ...base, user_settings: settings });
 }
 
+// ---------------------------------------------------------------------------
+// Pending-settings queue (offline edits awaiting cloud sync).
+//
+// On native, updateUserSettings mirrors the edit first and returns success
+// even when the cloud POST fails (offline / 5xx). Without a queue, the next
+// successful getUserData() would re-mirror the SERVER profile and silently
+// drop the offline edit (found by on-device QA 07/09/26: an offline-added
+// quick phrase vanished on reconnect). The queue holds the latest unsynced
+// settings so they are re-POSTed on the next successful backend contact.
+// ---------------------------------------------------------------------------
+
+const PENDING_SETTINGS_KEY = 'invincible-voice-pending-settings';
+
+/**
+ * Remember settings that could not reach the backend. Only the latest edit
+ * is kept: each queued edit carries the FULL settings object, so the newest
+ * one supersedes any older unsynced edit (last-write-wins, same as the
+ * online single-device flow).
+ */
+export function queuePendingSettings(settings: UserSettings): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  try {
+    localStorage.setItem(
+      PENDING_SETTINGS_KEY,
+      JSON.stringify({ queued_at: Date.now(), settings }),
+    );
+  } catch {
+    // Quota exceeded: the local mirror above still holds the edit; only the
+    // automatic re-sync is lost, and the next online save re-queues anyway.
+  }
+}
+
+/** The oldest-unsynced settings still awaiting upload, or null. */
+export function loadPendingSettings(): {
+  queuedAt: number;
+  settings: UserSettings;
+} | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  try {
+    const raw = localStorage.getItem(PENDING_SETTINGS_KEY);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw) as {
+      queued_at?: number;
+      settings?: UserSettings;
+    };
+    if (!parsed?.settings) {
+      return null;
+    }
+    return { queuedAt: parsed.queued_at ?? 0, settings: parsed.settings };
+  } catch {
+    return null;
+  }
+}
+
+/** Clear the queue after the backend confirmed the pending edit. */
+export function clearPendingSettings(): void {
+  if (typeof localStorage === 'undefined') {
+    return;
+  }
+  localStorage.removeItem(PENDING_SETTINGS_KEY);
+}
+
 /**
  * Delete one stored conversation by its index in the (unsorted) history.
  *
