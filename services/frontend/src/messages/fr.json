@@ -223,6 +223,7 @@
     "wakingTitle": "Le serveur démarre…",
     "wakingHelp": "Le serveur était en veille pour économiser les ressources. Son démarrage peut prendre jusqu'à une minute — cette page se mettra à jour toute seule.",
     "wakingAttempt": "Tentative {attempt} sur {total}",
+    "serverAsleepHint": "Le serveur se réveille peut-être encore — réessayez dans une minute, ou utilisez les fonctions ci-dessous en attendant.",
     "serviceStatus": "État du service :",
     "backend": "Backend",
     "stt": "STT",
@@ -233,7 +234,14 @@
     "fallbackHelp": "Le serveur est injoignable, mais vous pouvez toujours communiquer : vos phrases rapides utilisent l'audio enregistré, et le texte libre est lu par la voix de votre appareil.",
     "fallbackInputPlaceholder": "Écrivez une phrase à prononcer…",
     "speak": "Prononcer",
-    "retry": "Réessayer la connexion"
+    "retry": "Réessayer la connexion",
+    "fallbackQuickPhrases": "Phrases rapides",
+    "fallbackFreeText": "Écrire un message",
+    "fallbackUnavailable": "Les suggestions intelligentes nécessitent le serveur : elles reviendront dès la reconnexion.",
+    "stepServer": "Réveil du serveur",
+    "stepAuth": "Connexion de votre compte",
+    "stepProfile": "Chargement de votre profil",
+    "stepReady": "Prêt à discuter"
   },
   "admin": {
     "tabTitle": "Administration",

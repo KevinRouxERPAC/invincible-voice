@@ -223,6 +223,7 @@
     "wakingTitle": "Der Server startet…",
     "wakingHelp": "Der Server war im Ruhezustand, um Ressourcen zu sparen. Der Start kann bis zu einer Minute dauern — diese Seite aktualisiert sich von selbst.",
     "wakingAttempt": "Versuch {attempt} von {total}",
+    "serverAsleepHint": "Der Server erwacht möglicherweise noch — versuchen Sie es in einer Minute erneut oder nutzen Sie die Funktionen unten.",
     "serviceStatus": "Dienststatus:",
     "backend": "Backend",
     "stt": "STT",
@@ -233,7 +234,14 @@
     "fallbackHelp": "Der Server ist nicht erreichbar, aber Sie können weiterhin kommunizieren: Ihre Schnellphrasen nutzen das aufgenommene Audio, freier Text wird von der Gerätestimme vorgelesen.",
     "fallbackInputPlaceholder": "Einen Satz zum Vorlesen eingeben…",
     "speak": "Vorlesen",
-    "retry": "Verbindung erneut versuchen"
+    "retry": "Verbindung erneut versuchen",
+    "fallbackQuickPhrases": "Schnelle Sätze",
+    "fallbackFreeText": "Nachricht schreiben",
+    "fallbackUnavailable": "Intelligente Vorschläge brauchen den Server: Sie kommen nach der Wieder Verbindung zurück.",
+    "stepServer": "Server wird geweckt",
+    "stepAuth": "Anmeldung läuft",
+    "stepProfile": "Profil wird geladen",
+    "stepReady": "Bereit zum Chatten"
   },
   "admin": {
     "tabTitle": "Administration",

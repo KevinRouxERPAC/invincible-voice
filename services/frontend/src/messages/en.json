@@ -223,6 +223,7 @@
     "wakingTitle": "The server is starting…",
     "wakingHelp": "The server was sleeping to save resources. Starting it can take up to a minute — this page will update by itself.",
     "wakingAttempt": "Attempt {attempt} of {total}",
+    "serverAsleepHint": "The server may still be waking up — retry in a minute, or use the features below while waiting.",
     "serviceStatus": "Service status:",
     "backend": "Backend",
     "stt": "STT",
@@ -233,7 +234,14 @@
     "fallbackHelp": "The server is unreachable, but you can still communicate: your quick phrases use their recorded audio, and free text is read by your device voice.",
     "fallbackInputPlaceholder": "Type a phrase to say out loud…",
     "speak": "Speak",
-    "retry": "Retry connection"
+    "retry": "Retry connection",
+    "fallbackQuickPhrases": "Quick phrases",
+    "fallbackFreeText": "Write a message",
+    "fallbackUnavailable": "Smart suggestions need the server: they will come back once you are reconnected.",
+    "stepServer": "Waking the server",
+    "stepAuth": "Signing you in",
+    "stepProfile": "Loading your profile",
+    "stepReady": "Ready to chat"
   },
   "admin": {
     "tabTitle": "Administration",

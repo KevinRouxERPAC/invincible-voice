@@ -223,6 +223,7 @@
     "wakingTitle": "O servidor está a arrancar…",
     "wakingHelp": "O servidor estava adormecido para poupar recursos. O arranque pode levar até um minuto — esta página atualiza-se sozinha.",
     "wakingAttempt": "Tentativa {attempt} de {total}",
+    "serverAsleepHint": "O servidor pode ainda estar a acordar — tente novamente num minuto, ou use as funções abaixo enquanto espera.",
     "serviceStatus": "Status do serviço:",
     "backend": "Backend",
     "stt": "STT",
@@ -233,7 +234,14 @@
     "fallbackHelp": "O servidor está inacessível, mas ainda pode comunicar: as suas frases rápidas usam o áudio gravado e o texto livre é lido pela voz do seu dispositivo.",
     "fallbackInputPlaceholder": "Escreva uma frase para pronunciar…",
     "speak": "Pronunciar",
-    "retry": "Tentar ligar novamente"
+    "retry": "Tentar ligar novamente",
+    "fallbackQuickPhrases": "Frases rápidas",
+    "fallbackFreeText": "Escrever uma mensagem",
+    "fallbackUnavailable": "As sugestões inteligentes precisam do servidor: voltarão após a reconexão.",
+    "stepServer": "A acordar o servidor",
+    "stepAuth": "A iniciar sessão",
+    "stepProfile": "A carregar o seu perfil",
+    "stepReady": "Pronto para conversar"
   },
   "admin": {
     "tabTitle": "Administração",

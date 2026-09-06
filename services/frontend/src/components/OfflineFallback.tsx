@@ -1,8 +1,5 @@
-'use client';
-
-import { RefreshCw, Volume2 } from 'lucide-react';
+import { RefreshCw, Volume2, WifiOff } from 'lucide-react';
 import { FC, useCallback, useMemo, useState } from 'react';
-import CouldNotConnect from '@/components/CouldNotConnect';
 import EmergencyButton from '@/components/EmergencyButton';
 import QuickPhrases from '@/components/QuickPhrases';
 import { useTranslations } from '@/i18n';
@@ -16,9 +13,11 @@ interface OfflineFallbackProps {
 }
 
 /**
- * Degraded communication mode shown when the backend is unreachable. The
- * user can still speak: quick phrases play from their persisted audio
- * (cloned voice), and free text falls back to browser speech synthesis.
+ * Offline survival screen, shown when the backend is unreachable after all
+ * startup retries. Designed for a first-time user: a clear "why am I here"
+ * banner, the three communication paths that still work (emergency, quick
+ * phrases with cached voice, free text with the device voice), and an honest
+ * note about what is unavailable (smart suggestions need the server).
  */
 const OfflineFallback: FC<OfflineFallbackProps> = ({
   healthStatus,
@@ -46,24 +45,59 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
     speak(textInput);
   }, [speak, textInput]);
 
+  const isServerDown =
+    healthStatus.internet_up !== false && healthStatus.backend_up === false;
+
   return (
-    <div className='w-full min-h-screen flex flex-col items-center gap-6 px-4 py-10 overflow-y-auto text-ink'>
-      <div className='w-full max-w-2xl flex flex-col gap-4'>
-        <h1 className='text-2xl font-bold text-center'>
-          {t('connection.fallbackTitle')}
-        </h1>
-        <p className='text-sm text-ink-2 text-center'>
-          {t('connection.fallbackHelp')}
-        </p>
+    <div className='w-full min-h-screen flex flex-col items-center px-4 py-8 overflow-y-auto text-ink bg-paper gap-6'>
+      <div className='w-full max-w-2xl flex flex-col gap-5'>
+        {/* Header: why am I here */}
+        <div className='flex flex-col items-center gap-2 text-center'>
+          <div
+            className='w-16 h-16 rounded-full bg-terra-tint flex items-center justify-center'
+            aria-hidden='true'
+          >
+            <WifiOff
+              width={30}
+              height={30}
+              className='text-terra'
+            />
+          </div>
+          <h1 className='text-2xl font-bold'>
+            {t('connection.fallbackTitle')}
+          </h1>
+          <p className='text-sm text-ink-2 max-w-md'>
+            {t('connection.fallbackHelp')}
+          </p>
+          {isServerDown && (
+            <p className='text-xs text-muted mt-1'>
+              {t('connection.serverAsleepHint')}
+            </p>
+          )}
+        </div>
 
-        <EmergencyButton className='self-center' />
-
-        <QuickPhrases
-          phrases={snapshot?.quick_phrases ?? []}
-          onSelect={speak}
+        {/* Emergency: always first, biggest control */}
+        <EmergencyButton
+          className='self-center'
+          labeled
         />
 
-        <div className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] flex flex-col gap-2'>
+        {/* Quick phrases with cached cloned-voice audio */}
+        <section className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] flex flex-col gap-3'>
+          <h2 className='text-sm font-medium text-ink'>
+            {t('connection.fallbackQuickPhrases')}
+          </h2>
+          <QuickPhrases
+            phrases={snapshot?.quick_phrases ?? []}
+            onSelect={speak}
+          />
+        </section>
+
+        {/* Free text via the device's own voice */}
+        <section className='w-full px-6 py-4 bg-surface border border-hairline shadow-[var(--sh-sm)] rounded-[40px] flex flex-col gap-2'>
+          <h2 className='text-sm font-medium text-ink'>
+            {t('connection.fallbackFreeText')}
+          </h2>
           <textarea
             className='w-full px-6 py-4 text-base text-ink bg-surface-2 border border-hairline-2 rounded-3xl resize-none focus:outline-none focus:border-blue'
             placeholder={t('connection.fallbackInputPlaceholder')}
@@ -88,11 +122,17 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
               height={24}
             />
           </button>
-        </div>
+        </section>
 
+        {/* What does NOT work offline — honest expectation setting */}
+        <p className='text-xs text-muted text-center px-4'>
+          {t('connection.fallbackUnavailable')}
+        </p>
+
+        {/* Retry */}
         <button
           onClick={onRetry}
-          className='self-center mt-2 px-6 py-3 flex flex-row items-center gap-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper'
+          className='self-center px-6 py-3 flex flex-row items-center gap-2 text-sm text-ink-2 bg-surface border border-hairline-2 rounded-2xl hover:bg-paper'
         >
           <RefreshCw
             width={16}
@@ -100,10 +140,6 @@ const OfflineFallback: FC<OfflineFallbackProps> = ({
           />
           {t('connection.retry')}
         </button>
-      </div>
-
-      <div className='w-full max-w-2xl'>
-        <CouldNotConnect healthStatus={healthStatus} />
       </div>
     </div>
   );

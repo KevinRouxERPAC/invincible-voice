@@ -12,7 +12,7 @@ import useWebSocket, { ReadyState } from 'react-use-websocket';
 import { addAuthHeaders, getBearerToken } from '@/auth/authUtils';
 import ConversationLayout from '@/components/ConversationLayout';
 import OfflineFallback from '@/components/OfflineFallback';
-import ServerWaking from '@/components/ServerWaking';
+import StartupProgress from '@/components/StartupProgress';
 import type { PendingResponse } from '@/components/chat/ChatInterface';
 import ConfirmationDialog from '@/components/conversations/ConfirmationDialog';
 import type { MobileSettingsPanel } from '@/components/settings/MobileSettingsPopup';
@@ -139,12 +139,14 @@ const InvincibleVoice = () => {
   const backendServerUrl = useBackendServerUrl();
   const [healthStatus, setHealthStatus] = useState<HealthStatus | null>(null);
   // Server waking state: while a Cloud Run cold start is in progress (spaced
-  // health-check retries), show the dedicated "server starting" screen
-  // instead of the failure fallback. attempt/total drive the status line.
+  // health-check retries), show the startup progress screen instead of the
+  // failure fallback. attempt/total drive the progress bar; profileLoaded
+  // ticks the second step once the user profile has been fetched.
   const [waking, setWaking] = useState<{
     attempt: number;
     total: number;
   } | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const bearerToken = useMemo(() => getBearerToken(), []);
 
@@ -1092,6 +1094,7 @@ const InvincibleVoice = () => {
         setUserDataError(result.error);
       } else if (result.data) {
         setUserData(result.data);
+        setProfileLoaded(true);
       }
     };
 
@@ -1369,14 +1372,36 @@ const InvincibleVoice = () => {
     );
   }
 
-  // Cloud Run cold start in progress: show the dedicated waking screen instead
+  // Cloud Run cold start in progress: show the startup progress screen instead
   // of the failure fallback, so the user knows the server is starting (not
   // broken) and the page recovers by itself once it answers.
   if (waking) {
+    const attemptBasedPercent = (waking.attempt / (waking.total + 1)) * 80;
+    const percent = Math.max(
+      attemptBasedPercent,
+      profileLoaded ? 90 : attemptBasedPercent,
+    );
     return (
-      <ServerWaking
-        attempt={waking.attempt}
-        total={waking.total}
+      <StartupProgress
+        percent={percent}
+        steps={[
+          {
+            label: t('connection.stepServer'),
+            done: waking.attempt >= waking.total,
+          },
+          {
+            label: t('connection.stepAuth'),
+            done: waking.attempt >= waking.total,
+          },
+          {
+            label: t('connection.stepProfile'),
+            done: profileLoaded,
+          },
+          {
+            label: t('connection.stepReady'),
+            done: false,
+          },
+        ]}
       />
     );
   }

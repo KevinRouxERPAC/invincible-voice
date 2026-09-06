@@ -223,6 +223,7 @@
     "wakingTitle": "El servidor se está iniciando…",
     "wakingHelp": "El servidor estaba en reposo para ahorrar recursos. El arranque puede tardar hasta un minuto — esta página se actualizará sola.",
     "wakingAttempt": "Intento {attempt} de {total}",
+    "serverAsleepHint": "El servidor puede seguir despertándose — reintente en un minuto, o use las funciones de abajo mientras espera.",
     "serviceStatus": "Estado del servicio:",
     "backend": "Backend",
     "stt": "STT",
@@ -233,7 +234,14 @@
     "fallbackHelp": "El servidor no está disponible, pero todavía puedes comunicarte: tus frases rápidas usan su audio grabado y el texto libre lo lee la voz de tu dispositivo.",
     "fallbackInputPlaceholder": "Escribe una frase para pronunciar…",
     "speak": "Pronunciar",
-    "retry": "Reintentar la conexión"
+    "retry": "Reintentar la conexión",
+    "fallbackQuickPhrases": "Frases rápidas",
+    "fallbackFreeText": "Escribir un mensaje",
+    "fallbackUnavailable": "Las sugerencias inteligentes necesitan el servidor: volverán al reconectarse.",
+    "stepServer": "Despertando el servidor",
+    "stepAuth": "Iniciando sesión",
+    "stepProfile": "Cargando tu perfil",
+    "stepReady": "Listo para conversar"
   },
   "admin": {
     "tabTitle": "Administración",
