@@ -40,9 +40,9 @@ export interface Conversation {
   messages: ConversationMessage[];
   start_time: string; // ISO 8601 datetime string from backend
   // Display-only flag: an archived conversation is hidden from the main
-  // history list (shown in a separate "Archived" section) but is NOT deleted
-  // and keeps feeding the durable memory / prompt exactly like any other. It
-  // is optional so legacy blobs without the field are treated as not archived.
+  // history list (shown in a separate "Archived" section) but is NOT deleted.
+  // It is optional so legacy blobs without the field are treated as not
+  // archived.
   archived?: boolean;
 }
 
@@ -173,7 +173,7 @@ export const LOCAL_USER_DATA: UserData = {
  *
  * Preference order:
  *   1. The full locally-persisted profile (settings + conversation history),
- *      so the persona stays intact and the on-device model keeps learning.
+ *      so the persona and history display stay intact offline.
  *   2. The thin settings snapshot (quick phrases / voice / language only), kept
  *      for backward compatibility with installs that predate the full mirror.
  *   3. The empty anonymous profile.
@@ -183,7 +183,7 @@ function buildLocalUserData(): UserData {
   if (stored) {
     // Normalize the durable memory: a legacy blob (predating the memory
     // layer) would have `memory` undefined. We coerce it to a valid empty
-    // memory so the on-device prompt builder always has a well-shaped layer.
+    // memory so the UI (settings memory card) always has a well-shaped layer.
     return { ...stored, memory: normalizeUserMemory(stored.memory) };
   }
   const snapshot = loadSettingsSnapshot();

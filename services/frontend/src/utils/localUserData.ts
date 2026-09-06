@@ -1,35 +1,29 @@
-// Full local mirror of the user's data for the on-device / offline mode.
+// Local mirror of the user's data for the native (Capacitor) app.
 //
-// The thin SettingsSnapshot (localSettingsCache) only kept quick phrases, voice
-// and language — enough to *speak* offline, but not enough for the assistant to
-// stay personalized. The persona (name, prompt, friends, keywords, documents)
-// and the whole conversation history were lost the moment the backend became
-// unreachable, so `learn_style` had nothing to learn from offline and the
-// on-device prompt could not replay past conversations.
+// The thin SettingsSnapshot (localSettingsCache) only keeps quick phrases,
+// voice and language — enough to *speak* offline (SOS, quick phrases, free
+// text with the phone's TTS), but nothing more. Offline is a degraded
+// survival mode by design: there is no on-device LLM, so suggestions cannot
+// be generated without the backend, and the durable memory is server-side
+// only (see memory.ts).
 //
-// This module persists the WHOLE UserData (settings + conversations) in
-// localStorage so that, offline:
-//   - the persona is preserved,
-//   - past conversations are replayed into the on-device prompt,
-//   - learn_style can mirror the user's real phrasing.
-// Online it is kept in sync by mirroring every successful backend fetch, so the
-// device always holds the latest server-side state to fall back on.
+// This module persists the UserData profile (settings + conversation history)
+// in localStorage, mirrored on every successful backend fetch, so that when
+// the backend is unreachable the user keeps their persona, phrases and
+// history display. It never generates or transforms data on its own.
 
-import type { Conversation, UserData, UserSettings } from './userData';
+import type { UserData, UserSettings } from './userData';
 
 const STORAGE_KEY = 'invincible-voice-local-userdata';
 
-// Bound how much history we keep on the device. The prompt only ever replays a
-// handful of recent conversations, so there is no point growing localStorage
-// (and the JSON parse cost) without limit. Kept in sync with memory.ts.
+// Bound how much history we keep on the device (display only). The backend
+// caps its own stored history; this cap just keeps localStorage (and the JSON
+// parse cost) bounded on the phone.
 const MAX_STORED_CONVERSATIONS = 30;
 
 // Self-contained skeleton used the first time we persist something locally
 // before any full profile has been mirrored. Kept in sync with
 // userData.tsx::LOCAL_USER_DATA but defined here to avoid a circular import.
-// The memory layer is left undefined here; callers that need a well-shaped
-// empty memory should use `emptyLocalUserData()` or rely on `loadLocalUserData`
-// which normalizes it on read.
 const EMPTY_LOCAL_USER_DATA: UserData = {
   email: '',
   user_id: 'local',
@@ -74,11 +68,7 @@ export function loadLocalUserData(): UserData | null {
   }
 }
 
-/**
- * Persist the full profile. The caller is responsible for folding new
- * conversations into the durable memory (see `updateMemoryFromConversation`)
- * and for pruning the history before calling; here we only write to storage.
- */
+/** Persist the full profile (a mirrored backend payload, already normalized). */
 export function saveLocalUserData(data: UserData): void {
   if (typeof localStorage === 'undefined') {
     return;
@@ -92,8 +82,8 @@ export function saveLocalUserData(data: UserData): void {
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bounded));
   } catch {
-    // Quota exceeded or storage disabled: offline personalization will simply
-    // be poorer, never fatal.
+    // Quota exceeded or storage disabled: the offline fallback will just be
+    // emptier, never fatal.
   }
 }
 
@@ -104,83 +94,12 @@ export function saveLocalUserSettings(settings: UserSettings): void {
 }
 
 /**
- * Append a finished conversation to the stored history. This is the offline
- * equivalent of the backend saving on WebSocket disconnect: it is what lets the
- * on-device prompt replay past turns and feed learn_style next time. Empty
- * conversations are ignored so a session with no exchange leaves no trace.
- *
- * NOTE: this function does NOT fold the conversation into the durable memory.
- * Callers that want the style pass to run (the on-device conversation hook)
- * should call `updateMemoryFromConversation` on the profile's memory first,
- * then persist via this function — or use `appendLocalConversationWithMemory`
- * from the hook layer. Keeping memory logic out of this module avoids a
- * dependency cycle with `memory.ts` (imported by `userData.tsx`).
- */
-export function appendLocalConversation(conversation: Conversation): void {
-  if (!conversation.messages.length) {
-    return;
-  }
-  const base = loadLocalUserData() ?? EMPTY_LOCAL_USER_DATA;
-  saveLocalUserData({
-    ...base,
-    conversations: [...base.conversations, conversation],
-  });
-}
-
-/**
- * Return a copy of `conversations` with `conversation` inserted, or replacing an
- * existing entry that shares the same non-empty `start_time`. `start_time` is
- * assigned once per session, so this makes persisting an in-progress
- * conversation idempotent: the hook can write after every message (so an OS
- * process kill can't lose the session) and each write overwrites the previous
- * snapshot instead of piling up duplicates of the same conversation.
- */
-export function upsertConversation(
-  conversations: Conversation[],
-  conversation: Conversation,
-): Conversation[] {
-  const key = conversation.start_time;
-  if (key) {
-    const index = conversations.findIndex((c) => c.start_time === key);
-    if (index !== -1) {
-      const next = [...conversations];
-      next[index] = conversation;
-      return next;
-    }
-  }
-  return [...conversations, conversation];
-}
-
-/**
- * Upsert an in-progress (or finished) conversation into the stored history,
- * keyed by `start_time`. Unlike `appendLocalConversation`, calling this
- * repeatedly for the same session overwrites the previous snapshot instead of
- * duplicating it, so the conversation hook can persist after every message —
- * surviving an OS process kill — without cluttering the history. Empty
- * conversations are ignored so a session with no exchange leaves no trace.
- *
- * Like `appendLocalConversation`, this does NOT fold the conversation into the
- * durable memory; the finalizing caller runs the style pass once at end of
- * session (see the on-device conversation hook).
- */
-export function upsertLocalConversation(conversation: Conversation): void {
-  if (!conversation.messages.length) {
-    return;
-  }
-  const base = loadLocalUserData() ?? EMPTY_LOCAL_USER_DATA;
-  saveLocalUserData({
-    ...base,
-    conversations: upsertConversation(base.conversations, conversation),
-  });
-}
-
-/**
  * Delete one stored conversation by its index in the (unsorted) history.
  *
- * This is the offline equivalent of the backend `DELETE
- * /v1/user/conversations/{id}`: in local/offline mode there is no backend to
- * call, so deletion must happen directly in localStorage. A no-op when the
- * index is out of range, so a stale index can never drop the wrong row.
+ * This mirrors the backend `DELETE /v1/user/conversations/{id}` into the local
+ * cache so a later offline session doesn't resurrect the conversation from
+ * stale localStorage. A no-op when the index is out of range, so a stale index
+ * can never drop the wrong row.
  */
 export function deleteLocalConversation(index: number): void {
   const base = loadLocalUserData();
@@ -194,8 +113,8 @@ export function deleteLocalConversation(index: number): void {
 
 /**
  * Archive or unarchive one stored conversation by its index. Archiving is
- * display-only: the conversation stays in storage and keeps feeding the
- * durable memory / prompt. A no-op when the index is out of range.
+ * display-only: the conversation stays in storage. Mirrors the backend PATCH
+ * into the local cache. A no-op when the index is out of range.
  */
 export function setLocalConversationArchived(
   index: number,
