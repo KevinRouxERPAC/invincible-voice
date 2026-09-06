@@ -1364,17 +1364,10 @@ const InvincibleVoice = () => {
     };
   }, []);
 
-  if (!healthStatus || !backendServerUrl) {
-    return (
-      <div className='flex flex-col items-center justify-center min-h-screen gap-4'>
-        <h1 className='mb-4 text-xl'>{t('common.loading')}</h1>
-      </div>
-    );
-  }
-
-  // Cloud Run cold start in progress: show the startup progress screen instead
-  // of the failure fallback, so the user knows the server is starting (not
-  // broken) and the page recovers by itself once it answers.
+  // Cloud Run cold start in progress: show the startup progress screen FIRST
+  // (before the plain loading screen) — during the spaced retries healthStatus
+  // is still null, so this check must come before the generic loading branch
+  // or the progress bar would never be visible.
   if (waking) {
     const attemptBasedPercent = (waking.attempt / (waking.total + 1)) * 80;
     const percent = Math.max(
@@ -1403,6 +1396,14 @@ const InvincibleVoice = () => {
           },
         ]}
       />
+    );
+  }
+
+  if (!healthStatus || !backendServerUrl) {
+    return (
+      <div className='flex flex-col items-center justify-center min-h-screen gap-4'>
+        <h1 className='mb-4 text-xl'>{t('common.loading')}</h1>
+      </div>
     );
   }
 
