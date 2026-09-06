@@ -255,12 +255,14 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
   );
 
   const handleMobileWriteSend = useCallback(() => {
-    handleFooterSend(
-      isFocusedMobileSession && !isComposingWriterResponseRef.current
-        ? 'speaker'
-        : 'writer',
-    );
-  }, [handleFooterSend, isFocusedMobileSession]);
+    // Always 'writer': a hand-typed message is the USER's own speech, so it
+    // must render as a blue writer bubble (role: assistant), not as a white
+    // speaker bubble that makes it look like the other person said it.
+    // It also gets the same treatment as a selected suggestion: TTS playback
+    // and no immediate suggestion regeneration (fresh suggestions come from
+    // the speaker's next turn).
+    handleFooterSend('writer');
+  }, [handleFooterSend]);
 
   const onTextInputKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLTextAreaElement>) => {
