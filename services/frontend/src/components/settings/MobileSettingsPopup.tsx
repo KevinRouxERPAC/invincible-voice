@@ -3,6 +3,7 @@
 import { FC, useCallback, useEffect, useState } from 'react';
 import { useAuthContext } from '@/auth/authContext';
 import { useTranslations } from '@/i18n';
+import { privacyHref } from '@/utils/platform';
 import { updateUserSettings } from '@/utils/userData';
 import type { QuickPhrase, UserSettings } from '@/utils/userData';
 import AccessibilitySettings from './AccessibilitySettings';
@@ -275,7 +276,7 @@ const MobileSettingsPopup: FC<MobileSettingsPopupProps> = ({
         ) : null}
         <div className='w-full flex justify-center'>
           <a
-            href='/privacy'
+            href={privacyHref()}
             target='_blank'
             rel='noopener noreferrer'
             className='text-sm underline text-blue hover:text-blue-600 transition-colors'

@@ -16,6 +16,7 @@ import Trash from '@/components/icons/Trash';
 import { useTranslations } from '@/i18n';
 import { normalizeUserMemory } from '@/utils/memory';
 import type { UserMemory } from '@/utils/memory';
+import { privacyHref } from '@/utils/platform';
 import { estimateTokens, formatTokenCount } from '@/utils/tokenUtils';
 import { playTTSStream } from '@/utils/ttsUtil';
 import {
@@ -1175,7 +1176,7 @@ const SettingsPopup: FC<SettingsPopupProps> = ({
       {/* Pied de page toujours visible : mentions + actions principales. */}
       <div className='shrink-0 flex flex-row items-center justify-between gap-3 pt-3 border-t border-hairline'>
         <a
-          href='/privacy'
+          href={privacyHref()}
           target='_blank'
           rel='noopener noreferrer'
           className='text-sm underline text-blue hover:text-blue-600 transition-colors'

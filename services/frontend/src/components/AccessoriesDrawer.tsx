@@ -87,7 +87,7 @@ const AccessoriesDrawer: FC<AccessoriesDrawerProps> = ({
         <button
           className='absolute top-3 right-3 lg:hidden h-11 w-11 flex items-center justify-center text-muted hover:text-ink rounded-2xl hover:bg-paper transition-colors'
           onClick={onClose}
-          aria-label={t('common.close')}
+          aria-label={t('conversation.closeAriaLabel')}
         >
           <X size={20} />
         </button>
@@ -97,7 +97,7 @@ const AccessoriesDrawer: FC<AccessoriesDrawerProps> = ({
           <section>
             <div className='flex items-center gap-2 mb-2 text-sm font-medium text-ink'>
               <CalendarClock size={16} />
-              {t('settings.appointments')}
+              {t('appointments.title')}
             </div>
             <AppointmentLauncher
               appointments={appointments}

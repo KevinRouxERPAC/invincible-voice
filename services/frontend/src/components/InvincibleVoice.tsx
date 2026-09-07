@@ -23,6 +23,7 @@ import {
   RESPONSES_SIZES,
   type ResponseSize,
 } from '@/constants';
+import { useAppShellScrollGuard } from '@/hooks/useAppShellScrollGuard';
 import { useAudioProcessor } from '@/hooks/useAudioProcessor';
 import { useBackendServerUrl } from '@/hooks/useBackendServerUrl';
 import { useMicrophoneAccess } from '@/hooks/useMicrophoneAccess';
@@ -85,6 +86,7 @@ const InvincibleVoice = () => {
   }, []);
 
   const isMobile = useMobileDetection();
+  useAppShellScrollGuard();
   const { microphoneAccess, askMicrophoneAccess } = useMicrophoneAccess();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userDataError, setUserDataError] = useState<string | null>(null);
@@ -150,13 +152,21 @@ const InvincibleVoice = () => {
   const [errors, setErrors] = useState<ErrorItem[]>([]);
   const bearerToken = useMemo(() => getBearerToken(), []);
 
-  const newConversationUrl = useMemo(() => {
+  const lastConversationUrl = useRef<string | null>(null);
+  // Resolved at connection time, not at render time: `local_time` becomes the
+  // conversation's `start_time` on the backend. Computed once per component
+  // instance, every conversation of one app run was stamped with the app's
+  // launch time — the history then showed several entries at the same minute,
+  // indistinguishable from one another (found on device 07/09/26).
+  const getNewConversationUrl = useCallback(() => {
     // Create timezone-aware datetime for local_time parameter
     const localTime = new Date().toISOString();
     const encodedLocalTime = encodeURIComponent(localTime);
     // Conversation WebSocket: the app streams microphone audio and the
     // backend runs its own (Gradium) STT.
-    return `${backendServerUrl.toString()}/v1/user/new-conversation?local_time=${encodedLocalTime}`;
+    const url = `${backendServerUrl.toString()}/v1/user/new-conversation?local_time=${encodedLocalTime}`;
+    lastConversationUrl.current = url;
+    return url;
   }, [backendServerUrl]);
   const handleInComingMessage = useCallback(
     (lastMessage: WebSocketEventMap['message']) => {
@@ -300,13 +310,13 @@ const InvincibleVoice = () => {
     ],
   );
   const ws = useWebSocket(
-    newConversationUrl,
+    getNewConversationUrl,
     {
       protocols: bearerToken
         ? ['realtime', `Bearer.${bearerToken}`]
         : ['realtime'],
       onMessage: handleInComingMessage,
-      onOpen: () => console.warn('[ws] OPEN', newConversationUrl),
+      onOpen: () => console.warn('[ws] OPEN', lastConversationUrl.current),
       onClose: (e) =>
         console.warn(
           `[ws] CLOSE code=${(e as CloseEvent).code} reason=${

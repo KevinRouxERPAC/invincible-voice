@@ -201,7 +201,7 @@ const VoiceSettings: FC<VoiceSettingsProps> = ({
 
       {showDeleteConfirm && (
         <div className='mt-4 p-4 bg-red-tint border border-red rounded-2xl'>
-          <p className='text-ink mb-4'>{t('settings.deleteVoiceConfirm')}</p>
+          <p className='text-ink mb-4'>{t('settings.deleteVoiceMessage')}</p>
           <div className='flex gap-2'>
             <button
               onClick={() => setShowDeleteConfirm(false)}
