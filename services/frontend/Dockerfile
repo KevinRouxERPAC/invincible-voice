@@ -11,6 +11,11 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* .npmrc* ./
+# The `postinstall` script patches the Capacitor Android sources inside
+# node_modules, so it has to be in the image *before* the install runs —
+# otherwise pnpm dies with "Cannot find module .../scripts/…". Copied as its
+# own layer so editing a build script doesn't invalidate the dependency cache.
+COPY scripts ./scripts
 RUN corepack enable pnpm && pnpm i --frozen-lockfile
 
 
