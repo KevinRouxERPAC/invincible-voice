@@ -51,3 +51,32 @@ const patched = file.replace(
 fs.writeFileSync(speechRecognitionJavaPath, patched, 'utf8');
 console.log('[stt-offline] Patched SpeechRecognition.java to prefer offline STT.');
 
+// Gradle 9.x (AGP 9) rejects `proguard-android.txt` (contains -dontoptimize).
+// The plugin still ships the old name; patch it so `gradlew assembleDebug`
+// works on modern toolchains.
+const speechRecognitionGradlePath = path.join(
+  projectRoot,
+  'node_modules',
+  '@capacitor-community',
+  'speech-recognition',
+  'android',
+  'build.gradle',
+);
+
+if (fs.existsSync(speechRecognitionGradlePath)) {
+  const gradleFile = fs.readFileSync(speechRecognitionGradlePath, 'utf8');
+  const oldProguard = "getDefaultProguardFile('proguard-android.txt')";
+  const newProguard =
+    "getDefaultProguardFile('proguard-android-optimize.txt')";
+  if (gradleFile.includes(oldProguard)) {
+    fs.writeFileSync(
+      speechRecognitionGradlePath,
+      gradleFile.replace(oldProguard, newProguard),
+      'utf8',
+    );
+    console.log(
+      '[stt-offline] Patched speech-recognition build.gradle (proguard-android-optimize).',
+    );
+  }
+}
+
