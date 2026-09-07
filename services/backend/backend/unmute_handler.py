@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import time
 import uuid
 from logging import getLogger
 from typing import Any, Literal, cast
@@ -46,6 +47,13 @@ FURTHER_MESSAGES_TEMPERATURE = 0.3
 # first message.
 # A word from the ASR can still interrupt the bot.
 UNINTERRUPTIBLE_BY_VAD_TIME_SEC = 3
+
+# The STT provider caps a session's duration and closes the socket (Gradium:
+# 300s). A session that lived at least this long was doing its job and hit that
+# cap, so we silently open a new one; anything shorter looks like an outage,
+# and after a few in a row we stop retrying and let the error surface.
+MIN_HEALTHY_STT_SESSION_SEC = 30.0
+MAX_SHORT_LIVED_STT_RESTARTS = 3
 
 logger = getLogger(__name__)
 
@@ -98,6 +106,14 @@ class UnmuteHandler(AsyncStreamHandler):
 
         self.stt_last_message_time: float = 0
         self.stt_end_of_flush_time: float | None = None
+
+        # STT session rotation, see `_restart_stt`. The provider closes a
+        # session after a fixed duration; we open a new one instead of ending
+        # the conversation. `_stt_started_at` dates the current session so we
+        # can tell a normal expiry from a session that dies immediately.
+        self._stt_started_at: float = 0.0
+        self._stt_short_lived_restarts = 0
+        self._stt_restart_lock = asyncio.Lock()
 
         self.tts_voice: str | None = None  # Stored separately because TTS is restarted
         if isinstance(user_email_or_data, str):
@@ -408,7 +424,17 @@ class UnmuteHandler(AsyncStreamHandler):
         if self.chatbot.conversation_state() == "user_speaking":
             self.debug_dict["timing"] = {}
 
-        await stt.send_audio(array)
+        try:
+            await stt.send_audio(array)
+        except websockets.ConnectionClosed:
+            # The provider ended the session (duration cap). Rotate to a new
+            # one and keep the conversation going; at most this frame of audio
+            # is lost. Re-raise only when the restart itself gave up, so a real
+            # STT outage still surfaces as an error.
+            if not await self._restart_stt(stt):
+                raise
+            return
+
         if self.determine_pause():
             started_generating_response = await self._generate_response()
             if started_generating_response:
@@ -492,6 +518,62 @@ class UnmuteHandler(AsyncStreamHandler):
         quest = await self.quest_manager.add(Quest("stt", _init, _run, _close))
         # We want to be sure to have the STT before starting anything.
         await quest.get()
+        self._stt_started_at = time.monotonic()
+
+    async def _restart_stt(self, failed: SpeechToText) -> bool:
+        """Open a fresh STT session after the provider closed the current one.
+
+        The STT provider caps a session at a fixed duration — Gradium closes
+        with `1008 Session exceeded maximum duration of 300 seconds`. Left
+        alone that exception travels up the TaskGroup and is reported as a
+        fatal error, which ends the user's conversation: nobody could talk for
+        more than five minutes. A cap on the provider's session is not a
+        reason to cut someone off mid-sentence, so we open a new session and
+        carry on.
+
+        Returns False when the failure does not look like a session expiry —
+        a session that dies within seconds, repeatedly, is a real outage and
+        must surface as an error rather than loop.
+        """
+        async with self._stt_restart_lock:
+            # Audio frames arrive every ~80ms, so several of them can hit the
+            # same dead session. Identity, not connection state, tells us
+            # whether someone already replaced it while we waited for the lock.
+            if self.stt is not failed:
+                return True
+
+            session_duration = time.monotonic() - self._stt_started_at
+            if session_duration < MIN_HEALTHY_STT_SESSION_SEC:
+                self._stt_short_lived_restarts += 1
+            else:
+                self._stt_short_lived_restarts = 0
+
+            if self._stt_short_lived_restarts > MAX_SHORT_LIVED_STT_RESTARTS:
+                logger.error(
+                    "STT session closed after %.1fs, %d short-lived sessions in a "
+                    "row: giving up.",
+                    session_duration,
+                    self._stt_short_lived_restarts,
+                )
+                return False
+
+            logger.info(
+                "STT session closed after %.1fs, opening a new one.",
+                session_duration,
+            )
+            mt.STT_SESSION_RESTARTS.inc()
+
+            # `QuestManager.add` closes and cancels the quest of the same name,
+            # so this both tears the dead session down and starts a fresh one.
+            await self.start_up_stt()
+
+            # The new session restarts its own audio and word clocks, and
+            # `determine_pause` compares the two. Reset the last-message mark
+            # the way a session start does, so the first words of the new
+            # session set it again instead of a stale mark from the old
+            # timeline freezing pause detection for the rest of the call.
+            self.stt_last_message_time = 0
+            return True
 
     async def _stt_loop(self, stt: SpeechToText):
         try:

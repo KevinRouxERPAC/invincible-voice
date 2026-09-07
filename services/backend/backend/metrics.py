@@ -98,6 +98,11 @@ STT_AUDIO_DURATION = Histogram(
     "worker_stt_audio_duration", "", buckets=SESSION_DURATION_BINS
 )
 STT_NUM_WORDS = Histogram("worker_stt_num_words", "", buckets=NUM_WORDS_STT_BINS)
+# The STT provider caps a session at a fixed duration (300s for Gradium) and
+# closes the socket. We open a new one and keep the conversation alive, so this
+# counter is the only trace: a steady rate is normal on long conversations, a
+# spike means sessions are dying early.
+STT_SESSION_RESTARTS = Counter("worker_stt_session_restarts", "")
 STT_TTFT = Histogram("worker_stt_ttft", "", buckets=TTFT_BINS_STT)
 
 VLLM_ACTIVE_SESSIONS = Gauge("worker_vllm_active_sessions", "")
