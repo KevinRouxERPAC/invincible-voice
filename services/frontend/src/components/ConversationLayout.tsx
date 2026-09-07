@@ -559,10 +559,29 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     );
   };
 
+  // Opens the accessories drawer (keywords, friends, appointments). The
+  // focused mobile footer is the only footer rendered during a session on a
+  // phone, so without this button the drawer had no opener at all on Android:
+  // its keyword steering and the appointment launcher — which has no other
+  // entry point — stayed off-screen for the whole session (found 07/09/26).
+  const renderDrawerToggle = () => (
+    <button
+      data-scan-item
+      className='shrink-0 min-h-[44px] w-11 flex items-center justify-center bg-surface border-2 border-hairline-2 rounded-md text-ink-2'
+      onClick={() => setIsDrawerOpen((v) => !v)}
+      aria-label={t('conversation.keywords')}
+      aria-expanded={isDrawerOpen}
+      title={t('conversation.keywords')}
+    >
+      {isDrawerOpen ? <X size={18} /> : <Compass size={18} />}
+    </button>
+  );
+
   const renderFocusedMobileFooter = () => {
     if (isWriteExpanded) {
       return (
         <div className='flex gap-2 pb-1 items-end'>
+          {renderDrawerToggle()}
           <textarea
             ref={textareaRef}
             className='flex-1 p-2.5 bg-surface-2 border-2 border-hairline-2 rounded-sm text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
@@ -585,6 +604,7 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
 
     return (
       <div className='flex gap-2 pb-1'>
+        {renderDrawerToggle()}
         <button
           data-scan-item
           className='flex-1 min-h-[44px] flex items-center justify-center gap-2 px-3 bg-surface border-2 border-hairline-2 rounded-md text-sm font-bold text-ink-2'
@@ -668,17 +688,12 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
         </div>
       )}
 
+      {/* No drawer toggle here: this footer only runs when the session is not
+          a focused mobile one — on a phone in session it is
+          renderFocusedMobileFooter that renders (and carries the toggle), and
+          on a wide screen the drawer is a pinned column. A toggle gated on
+          `isMobile` here was unreachable and hid the missing one for months. */}
       <div className='flex gap-2 pb-1 items-end'>
-        {shouldConnect && !isHistoryMode && isMobile && (
-          <button
-            className='shrink-0 h-11 w-11 flex items-center justify-center bg-surface border border-hairline-2 rounded-lg text-ink-2 hover:bg-paper transition-colors'
-            onClick={() => setIsDrawerOpen((v) => !v)}
-            aria-label={t('conversation.keywords')}
-            title={t('conversation.keywords')}
-          >
-            {isDrawerOpen ? <X size={20} /> : <Compass size={20} />}
-          </button>
-        )}
         <textarea
           ref={textareaRef}
           className='flex-1 p-2 bg-surface-2 border border-hairline-2 rounded-lg text-ink placeholder-muted resize-none focus:outline-none focus:ring-2 focus:ring-blue focus:border-blue text-sm max-h-[96px] overflow-y-auto'
