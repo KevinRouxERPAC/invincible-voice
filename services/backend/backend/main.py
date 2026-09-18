@@ -107,7 +107,7 @@ app.include_router(voices_router)
 app.add_middleware(
     LimitUploadSizeForPath,
     max_upload_size=MAX_VOICE_FILE_SIZE_MB * 1024 * 1024,
-    path="/v1/voices",
+    path="/v1/voices/create",
 )
 
 

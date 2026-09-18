@@ -71,17 +71,14 @@ const Google = () => {
       }
     } catch (e) {
       console.error('Native Google sign-in failed:', e);
-      // A user-driven cancellation (back button, outside tap) is not an auth
-      // failure: leave the form clean instead of showing a misleading error.
-      const cancelled =
-        (e instanceof Error && /cancel/i.test(e.message)) ||
-        (typeof e === 'object' &&
-          e !== null &&
-          'code' in e &&
-          String((e as { code?: string }).code).includes('CANCEL'));
-      if (!cancelled) {
-        setAuthError('invalid');
-      }
+      // Every failure lands here as USER_CANCELLED, including ones the user did
+      // not cause: Android wraps a rejected token request (SHA-1 of the signing
+      // certificate not registered on the Android OAuth client, revoked client)
+      // in a GetCredentialCancellationException, and the plugin drops the
+      // underlying "[16] Account reauth failed." message before it reaches JS.
+      // Staying silent on that code left the button doing visibly nothing, so
+      // show a neutral message that fits both a real dismissal and a failure.
+      setAuthError('google_failed');
     } finally {
       setIsSigningIn(false);
     }

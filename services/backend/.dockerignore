@@ -34,11 +34,18 @@ build/
 .DS_Store
 Thumbs.db
 
+# Environment and secrets
+.env*
+
 # Local data and logs
 *.log
+logs.txt
 logs/
 recordings/
 debug/
+data/
+volumes/
+.local-users-data/
 
 # Documentation
 docs/

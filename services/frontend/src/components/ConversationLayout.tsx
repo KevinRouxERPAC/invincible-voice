@@ -283,6 +283,44 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
     ],
   );
 
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      const { activeElement } = document;
+      const isInputField =
+        activeElement &&
+        (activeElement.tagName === 'INPUT' ||
+          activeElement.tagName === 'TEXTAREA' ||
+          activeElement.getAttribute('contenteditable') === 'true');
+
+      if (event.key === 'Escape' && isWriteExpanded) {
+        setIsWriteExpanded(false);
+        return;
+      }
+
+      if (isInputField) {
+        return;
+      }
+
+      // 'e' (Écrire) or 'w' (Write) activates manual writing
+      if (
+        (event.key === 'e' ||
+          event.key === 'E' ||
+          event.key === 'w' ||
+          event.key === 'W') &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey
+      ) {
+        event.preventDefault();
+        setIsWriteExpanded(true);
+        setTimeout(() => textareaRef.current?.focus(), 0);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [isWriteExpanded]);
+
   const pastConversation =
     selectedConversationIndex !== null &&
     userData?.conversations[selectedConversationIndex]
@@ -630,16 +668,6 @@ const ConversationLayout: FC<ConversationLayoutProps> = ({
 
   const renderStandardFooter = () => (
     <Fragment>
-      {!isHistoryMode && quickPhrases.length > 0 && (
-        <div className='mb-2 landscape:hidden'>
-          <QuickPhrases
-            phrases={quickPhrases}
-            onSelect={onQuickPhraseSelect}
-            compact
-          />
-        </div>
-      )}
-
       {isDirectiveOpen && (
         <div className='flex flex-row gap-2 mb-2'>
           <input

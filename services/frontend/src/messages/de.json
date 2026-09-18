@@ -7,6 +7,7 @@
     "signingIn": "Anmeldung…",
     "signUp": "Registrieren",
     "googleSignIn": "Mit Google anmelden",
+    "googleSignInFailed": "Die Google-Anmeldung wurde nicht abgeschlossen. Versuchen Sie es erneut oder melden Sie sich mit Ihrer E-Mail-Adresse an.",
     "createYourAccount": "Erstellen Sie Ihr Konto",
     "yourEmail": "Ihre E-Mail",
     "emailPlaceholder": "vorname.nachname@beispiel.de",

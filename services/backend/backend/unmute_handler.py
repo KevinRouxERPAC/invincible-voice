@@ -250,9 +250,7 @@ class UnmuteHandler(AsyncStreamHandler):
 
         # Empty message to signal we've started responding.
         # Do it here in the lock to avoid race conditions
-        quest = Quest.from_run_step(
-            "llm" + str(dt.datetime.now()), self._generate_response_task
-        )
+        quest = Quest.from_run_step("llm", self._generate_response_task)
         await self.quest_manager.add(quest)
         return True
 

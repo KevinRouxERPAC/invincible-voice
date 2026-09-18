@@ -7,6 +7,7 @@
     "signingIn": "Signing in…",
     "signUp": "Sign up",
     "googleSignIn": "Sign in with Google",
+    "googleSignInFailed": "Google sign-in did not complete. Try again, or sign in with your email.",
     "createYourAccount": "Create your account",
     "yourEmail": "Your email",
     "emailPlaceholder": "firstname.lastname@example.com",

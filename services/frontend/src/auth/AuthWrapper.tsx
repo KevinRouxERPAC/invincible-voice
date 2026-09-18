@@ -14,6 +14,7 @@ import BrandLogos from '@/components/ui/BrandLogos';
 import { useTranslations } from '@/i18n';
 import Google from './Google';
 import { AUTH_STATUSES, useAuthContext } from './authContext';
+import type { AuthError } from './authContext';
 
 const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
   const {
@@ -82,7 +83,7 @@ const AuthWrapper: FC<PropsWithChildren> = ({ children = null }) => {
 export default AuthWrapper;
 
 interface SignInScreenProps {
-  authError: 'invalid' | 'not_provisioned' | 'password_conflict' | false;
+  authError: AuthError;
   allowPassword: boolean;
   onSignIn: (email: string, password: string) => void;
 }
@@ -127,8 +128,16 @@ const SignInScreen: FC<SignInScreenProps> = ({
     if (authError === 'invalid') {
       return t('common.emailOrPasswordIncorrect');
     }
+    if (authError === 'google_failed') {
+      return t('common.googleSignInFailed');
+    }
     return '';
   })();
+
+  // A cancelled Google sheet is indistinguishable from a failed one, so that
+  // message is phrased as a hint and styled quietly: red would accuse the user
+  // of an error they may have made on purpose.
+  const errorIsQuiet = authError === 'google_failed';
 
   return (
     <div className='flex flex-col gap-3 max-w-md w-[90%] my-16'>
@@ -146,7 +155,9 @@ const SignInScreen: FC<SignInScreenProps> = ({
         {errorMessage && (
           <p
             role='alert'
-            className='text-sm text-red text-center leading-snug px-2'
+            className={`text-sm text-center leading-snug px-2 ${
+              errorIsQuiet ? 'text-ink-2' : 'text-red'
+            }`}
           >
             {errorMessage}
           </p>

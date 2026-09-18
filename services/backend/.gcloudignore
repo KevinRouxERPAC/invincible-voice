@@ -1,9 +1,16 @@
 # Exclut du tarball uploade vers Cloud Build (sinon gcloud envoie tout le
 # dossier, dont le .venv ~1 Go). Syntaxe type .gitignore.
 .venv/
+.env*
 __pycache__/
 *.pyc
 .pytest_cache/
 .ruff_cache/
 *.egg-info/
 .dockerignore
+*.log
+logs.txt
+data/
+volumes/
+.local-users-data/
+recordings/

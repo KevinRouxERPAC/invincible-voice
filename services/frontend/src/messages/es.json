@@ -7,6 +7,7 @@
     "signingIn": "Iniciando sesión…",
     "signUp": "Registrarse",
     "googleSignIn": "Iniciar sesión con Google",
+    "googleSignInFailed": "El inicio de sesión con Google no se completó. Vuelve a intentarlo o inicia sesión con tu correo electrónico.",
     "createYourAccount": "Crea tu cuenta",
     "yourEmail": "Tu correo electrónico",
     "emailPlaceholder": "nombre.apellido@ejemplo.com",

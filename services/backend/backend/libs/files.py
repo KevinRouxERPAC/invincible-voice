@@ -14,7 +14,10 @@ class LimitUploadSizeForPath(BaseHTTPMiddleware):
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
-        if request.method == "POST" and request.url.path == self.path:
+        matches_path = request.url.path == self.path or request.url.path.startswith(
+            self.path.rstrip("/") + "/"
+        )
+        if request.method == "POST" and matches_path:
             if "content-length" not in request.headers:
                 return Response(status_code=status.HTTP_411_LENGTH_REQUIRED)
 

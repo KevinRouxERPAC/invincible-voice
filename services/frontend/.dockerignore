@@ -1,0 +1,32 @@
+# Dependencies and build outputs
+node_modules/
+.next/
+out/
+.firebase/
+coverage/
+
+# Android build artifacts and sensitive signing keys
+android/keystore/
+android/keystore.properties
+android/
+
+# Environment and secrets
+.env*
+
+# Logs and debug
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Git and IDE
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Docker files
+Dockerfile*
+.dockerignore

@@ -103,9 +103,11 @@ class Chatbot:
         ):
             # The only case where we need to fuse, otherwise the history will be displayed
             # in a strange way since we get those word by word
-            needs_space = not self.last_message.content.startswith(
-                " "
-            ) and not delta.startswith(" ")
+            needs_space = (
+                bool(self.last_message.content)
+                and not self.last_message.content.endswith(" ")
+                and not delta.startswith(" ")
+            )
             if needs_space:
                 delta = " " + delta
             self.current_conversation[-1].content += delta

@@ -135,35 +135,51 @@ export function formatConversationDate(
     }
     const dateLocale = DATE_LOCALES[locale] ?? locale;
     const now = new Date();
-    const diffInMs = now.getTime() - date.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
+    const startOfConv = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const diffInDays = Math.floor(
+      (startOfToday.getTime() - startOfConv.getTime()) / (1000 * 60 * 60 * 24),
+    );
+    const time = date.toLocaleTimeString(dateLocale, {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
     if (diffInDays === 0) {
-      return date.toLocaleTimeString(dateLocale, {
-        hour: '2-digit',
-        minute: '2-digit',
-      });
+      return time;
     }
     if (diffInDays === 1) {
-      return t('conversation.yesterday');
+      return `${t('conversation.yesterday')} ${time}`;
     }
     if (diffInDays < 7) {
-      return date.toLocaleDateString(dateLocale, {
+      const day = date.toLocaleDateString(dateLocale, {
         weekday: 'short',
         day: 'numeric',
         month: 'short',
       });
+      return `${day} ${time}`;
     }
     if (diffInDays < 365) {
-      return date.toLocaleDateString(dateLocale, {
+      const day = date.toLocaleDateString(dateLocale, {
         month: 'short',
         day: 'numeric',
       });
+      return `${day} ${time}`;
     }
-    return date.toLocaleDateString(dateLocale, {
+    const day = date.toLocaleDateString(dateLocale, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',
     });
+    return `${day} ${time}`;
   } catch {
     console.warn(
       'Failed to parse conversation start_time:',

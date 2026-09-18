@@ -28,17 +28,29 @@ export const AUTH_STATUSES = {
 type AuthStatusKeys = keyof typeof AUTH_STATUSES;
 export type AuthStatus = (typeof AUTH_STATUSES)[AuthStatusKeys];
 
+/**
+ * Why the last sign-in attempt failed. `google_failed` covers every
+ * unsuccessful native Google flow: the Credential Manager plugin reports a
+ * server-side rejection (unregistered SHA-1, revoked client) with the same
+ * USER_CANCELLED code as a real dismissal, so the two cannot be told apart
+ * from JS and both must leave a visible way forward.
+ */
+export type AuthError =
+  | 'invalid'
+  | 'not_provisioned'
+  | 'password_conflict'
+  | 'google_failed'
+  | false;
+
 interface AuthContextInterface {
   authStatus: AuthStatus;
-  authError: 'invalid' | 'not_provisioned' | 'password_conflict' | false;
+  authError: AuthError;
   allowPassword: boolean;
   googleClientId: string;
   userData: UserData | null;
   signIn: (email: string, password: string) => void;
   googleSignIn: (googleToken: string) => void;
-  setAuthError: (
-    error: 'invalid' | 'not_provisioned' | 'password_conflict' | false,
-  ) => void;
+  setAuthError: (error: AuthError) => void;
   signOut: () => void;
   acceptTermsOfServices: () => Promise<void>;
   fetchUserData: () => Promise<void>;
@@ -74,9 +86,7 @@ const getCachedGoogleClientId = (): string => {
 };
 
 const AuthProvider: FC<PropsWithChildren> = ({ children = null }) => {
-  const [authError, setAuthError] = useState<
-    'invalid' | 'not_provisioned' | 'password_conflict' | false
-  >(false);
+  const [authError, setAuthError] = useState<AuthError>(false);
   const [authStatus, setAuthStatus] = useState<AuthStatus>(
     AUTH_STATUSES.NOT_CHECKED,
   );

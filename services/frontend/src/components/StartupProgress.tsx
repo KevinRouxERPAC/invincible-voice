@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import BrandLogos from '@/components/ui/BrandLogos';
 import { useTranslations } from '@/i18n';
 
 export interface StartupStep {
@@ -13,21 +14,47 @@ interface StartupProgressProps {
   steps: StartupStep[];
   /** 0..100 progress percentage (drives the bar width). */
   percent: number;
+  /** Current health-check attempt, 1-based. */
+  attempt: number;
+  /** Total attempts in the retry schedule. */
+  total: number;
 }
 
 /**
- * Startup progress screen shown while the app connects at launch. A progress
- * bar plus a step list tell the user exactly what is happening (server wake,
- * authentication, profile) — a Cloud Run cold start takes ~70 s and without
- * this feedback the app just looks frozen or broken.
+ * Startup progress screen shown while the app connects at launch. A title, a
+ * progress bar, the attempt counter and a step list tell the user exactly what
+ * is happening (server wake, authentication, profile) — a Cloud Run cold start
+ * takes ~70 s and without this feedback the app just looks frozen or broken.
  */
-const StartupProgress: FC<StartupProgressProps> = ({ steps, percent }) => {
+const StartupProgress: FC<StartupProgressProps> = ({
+  steps,
+  percent,
+  attempt,
+  total,
+}) => {
   const t = useTranslations();
   const clamped = Math.max(0, Math.min(100, Math.round(percent)));
 
+  // A step is shown as done only once every step before it is done. Callers
+  // report each step independently, and the profile one completes early from
+  // the local cache: ticking it while "server wake" was still pending made the
+  // list read as broken rather than as a sequence.
+  let previousDone = true;
+  const orderedSteps = steps.map((step) => {
+    const done = previousDone && step.done;
+    previousDone = done;
+    return { ...step, done };
+  });
+
   return (
     <div className='w-full min-h-screen flex flex-col items-center justify-center gap-8 px-8 bg-paper text-ink'>
+      <BrandLogos className='h-9' />
+
       <div className='w-full max-w-md flex flex-col gap-3'>
+        <h1 className='text-center text-xl font-bold mb-1'>
+          {t('connection.wakingTitle')}
+        </h1>
+
         {/* Progress bar */}
         <div
           className='w-full h-3 rounded-full bg-hairline overflow-hidden'
@@ -43,12 +70,21 @@ const StartupProgress: FC<StartupProgressProps> = ({ steps, percent }) => {
           />
         </div>
 
+        <p
+          className='text-xs text-muted text-center'
+          aria-live='polite'
+        >
+          {t('connection.wakingAttempt')
+            .replace('{attempt}', String(attempt))
+            .replace('{total}', String(total))}
+        </p>
+
         {/* Step list */}
         <ul
           className='flex flex-col gap-2.5 mt-2'
           aria-live='polite'
         >
-          {steps.map((step) => (
+          {orderedSteps.map((step) => (
             <li
               key={step.label}
               className='flex items-center gap-3 text-base'

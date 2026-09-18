@@ -916,7 +916,10 @@ const InvincibleVoice = () => {
     [textInput, sendMessage, sendCurrentKeywords, clearResponses],
   );
   const checkHealth = useCallback(
-    async (attempt = 1): Promise<HealthStatus> => {
+    async (
+      attempt = 1,
+      { silent = false }: { silent?: boolean } = {},
+    ): Promise<HealthStatus> => {
       const backendHealthUrl = apiUrl(`/v1/health`);
       const internetUp = hasInternetConnectivity();
 
@@ -965,7 +968,12 @@ const InvincibleVoice = () => {
         // startup (measured ~70 s when fully idle) and exceeds the timeout even
         // though the backend is fine. Retry with increasing delays while showing
         // the "server starting" screen; only give up after the full schedule.
-        if (attempt < WAKE_RETRY_TOTAL) {
+        // `silent` marks the background recovery polls, which fire every 10 s
+        // while the app is offline. Letting them run the whole schedule put the
+        // waking screen back over the offline fallback within seconds and
+        // stacked overlapping cascades, so SOS and the quick phrases kept being
+        // yanked off screen — the one moment the user most needs them to stay.
+        if (!silent && attempt < WAKE_RETRY_TOTAL) {
           setWaking({ attempt: attempt + 1, total: WAKE_RETRY_TOTAL });
           const delay = WAKE_RETRY_DELAYS_MS[attempt] ?? 15_000;
           if (delay > 0) {
@@ -973,7 +981,7 @@ const InvincibleVoice = () => {
               setTimeout(resolve, delay);
             });
           }
-          return checkHealth(attempt + 1);
+          return checkHealth(attempt + 1, { silent });
         }
         setWaking(null);
         const nextStatus: HealthStatus = {
@@ -1159,14 +1167,14 @@ const InvincibleVoice = () => {
       return undefined;
     }
     const intervalId = setInterval(() => {
-      checkHealth().catch(() => {});
+      checkHealth(1, { silent: true }).catch(() => {});
     }, 10000);
     return () => clearInterval(intervalId);
   }, [healthStatus, checkHealth]);
 
   useEffect(() => {
     const handleConnectivityChange = () => {
-      checkHealth().catch(() => {});
+      checkHealth(1, { silent: true }).catch(() => {});
     };
     window.addEventListener('online', handleConnectivityChange);
     window.addEventListener('offline', handleConnectivityChange);
@@ -1379,22 +1387,26 @@ const InvincibleVoice = () => {
   // is still null, so this check must come before the generic loading branch
   // or the progress bar would never be visible.
   if (waking) {
-    const attemptBasedPercent = (waking.attempt / (waking.total + 1)) * 80;
-    const percent = Math.max(
-      attemptBasedPercent,
-      profileLoaded ? 90 : attemptBasedPercent,
-    );
+    // Progress tracks the retry schedule and nothing else. Flooring it at 90%
+    // because the cached profile had loaded pushed the bar to near-full within
+    // seconds and then froze it for the rest of the wait — the exact "is this
+    // thing stuck?" impression this screen exists to prevent.
+    const percent = (waking.attempt / waking.total) * 100;
     return (
       <StartupProgress
         percent={percent}
+        attempt={waking.attempt}
+        total={waking.total}
         steps={[
           {
+            // The server is unreachable for as long as this screen is up, so
+            // this step stays pending: it ticks by leaving the screen.
             label: t('connection.stepServer'),
-            done: waking.attempt >= waking.total,
+            done: false,
           },
           {
             label: t('connection.stepAuth'),
-            done: waking.attempt >= waking.total,
+            done: false,
           },
           {
             label: t('connection.stepProfile'),

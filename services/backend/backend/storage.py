@@ -307,14 +307,15 @@ class InvalidEmailError(ValueError):
 
 
 def validate_email(email: str) -> str:
-    if ".." in email or not _EMAIL_REGEX.fullmatch(email):
+    normalized = email.strip().lower()
+    if ".." in normalized or not _EMAIL_REGEX.fullmatch(normalized):
         raise InvalidEmailError(f"Invalid email address: {email!r}")
-    return email
+    return normalized
 
 
 def get_user_data_path(email: str) -> AnyPath:
-    validate_email(email)
-    return kyutai_constants.USERS_SETTINGS_AND_HISTORY_DIR / f"{email}.json"
+    normalized = validate_email(email)
+    return kyutai_constants.USERS_SETTINGS_AND_HISTORY_DIR / f"{normalized}.json"
 
 
 class UserDataNotFoundError(Exception):

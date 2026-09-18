@@ -7,6 +7,7 @@
     "signingIn": "Connexion…",
     "signUp": "S'inscrire",
     "googleSignIn": "Se connecter avec Google",
+    "googleSignInFailed": "La connexion Google n'a pas abouti. Réessayez, ou connectez-vous avec votre email.",
     "createYourAccount": "Créer votre compte",
     "yourEmail": "Votre email",
     "emailPlaceholder": "prenom.nom@exemple.com",
